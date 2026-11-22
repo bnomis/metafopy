@@ -3,7 +3,6 @@
 Formulas are built from generated R names (``rstrategies.r_identifiers``), so the parts a test puts in are the parts it expects back.
 """
 
-import importlib
 import keyword
 
 import hypothesis
@@ -13,16 +12,15 @@ import rstrategies
 
 import metafopy.errors
 import metafopy.formula
-
-matreg = importlib.import_module('metafopy.methods.matreg')
-rcalc = importlib.import_module('metafopy.methods.rcalc')
-call = importlib.import_module('metafopy.models.call')
-mv_factor = importlib.import_module('metafopy.models.mv_factor')
-mv_hessian = importlib.import_module('metafopy.models.mv_hessian')
-mv_print = importlib.import_module('metafopy.models.mv_print')
-rma_mv = importlib.import_module('metafopy.models.rma_mv')
-rma_uni = importlib.import_module('metafopy.models.rma_uni')
-infl = importlib.import_module('metafopy.plot.infl')
+import metafopy.methods.matreg
+import metafopy.methods.rcalc
+import metafopy.models.call
+import metafopy.models.mv_factor
+import metafopy.models.mv_hessian
+import metafopy.models.mv_print
+import metafopy.models.rma_mv
+import metafopy.models.rma_uni
+import metafopy.plot.infl
 
 SETTINGS = hypothesis.settings(max_examples=100, deadline=None)
 names = rstrategies.r_identifiers()
@@ -125,7 +123,7 @@ def test_parse_random_demands_a_leading_tilde(text: str) -> None:
 @hypothesis.given(y=names, xs=hypothesis.strategies.lists(names, min_size=1, max_size=6))
 def test_matreg_parse_formula_gives_outcome_and_unique_predictors_in_order(y: str, xs: list[str]) -> None:
     """matreg.py::parse_formula: the outcome, then each predictor once in order of first appearance."""
-    assert matreg.parse_formula(f'{y} ~ {" + ".join(xs)}') == (y, list(dict.fromkeys(xs)))
+    assert metafopy.methods.matreg.parse_formula(f'{y} ~ {" + ".join(xs)}') == (y, list(dict.fromkeys(xs)))
 
 
 @SETTINGS
@@ -133,7 +131,7 @@ def test_matreg_parse_formula_gives_outcome_and_unique_predictors_in_order(y: st
 def test_matreg_parse_formula_needs_a_left_hand_side(rhs: str) -> None:
     """matreg.py::parse_formula: no outcome is an input error."""
     with pytest.raises(metafopy.errors.InputError):
-        matreg.parse_formula(f'~ {rhs}')
+        metafopy.methods.matreg.parse_formula(f'~ {rhs}')
 
 
 @SETTINGS
@@ -142,7 +140,7 @@ def test_formula_variables_skip_function_names_and_duplicates(y: str, xs: list[s
     """rcalc.py::formula_variables: variables in order of appearance, once each, and no function name."""
     terms = [f'{fn}({x})' for fn, x in zip(fns, xs, strict=False)] + xs
     expected = list(dict.fromkeys([y, *[x for x in xs[: len(fns)]], *xs]))
-    assert rcalc.formula_variables(f'{y} ~ {" + ".join(terms)}') == expected
+    assert metafopy.methods.rcalc.formula_variables(f'{y} ~ {" + ".join(terms)}') == expected
 
 
 @SETTINGS
@@ -150,20 +148,20 @@ def test_formula_variables_skip_function_names_and_duplicates(y: str, xs: list[s
 def test_formula_variables_demand_a_tilde(text: str) -> None:
     """rcalc.py::formula_variables: text without ``~`` is an input error."""
     with pytest.raises(metafopy.errors.InputError):
-        rcalc.formula_variables(text)
+        metafopy.methods.rcalc.formula_variables(text)
 
 
 @SETTINGS
-@hypothesis.given(choice=hypothesis.strategies.sampled_from(rcalc.NFUNS), keep=hypothesis.strategies.integers(1, 8))
+@hypothesis.given(choice=hypothesis.strategies.sampled_from(metafopy.methods.rcalc.NFUNS), keep=hypothesis.strategies.integers(1, 8))
 def test_match_nfun_takes_unambiguous_prefixes_only(choice: str, keep: int) -> None:
     """rcalc.py::match_nfun: a prefix that starts exactly one choice gives it; an ambiguous prefix is an input error."""
     prefix = choice[:keep]
-    hits = [c for c in rcalc.NFUNS if c.startswith(prefix)]
-    if prefix in rcalc.NFUNS or len(hits) == 1:
-        assert rcalc.match_nfun(prefix) == choice
+    hits = [c for c in metafopy.methods.rcalc.NFUNS if c.startswith(prefix)]
+    if prefix in metafopy.methods.rcalc.NFUNS or len(hits) == 1:
+        assert metafopy.methods.rcalc.match_nfun(prefix) == choice
     else:
         with pytest.raises(metafopy.errors.InputError):
-            rcalc.match_nfun(prefix)
+            metafopy.methods.rcalc.match_nfun(prefix)
 
 
 # models/call.py
@@ -175,9 +173,9 @@ def test_split_terms_splits_at_top_level_signs_only(terms: list[tuple[str, str]]
     """call.py::split_terms: the sign and text of each term come back; a sign inside parentheses does not split."""
     first = [('+', terms[0][1]), *terms[1:]]
     text = ''.join(f' {s} {t}' for s, t in first)
-    assert call.split_terms(text) == first
+    assert metafopy.models.call.split_terms(text) == first
     nested = f'{wrap}({terms[0][1]} - {terms[-1][1]})'
-    assert call.split_terms(nested) == [('+', nested)]
+    assert metafopy.models.call.split_terms(nested) == [('+', nested)]
 
 
 @SETTINGS
@@ -185,9 +183,9 @@ def test_split_terms_splits_at_top_level_signs_only(terms: list[tuple[str, str]]
 def test_update_side_dot_is_idempotent(old: list[str]) -> None:
     """call.py::update_side: ``.`` keeps the terms, and applying it again changes nothing."""
     text = ' + '.join(old)
-    once = call.update_side(text, '.')
+    once = metafopy.models.call.update_side(text, '.')
     assert once == text
-    assert call.update_side(once, '.') == once
+    assert metafopy.models.call.update_side(once, '.') == once
 
 
 @SETTINGS
@@ -196,9 +194,9 @@ def test_update_side_adds_then_drops_a_term(old: list[str], new: str) -> None:
     """call.py::update_side: ``. + t`` appends a new term, and ``. - t`` then removes it again."""
     hypothesis.assume(new not in old)
     text = ' + '.join(old)
-    added = call.update_side(text, f'. + {new}')
+    added = metafopy.models.call.update_side(text, f'. + {new}')
     assert added == f'{text} + {new}'
-    assert call.update_side(added, f'. - {new}') == text
+    assert metafopy.models.call.update_side(added, f'. - {new}') == text
 
 
 @SETTINGS
@@ -207,9 +205,9 @@ def test_update_formula_keeps_the_outcome_and_updates_the_terms(y: str, old: lis
     """call.py::update_formula: ``. ~ . + t`` keeps the left-hand side and the old terms, and is idempotent."""
     hypothesis.assume(new not in old)
     formula = f'{y} ~ {" + ".join(old)}'
-    updated = call.update_formula(formula, f'. ~ . + {new}')
+    updated = metafopy.models.call.update_formula(formula, f'. ~ . + {new}')
     assert updated == f'{formula} + {new}'
-    assert call.update_formula(updated, f'. ~ . + {new}') == updated
+    assert metafopy.models.call.update_formula(updated, f'. ~ . + {new}') == updated
 
 
 @SETTINGS
@@ -217,7 +215,7 @@ def test_update_formula_keeps_the_outcome_and_updates_the_terms(y: str, old: lis
 def test_update_formula_demands_a_tilde_in_the_update(text: str) -> None:
     """call.py::update_formula: an update without ``~`` is an input error."""
     with pytest.raises(metafopy.errors.InputError):
-        call.update_formula('y ~ x', text)
+        metafopy.models.call.update_formula('y ~ x', text)
 
 
 # models/mv_factor.py
@@ -237,7 +235,7 @@ def test_update_formula_demands_a_tilde_in_the_update(text: str) -> None:
 )
 def test_split_top_level_ignores_separators_in_brackets_and_quotes(pieces: list[str]) -> None:
     """mv_factor.py::split_top_level: pieces joined with the separator come back whole, even with commas inside calls or quotes."""
-    assert mv_factor.split_top_level(', '.join(pieces), ',') == pieces
+    assert metafopy.models.mv_factor.split_top_level(', '.join(pieces), ',') == pieces
 
 
 # models/mv_hessian.py
@@ -248,7 +246,7 @@ def test_split_top_level_ignores_separators_in_brackets_and_quotes(pieces: list[
 def test_inner_names_number_each_lower_triangle_pair_once(prefix: str, nlevels: int) -> None:
     """mv_hessian.py::inner_names: one unique name per correlation of an ``n x n`` matrix, in column-major lower-triangle order."""
     count = nlevels * (nlevels - 1) // 2
-    out = mv_hessian.inner_names(prefix, count)
+    out = metafopy.models.mv_hessian.inner_names(prefix, count)
     assert len(out) == len(set(out)) == count
     if count == 1:
         assert out == [prefix]
@@ -260,7 +258,7 @@ def test_inner_names_number_each_lower_triangle_pair_once(prefix: str, nlevels: 
 @hypothesis.given(prefix=names, count=hypothesis.strategies.integers(1, 12))
 def test_numbered_gives_the_prefix_alone_or_one_unique_name_each(prefix: str, count: int) -> None:
     """mv_hessian.py::numbered: one count gives the bare prefix; more give ``prefix.1`` to ``prefix.count``."""
-    out = mv_hessian.numbered(prefix, count)
+    out = metafopy.models.mv_hessian.numbered(prefix, count)
     assert out == ([prefix] if count == 1 else [f'{prefix}.{i}' for i in range(1, count + 1)])
 
 
@@ -278,7 +276,7 @@ def test_lower_triangle_order_is_a_permutation_in_column_major_order(n: int) -> 
                 expected.append(cov)
                 cov += 1
     # covariances are numbered in the order of the strictly lower triangle, which is the order this loop meets them
-    assert mv_hessian.lower_triangle_order(n) == expected
+    assert metafopy.models.mv_hessian.lower_triangle_order(n) == expected
     assert sorted(expected) == list(range(n * (n + 1) // 2))
 
 
@@ -291,7 +289,7 @@ def test_lower_triangle_order_is_a_permutation_in_column_major_order(n: int) -> 
 )
 def test_abbreviate_once_keeps_the_first_letter_and_a_subsequence(text: str, minlen: int) -> None:
     """mv_print.py::abbreviate_once: a short string is kept; a long one loses characters but never its first, and no longer than before."""
-    out = mv_print.abbreviate_once(text, minlen)
+    out = metafopy.models.mv_print.abbreviate_once(text, minlen)
     if len(text) <= minlen:
         assert out == text
     assert out[0] == text[0]
@@ -303,7 +301,7 @@ def test_abbreviate_once_keeps_the_first_letter_and_a_subsequence(text: str, min
 @hypothesis.given(words=hypothesis.strategies.lists(lower_words, min_size=1, max_size=6, unique=True), minlen=hypothesis.strategies.integers(1, 6))
 def test_abbreviate_makes_unique_names_unique(words: list[str], minlen: int) -> None:
     """mv_print.py::abbreviate: unique names give unique abbreviations, each a subsequence of its name."""
-    out = mv_print.abbreviate(words, minlen)
+    out = metafopy.models.mv_print.abbreviate(words, minlen)
     assert len(out) == len(words)
     assert len(set(out)) == len(out)
     assert all(is_subsequence(a, w) for a, w in zip(out, words, strict=True))
@@ -314,30 +312,30 @@ def test_abbreviate_makes_unique_names_unique(words: list[str], minlen: int) -> 
 def test_abbreviate_names_strips_the_wrappers_of_coefficient_names(x: str, ref: str, degree: int) -> None:
     """rma_uni.py::abbreviate_names: ``factor()``, ``I()``, ``relevel()`` and ``poly()`` wrappers go; a plain name stays."""
     hypothesis.assume(')' not in x)
-    assert rma_uni.abbreviate_names([x]) == [x]
-    assert rma_uni.abbreviate_names([f'factor({x})b']) == [f'{x}b']
-    assert rma_uni.abbreviate_names([f'I({x})']) == [x]
-    assert rma_uni.abbreviate_names([f'relevel(factor({x}), ref = "{ref}")b']) == [f'{x}b']
-    assert rma_uni.abbreviate_names([f'poly({x}, degree = {degree})2']) == [f'{x}^2']
-    out = rma_uni.abbreviate_names([f'factor({x})b'])
-    assert rma_uni.abbreviate_names(out) == out
+    assert metafopy.models.rma_uni.abbreviate_names([x]) == [x]
+    assert metafopy.models.rma_uni.abbreviate_names([f'factor({x})b']) == [f'{x}b']
+    assert metafopy.models.rma_uni.abbreviate_names([f'I({x})']) == [x]
+    assert metafopy.models.rma_uni.abbreviate_names([f'relevel(factor({x}), ref = "{ref}")b']) == [f'{x}b']
+    assert metafopy.models.rma_uni.abbreviate_names([f'poly({x}, degree = {degree})2']) == [f'{x}^2']
+    out = metafopy.models.rma_uni.abbreviate_names([f'factor({x})b'])
+    assert metafopy.models.rma_uni.abbreviate_names(out) == out
 
 
 @SETTINGS
 @hypothesis.given(a=names, b=names, fn=hypothesis.strategies.sampled_from(['interaction', 'paste', 'paste0']))
 def test_replace_call_notation_writes_interactions_with_a_colon(a: str, b: str, fn: str) -> None:
     """rma_mv.py::replace_call_notation: ``interaction(a, b)``, ``paste(a, b)`` and ``paste0(a, b)`` become ``a:b``; a plain name stays."""
-    out = rma_mv.replace_call_notation(f'{fn}({a}, {b})')
+    out = metafopy.models.rma_mv.replace_call_notation(f'{fn}({a}, {b})')
     assert out == f'{a}:{b}'
-    assert rma_mv.replace_call_notation(out) == out
-    assert rma_mv.replace_call_notation(a) == a
+    assert metafopy.models.rma_mv.replace_call_notation(out) == out
+    assert metafopy.models.rma_mv.replace_call_notation(a) == a
 
 
 @SETTINGS
 @hypothesis.given(text=lower_words, minlen=hypothesis.strategies.integers(1, 8))
 def test_infl_abbreviate_shortens_a_lower_case_word_to_minlength(text: str, minlen: int) -> None:
     """infl.py::abbreviate: a lower-case word of at most ``minlen`` letters is kept; a longer one is cut to ``minlen`` and keeps its first letter."""
-    out = infl.abbreviate(text, minlen)
+    out = metafopy.plot.infl.abbreviate(text, minlen)
     assert out[0] == text[0]
     assert is_subsequence(out, text)
     assert out == text if len(text) <= minlen else len(out) == minlen

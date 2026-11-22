@@ -1,7 +1,7 @@
 # Property tests for metafopy helpers
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-22
 
 Every function under `src/metafopy` whose domain supports a property gets a hypothesis test that calls it directly, in the way the auditme

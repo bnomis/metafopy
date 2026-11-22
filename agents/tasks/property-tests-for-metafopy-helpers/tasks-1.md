@@ -355,7 +355,7 @@ ledger says so.
 
 ## Task 9: Re-judge, the full check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; decision D2
@@ -365,30 +365,30 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] Repeat Task 1's plan, judge, check and merge. A test file that Tasks 3 to 8 wrote or edited re-plans the candidates its new tests
+- [x] Repeat Task 1's plan, judge, check and merge. A test file that Tasks 3 to 8 wrote or edited re-plans the candidates its new tests
       reach. `phaseb.py report . --question T2` must show no open `src/metafopy` candidate. A candidate still open goes back to the task its
       row in `open-after-rejudge.md` names
-- [ ] Move the `TODO.md` item "Numerical cores have no property-based tests" to the end of `DONE.md`: append its heading and body unchanged,
+- [x] Move the `TODO.md` item "Numerical cores have no property-based tests" to the end of `DONE.md`: append its heading and body unchanged,
       then the line `Done: <date> - agents/specs/property-tests-for-metafopy-helpers/spec.md,
       agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md; the src/audit and bin findings moved to the harness item (D2).`, and remove
       it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved 2026-11-22" to "Implemented"
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved 2026-11-22" to "Implemented"
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/property-tests-for-metafopy-helpers/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/property-tests-for-metafopy-helpers/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] No `src/metafopy` candidate is open in the T2 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
+- [x] No `src/metafopy` candidate is open in the T2 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
