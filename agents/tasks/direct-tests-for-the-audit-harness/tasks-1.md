@@ -125,31 +125,31 @@ transpiler and shims and compare it with R, so groups A and B test against R wit
 
 **Subtasks:**
 
-- [ ] Move R's `ast()` unchanged from `src/audit/r/runscripts.R` into `src/audit/r/common.R`, and make `runscripts.R` get it from there
+- [x] Move R's `ast()` unchanged from `src/audit/r/runscripts.R` into `src/audit/r/common.R`, and make `runscripts.R` get it from there
       (it already sources `common.R`; check). Diff the function text before and after: it must be identical
-- [ ] Write `src/tests/r/generate_audit_snippets.R` as Implementation step 3 says: a named list of R snippets; for each, `parse(text = )`,
+- [x] Write `src/tests/r/generate_audit_snippets.R` as Implementation step 3 says: a named list of R snippets; for each, `parse(text = )`,
       `ast()` of every expression, evaluation in a fresh environment after `set.seed(1234)` with `metafor` and `metadat` attached,
       `node_of()` of the last value (or the error message), `deparse()` for formula snippets; a `meta` block with `R.version.string`,
       `R.version$major`/`minor` and `packageVersion("metafor")`. It stops with an error naming the installed and the pinned version when
       they differ from `src/audit/data/r-versions.json`. It writes `src/tests/reference/audit/snippets.json`
-- [ ] Start the snippet list with one snippet per case Tasks 4-6 need, read from each open group A and B candidate's ledger `reason`
+- [x] Start the snippet list with one snippet per case Tasks 4-6 need, read from each open group A and B candidate's ledger `reason`
       in `open-after-rejudge.md`; Tasks 4-6 may add snippets and rerun the generator
-- [ ] Run it with `LC_ALL=C.UTF-8 R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib Rscript src/tests/r/generate_audit_snippets.R`
-- [ ] Write `src/tests/auditsnippets.py` with `Snippet`, `load_snippet`, `run_in_python`, `assert_same_as_r` and `SNIPPET_RTOL = 1e-12`,
+- [x] Run it with `LC_ALL=C.UTF-8 R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib Rscript src/tests/r/generate_audit_snippets.R`
+- [x] Write `src/tests/auditsnippets.py` with `Snippet`, `load_snippet`, `run_in_python`, `assert_same_as_r` and `SNIPPET_RTOL = 1e-12`,
       as the spec's API section gives them
-- [ ] Write `src/tests/test_auditsnippets.py`: a snippet loads; `load_snippet` fails naming both versions on a fixture whose `meta` differs
+- [x] Write `src/tests/test_auditsnippets.py`: a snippet loads; `load_snippet` fails naming both versions on a fixture whose `meta` differs
       from the pin (a temporary copy); `assert_same_as_r` passes on a match and fails on a changed cell
 
 **Acceptance Criteria:**
 
-- [ ] `ast()` is defined once, in `common.R`, with its text unchanged
-- [ ] The fixture is committed, its `meta` matches `r-versions.json`, and `test_auditsnippets.py` passes without R on the path
+- [x] `ast()` is defined once, in `common.R`, with its text unchanged
+- [x] The fixture is committed, its `meta` matches `r-versions.json`, and `test_auditsnippets.py` passes without R on the path
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/auditsnippets.py src/tests/test_auditsnippets.py` passes
-- [ ] `pytest src/tests/test_auditsnippets.py src/tests/test_harness_scripts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/auditsnippets.py src/tests/test_auditsnippets.py` passes
+- [x] `pytest src/tests/test_auditsnippets.py src/tests/test_harness_scripts.py` passes
 
 **Notes:**
 
