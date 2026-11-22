@@ -24,6 +24,14 @@ import audit.valuetree
 import metafopy
 import metafopy.errors
 
+__all__ = [
+    'build_env',
+    'classify',
+    'r_killed',
+    'r_timed_out',
+    'run_guarded',
+]
+
 matplotlib.use('Agg')
 
 Json = dict[str, typing.Any]

@@ -3,6 +3,23 @@
 import os
 import pathlib
 
+__all__ = [
+    'ATOL',
+    'CASE_TIMEOUT',
+    'DATA_DIR',
+    'DRIFT_RTOL',
+    'MEMORY_LIMIT',
+    'METAFOPY_SRC',
+    'METAFOR_VERSION',
+    'POLL_SECONDS',
+    'ROOT',
+    'RTOL',
+    'R_DIR',
+    'R_LIB',
+    'WORK',
+    'limit_memory',
+]
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PACKAGE = pathlib.Path(__file__).resolve().parent
 METAFOPY_SRC = pathlib.Path(os.environ.get('METAFOPY_AUDIT_SRC', ROOT / 'src'))

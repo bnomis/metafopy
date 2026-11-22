@@ -39,7 +39,7 @@ docstring their own passing test, so the candidate is still covered.
 
 ## Task 1: Declare each src/audit module's public names with `__all__`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 1; decision D3
@@ -48,23 +48,23 @@ docstring their own passing test, so the candidate is still covered.
 
 **Subtasks:**
 
-- [ ] For each module in `src/audit` except `__init__.py` and `rlib.py`, collect the names that another file under `src/audit`, `bin` or
+- [x] For each module in `src/audit` except `__init__.py` and `rlib.py`, collect the names that another file under `src/audit`, `bin` or
       `src/tests` reads as `audit.<module>.<name>` (grep `audit\.<module>\.` and `getattr(audit.<module>`), and add an `__all__` listing
       exactly those, sorted, after the imports
-- [ ] A module no other file reads by attribute gets an `__all__` naming the entry points that `bin/` or a subprocess runs (such as `main`),
+- [x] A module no other file reads by attribute gets an `__all__` naming the entry points that `bin/` or a subprocess runs (such as `main`),
       found by grepping `bin/` and `src/audit` for the module name; with none, `__all__ = []`. Note each such module in the commit body
-- [ ] Run `python3 -c "import audit.cli"`, then `mypy src/audit`, then the harness tests `src/tests/test_harness_*.py`. If a name is missing
+- [x] Run `python3 -c "import audit.cli"`, then `mypy src/audit`, then the harness tests `src/tests/test_harness_*.py`. If a name is missing
       from an `__all__` and a test or mypy fails, add it
 
 **Acceptance Criteria:**
 
-- [ ] Every `src/audit` module another file reads has an `__all__`, and no harness test fails
+- [x] Every `src/audit` module another file reads has an `__all__`, and no harness test fails
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/audit` passes
-- [ ] `pytest src/tests/test_harness_*.py src/tests/test_platform_probe.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/audit` passes
+- [x] `pytest src/tests/test_harness_*.py src/tests/test_platform_probe.py` passes
 
 **Notes:**
 

@@ -7,6 +7,13 @@ import typing
 
 import audit.config
 
+__all__ = [
+    'Domains',
+    'Recipes',
+    'label',
+    'refs_in',
+]
+
 Json = dict[str, typing.Any]
 
 

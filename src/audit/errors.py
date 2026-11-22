@@ -1,3 +1,6 @@
+__all__ = [
+    'HarnessError',
+]
 """Errors of the audit harness."""
 
 

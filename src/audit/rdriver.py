@@ -9,6 +9,14 @@ import threading
 import audit.config
 import audit.errors
 
+__all__ = [
+    'environment',
+    'limit_memory',
+    'rscript_command',
+    'run',
+    'start',
+]
+
 PORTS_LOCK = threading.Lock()
 PORTS_GIVEN: set[int] = set()
 

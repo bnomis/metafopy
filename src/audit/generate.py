@@ -11,6 +11,11 @@ import audit.cases
 import audit.domains
 import audit.universe
 
+__all__ = [
+    'Generated',
+    'generate',
+]
+
 Json = dict[str, typing.Any]
 
 SKIP_GENERICS = frozenset({'print'})

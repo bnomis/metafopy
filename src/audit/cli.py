@@ -10,6 +10,11 @@ import audit.recall
 import audit.report
 import audit.steps
 
+__all__ = [
+    'main',
+    'parse_args',
+]
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
