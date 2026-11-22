@@ -211,7 +211,7 @@ regression in it is caught where it is.
 
 ## Task 6: Caller tests for private helpers in core, effects, bias and the top-level modules
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 4
