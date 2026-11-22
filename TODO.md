@@ -19,6 +19,11 @@ Fix direction: a spec with `/specdev`, starting with the numerical cores, where 
 `core/dbinom.py`, `core/farebrother.py`, `core/tukey.py`, `core/nchg.py`, the distribution functions in `methods/emm_adjust.py`, the weight
 functions in `models/sel_spec.py`, and `models/sel_lik.py::map_delta`/`map_inverse`. Then the formatting helpers, then the harness.
 
+Spec: `agents/specs/property-tests-for-metafopy-helpers/spec.md`; tasks: not yet written.
+
+Note 2026-11-22: the T2 findings under `src/audit` and `bin` move to the item "Audit-harness and bin helpers with branches have no
+direct test" (decision D2 of `agents/reviews/property-tests-for-metafopy-helpers-spec.md`); this item now covers `src/metafopy` only.
+
 ## Audit-harness and bin helpers with branches have no direct test
 
 <!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->
@@ -32,3 +37,7 @@ Cause: the harness is exercised end to end by `bin/metafor-audit.sh --recall` an
 
 Fix direction: a spec with `/specdev`. It decides which harness functions need direct tests (the R-library shims in `rlib.py` and the
 transpiler first), and dismisses the rest in the ledger with the reason that the recall check covers them.
+
+Note 2026-11-22: this item also takes the T2 (property test) findings under `src/audit` and `bin`, moved from the item "Numerical cores
+have no property-based tests" (decision D2 of `agents/reviews/property-tests-for-metafopy-helpers-spec.md`). The list is in
+`agents/audit-reviews/ledger/T2.jsonl`.
