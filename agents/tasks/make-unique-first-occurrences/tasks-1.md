@@ -62,7 +62,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 2: Full check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"
@@ -71,24 +71,24 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 **Subtasks:**
 
-- [ ] Move the `TODO.md` item "`make_unique` renames a label that occurs once when it collides with a generated one" to the end of `DONE.md`: append its heading and body unchanged, then the line
+- [x] Move the `TODO.md` item "`make_unique` renames a label that occurs once when it collides with a generated one" to the end of `DONE.md`: append its heading and body unchanged, then the line
       `Done: <date> - agents/tasks/make-unique-first-occurrences/tasks-1.md Task 1 (<commit>); approved in agents/reviews/order-r-parity-fixes-from-property-tests-specs.md item 3.`, and remove it from `TODO.md`
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/make-unique-first-occurrences/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/make-unique-first-occurrences/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and the final run passes
+- [x] The item is in `DONE.md` with its body unchanged, and the final run passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/make-unique-first-occurrences/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/make-unique-first-occurrences/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
