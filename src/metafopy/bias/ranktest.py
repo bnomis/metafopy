@@ -25,7 +25,7 @@ import metafopy.mfopt
 import metafopy.models.rma_uni
 import metafopy.printing
 
-__all__ = ['RanktestResult', 'kendall_test', 'ranktest']
+__all__ = ['RanktestResult', 'ranktest']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

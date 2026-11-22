@@ -27,7 +27,7 @@ import metafopy.models.rma_uni
 import metafopy.models.sel_result
 import metafopy.models.tables
 
-__all__ = ['FIXED_UNI_ONLY', 'Fit', 'FitView', 'check_class', 'check_method', 'fit_view', 'is_rma', 'r_class']
+__all__ = ['FIXED_UNI_ONLY', 'Fit', 'FitView', 'check_class', 'fit_view', 'is_rma', 'r_class']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Fit = (

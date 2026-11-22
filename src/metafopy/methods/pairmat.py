@@ -9,7 +9,7 @@ import pandas
 import metafopy.errors
 import metafopy.models.rma_uni
 
-__all__ = ['PairmatSpec', 'pairmat', 'resolve']
+__all__ = ['PairmatSpec', 'pairmat']
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

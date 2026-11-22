@@ -39,10 +39,7 @@ __all__ = [
     'digits_map',
     'getmfopt',
     'model_digits',
-    'option_digits',
     'option_signif',
-    'option_space',
-    'reduce_digits',
     'setmfopt',
     'with_digits',
 ]

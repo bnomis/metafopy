@@ -10,8 +10,6 @@ import typing
 import numpy
 import pandas
 
-__all__ = ['rows']
-
 
 def rows[R](result: R, index: typing.Any, size: int) -> R:
     """``result`` with the rows ``index`` of every field that has ``size`` rows.

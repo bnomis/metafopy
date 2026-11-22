@@ -17,7 +17,7 @@ import sys
 import numpy
 import numpy.typing
 
-__all__ = ['derivative_each', 'derivative_mixed', 'hessian']
+__all__ = ['derivative_each']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type VectorFunction = collections.abc.Callable[[FloatArray], FloatArray]

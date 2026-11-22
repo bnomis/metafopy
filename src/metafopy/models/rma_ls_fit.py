@@ -30,7 +30,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['LS_METHODS', 'LSProblem', 'fit_rma_ls', 'make_ls_control']
+__all__ = ['LS_METHODS']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

@@ -1,6 +1,7 @@
 """matreg() and its methods against R metafor (fixtures from src/tests/r/generate_matreg.R)."""
 
 import collections.abc
+import dataclasses
 import functools
 import json
 import math
@@ -14,6 +15,7 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.core.labelled
 import metafopy.errors
 
 # auditme: accept[non-alphabetical-literal] predictor order of the R example sets the coefficient order
@@ -404,3 +406,29 @@ def test_craft2003_pipeline(rtoz: bool, mv_key: str, fit_key: str) -> None:
     refutil.close(mr.tab['beta'], fit['beta'], 'matreg beta', rtol=MV_VC_RTOL)
     refutil.close(mr.tab['se'], fit['se'], 'matreg se', rtol=MV_VC_RTOL)
     refutil.close(mr.R2, fit['R2'], 'matreg R2', rtol=MV_VC_RTOL)
+
+
+def test_stat_reads_the_fit_statistics_table() -> None:
+    res = cov_fit()
+    stats = ref()['cov_n']['fit_stats']
+    for i, row in enumerate(['ll', 'dev', 'AIC', 'BIC', 'AICc']):
+        refutil.close([res.stat(row, False), res.stat(row, True)], stats[i], row)
+    with pytest.raises(metafopy.errors.InternalError, match='fit_stats'):
+        dataclasses.replace(res, fit_stats=None).stat('ll', False)
+
+
+def test_table_lines_are_the_printed_coefficient_table() -> None:
+    res = cov_fit()
+    lines = res.table_lines(res.digits, True, True)
+    same_text('\n'.join(lines), ref()['cov_n']['print'])
+    assert '\n'.join(lines) == str(res)
+    assert not any('---' in line for line in res.table_lines(res.digits, False, False))
+
+
+def test_rcalc_result_names_its_v_by_variable_pair() -> None:
+    dat = pandas.DataFrame({'var1.var2': ['a.b', 'a.c']})
+    built = metafopy.RCalcResult(dat, numpy.eye(2))
+    assert isinstance(built.V, metafopy.core.labelled.VCovMat)
+    assert built.V.rownames is not None
+    assert list(built.V.rownames) == ['a.b', 'a.c']
+    assert metafopy.RCalcResult(None, None).V is None

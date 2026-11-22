@@ -12,8 +12,6 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.printing
 
-__all__ = ['coef_table', 'format_result']
-
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
 

@@ -34,7 +34,7 @@ import metafopy.core.glm
 import metafopy.core.glmm
 import metafopy.errors
 
-__all__ = ['AdaptiveControl', 'fit_adaptive']
+__all__ = ['AdaptiveControl']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

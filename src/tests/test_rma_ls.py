@@ -1,6 +1,7 @@
 """Location-scale models (``rma_uni(..., scale=)``) checked against R metafor 5.2-1 (fixtures from tests/r/generate_location_scale.R)."""
 
 import collections.abc
+import dataclasses
 import json
 import pathlib
 import re
@@ -17,6 +18,7 @@ import refutil
 import scipy.stats
 
 import metafopy
+import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.anova
 import metafopy.methods.ls_anova
@@ -1022,3 +1024,25 @@ def test_confint_scale_interval_is_not_capped_at_ten_times_the_estimate() -> Non
     assert (capped.lb_sign, capped.ub_sign) == NOT_CROSSED
     assert capped.random['ci.lb'].iloc[0] == pytest.approx(-3.6100, abs=5e-5)
     assert capped.random['ci.ub'].iloc[0] == pytest.approx(4.4122, abs=5e-5)
+
+
+def test_hat_matrix_diagonal_is_hatvalues() -> None:
+    res = FITS['bd_3']()
+    assert isinstance(res, metafopy.RMALSResult)
+    hat = res.hat_matrix()
+    numpy.testing.assert_allclose(numpy.diag(hat), res.hatvalues(), rtol=1e-10)
+    numpy.testing.assert_allclose(hat @ hat, hat, atol=1e-8)
+
+
+def test_post_init_labels_the_matrices_of_a_replaced_fit() -> None:
+    res = FITS['bd_3']()
+    assert isinstance(res, metafopy.RMALSResult)
+    again = dataclasses.replace(res, H=numpy.asarray(res.H), X=numpy.asarray(res.X), Z=numpy.asarray(res.Z))
+    assert isinstance(again.H, metafopy.core.labelled.LabelledMatrix)
+    assert isinstance(res.H, metafopy.core.labelled.LabelledMatrix)
+    assert again.H.rownames == res.H.rownames
+    assert isinstance(again.X, metafopy.core.labelled.LabelledMatrix)
+    assert isinstance(again.Z, metafopy.core.labelled.LabelledMatrix)
+    assert again.X.colnames == tuple(res.coef_names)
+    assert again.Z.colnames == tuple(res.alpha_names)
+    assert again.X.rownames == tuple(res.data.rownames)

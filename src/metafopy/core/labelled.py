@@ -26,16 +26,11 @@ import metafopy.mfopt
 import metafopy.printing
 
 __all__ = [
-    'EscalcFrame',
-    'LabelledMatrix',
     'NamedList',
     'RFrame',
     'SparseVCovMat',
-    'VCovMat',
-    'design_matrix',
     'escalc_frame',
     'frame_text',
-    'matrix_text',
     'vector_text',
 ]
 

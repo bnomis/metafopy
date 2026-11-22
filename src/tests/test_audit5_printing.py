@@ -3,6 +3,7 @@ the result objects of list ``btt`` and of ``confint()`` of several components, a
 against the printouts of R metafor 5.2-1 stored by tests/r/generate_audit4_robust.R."""
 
 import collections.abc
+import dataclasses
 import typing
 
 import matplotlib
@@ -12,9 +13,11 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.core.labelled
 import metafopy.datasets
 import metafopy.methods.anova
 import metafopy.methods.confint
+import metafopy.methods.permutest
 
 REF: dict[str, typing.Any] = refutil.load_phase12('audit4_robust')
 
@@ -491,3 +494,44 @@ def test_progbar_tes(capsys: pytest.CaptureFixture[str]) -> None:
     assert got.pval == plain.pval
     metafopy.tes(yi, vi, test='chi2', find_lim=False, progbar=True)
     assert capsys.readouterr().err == ''
+
+
+def test_leave1out_to_frame_holds_the_fields(dat: pandas.DataFrame) -> None:
+    out = metafopy.leave1out(metafopy.rma('yi', 'vi', data=dat))
+    frame = out.to_frame()
+    assert list(frame.columns) == ['estimate', 'se', 'zval', 'pval', 'ci.lb', 'ci.ub', 'Q', 'Qp', 'tau2', 'I2', 'H2']
+    assert list(frame.index) == list(out.slab)
+    numpy.testing.assert_array_equal(frame['estimate'], out.estimate)
+    numpy.testing.assert_array_equal(frame['tau2'], out.tau2)
+
+
+def test_permutest_to_frame_holds_the_coefficients(res1: metafopy.RMAResult) -> None:
+    pt = metafopy.permutest(res1, iter=20, seed=1)
+    assert isinstance(pt, metafopy.methods.permutest.PermutestResult)
+    frame = pt.to_frame()
+    assert list(frame.index) == ['intrcpt', 'ablat']
+    numpy.testing.assert_array_equal(frame['estimate'], pt.beta)
+    numpy.testing.assert_array_equal(frame['pval'], pt.pval)
+    assert 'zval' in frame.columns
+
+
+def test_confint_to_frame_and_ci_null(dat: pandas.DataFrame) -> None:
+    ci = metafopy.confint(metafopy.rma('yi', 'vi', data=dat))
+    assert isinstance(ci, metafopy.methods.confint.ConfintResult)
+    assert not ci.ci_null
+    assert list(ci.to_frame().index) == ['tau^2', 'tau', 'I^2(%)', 'H^2']
+    below = pandas.DataFrame({'estimate': [0.0], 'ci.lb': [-1.0], 'ci.ub': [-0.5]}, index=['tau^2'])
+    assert metafopy.methods.confint.ConfintResult(None, below, lb_sign='<', ub_sign='<').ci_null
+    assert not metafopy.methods.confint.ConfintResult(None, below).ci_null
+    assert list(metafopy.methods.confint.ConfintResult(None, None).to_frame().columns) == ['estimate', 'ci.lb', 'ci.ub']
+
+
+def test_predict_result_labels_its_matrices(res1: metafopy.RMAResult) -> None:
+    pred = metafopy.predict(res1, newmods=[10, 20], vcov=True, addx=True)
+    plain = dataclasses.replace(pred, X=numpy.asarray(pred.X), vcov=numpy.asarray(pred.vcov))
+    assert isinstance(plain.vcov, metafopy.core.labelled.VCovMat)
+    assert plain.vcov.shape == (2, 2)
+    assert isinstance(plain.X, metafopy.core.labelled.LabelledMatrix)
+    assert plain.X.colnames is not None
+    assert list(plain.X.colnames) == ['intrcpt', 'ablat']
+    numpy.testing.assert_array_equal(plain.X, [[1, 10], [1, 20]])

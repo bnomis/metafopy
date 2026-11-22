@@ -23,7 +23,7 @@ import metafopy.effects
 import metafopy.errors
 import metafopy.metadata
 
-__all__ = ['TableSet', 'pair', 'prepare_tables']
+__all__ = ['TableSet']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

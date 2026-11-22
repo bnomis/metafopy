@@ -21,7 +21,7 @@ import metafopy.core.tukey
 import metafopy.core.zeroin
 import metafopy.errors
 
-__all__ = ['Adjustment', 'Family', 'critical_values', 'p_values', 'parse_side']
+__all__ = ['Adjustment', 'Family', 'parse_side']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

@@ -25,7 +25,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.printing
 
-__all__ = ['LSWaldResult', 'anova_rma_ls']
+__all__ = ['anova_rma_ls']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Sequences = collections.abc.Sequence[typing.Any]

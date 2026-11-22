@@ -19,7 +19,7 @@ import scipy.special
 
 import metafopy.errors
 
-__all__ = ['RRandom', 'get_rng', 'set_seed']
+__all__ = ['set_seed']
 
 N = 624
 I2_32M1 = 2.328306437080797e-10
@@ -183,12 +183,10 @@ class RRandom:
                     lo += 1
                 if lo >= n:
                     break
-        q = q + numpy.arange(n)
         out = numpy.empty(nans, dtype=numpy.intp)
         for i in range(nans):
-            ru = self.unif_rand() * n
-            kk = int(ru)
-            out[i] = kk + 1 if ru < q[kk] else a[kk] + 1
+            kk = self.unif_index(n)
+            out[i] = kk + 1 if self.unif_rand() < q[kk] else a[kk] + 1
         return out
 
 

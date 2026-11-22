@@ -42,7 +42,6 @@ __all__ = [
     'fixed_information',
     'marginal_information',
     'neg_loglik',
-    'study_loglik',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]

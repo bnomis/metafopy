@@ -25,7 +25,7 @@ import metafopy.core.optim
 import metafopy.core.stationarity
 import metafopy.errors
 
-__all__ = ['OptResult', 'constr_optim', 'minimise', 'polish_identity']
+__all__ = ['OptResult']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Objective = collections.abc.Callable[[FloatArray], float]

@@ -25,7 +25,7 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['RandomTerm', 'design_matrix', 'formula_context', 'parse_random', 'r_column_name', 'r_factor', 'r_logical_formula', 'r_relevel', 'r_scale']
+__all__ = ['RandomTerm', 'design_matrix', 'parse_random', 'r_column_name', 'r_logical_formula', 'r_relevel', 'r_scale']
 
 KEYWORD = re.compile(r'(?<=[(,] )(\w+)=(?!=)')
 RAW_TRUE = re.compile(r'raw\s*=\s*(True|TRUE|T)\b')

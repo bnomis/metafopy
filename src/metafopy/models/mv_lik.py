@@ -22,7 +22,7 @@ import metafopy.core.linalg
 import metafopy.errors
 import metafopy.models.mv_structs
 
-__all__ = ['Fit', 'Layout', 'Problem', 'evaluate', 'final_fit', 'gradient', 'negative_loglik', 'quad_form']
+__all__ = ['Fit', 'Layout', 'gradient', 'negative_loglik']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

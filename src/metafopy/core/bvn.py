@@ -11,7 +11,7 @@ import math
 
 import scipy.special
 
-__all__ = ['bvn_lower', 'bvn_rect', 'bvnu']
+__all__ = ['bvn_lower', 'bvn_rect']
 
 TWOPI = 6.283185307179586
 

@@ -243,3 +243,17 @@ def test_plot_vif_without_lines(vifs: metafopy.methods.vif.VIFResult, ax: matplo
 def test_plot_vif_needs_simulation(fit: metafopy.RMAResult, ax: matplotlib.axes.Axes) -> None:
     with pytest.raises(metafopy.errors.InputError, match='sim=True'):
         metafopy.plot_vif(metafopy.vif(fit), ax=ax)
+
+
+def test_fixed_btt_string_picks_the_coefficients_whose_names_contain_it(fit: metafopy.RMAResult) -> None:
+    by_name = metafopy.permutest(fit, btt='ablat', fixed=True, iter=20, seed=1)
+    by_index = metafopy.permutest(fit, btt=[1], iter=20, seed=1)
+    assert isinstance(by_name, metafopy.methods.permutest.PermutestResult)
+    assert isinstance(by_index, metafopy.methods.permutest.PermutestResult)
+    assert by_name.QMp == by_index.QMp
+    numpy.testing.assert_allclose(by_name.QM, by_index.QM, rtol=1e-12)
+
+
+def test_fixed_btt_string_matching_no_coefficient_is_refused(fit: metafopy.RMAResult) -> None:
+    with pytest.raises(metafopy.errors.InputError, match='btt'):
+        metafopy.permutest(fit, btt='nomatch', fixed=True, iter=20, seed=1)

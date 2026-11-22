@@ -1615,3 +1615,42 @@ documentation, or an exemption if only its code defines it) and add the coverage
 Spec: `agents/specs/correctness-ls-weights/spec.md`; tasks: `agents/tasks/correctness-ls-weights/tasks-1.md`.
 
 Done: 2026-11-20 - agents/specs/correctness-ls-weights/spec.md, agents/tasks/correctness-ls-weights/tasks-1.md.
+
+## `RRandom.walker` draws differently from R's `sample.int` with `prob` and more than 200 weights
+
+Found on 2026-11-22 while writing the caller tests of Task 6 of `agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md`. Base R 4.6.2
+(`Rscript`, no metafor needed) gives, after `set.seed(42)`:
+
+- `sample.int(300, 5, TRUE, prob = rep(1, 300))` is `49 153 228 122 128`, and `metafopy.core.rng.set_seed(42).sample_int(300, 5, True, prob=numpy.ones(300))`
+  (through `RRandom.walker`, `src/metafopy/core/rng.py`) gives `275 282 86 250 193`;
+- `sample.int(300, 6, TRUE, prob = (1:300)/sum(1:300))` is `276 153 228 122 128 289`, and metafopy gives `275 282 258 250 193 156`.
+
+The cases with at most 200 weights (`prob_sample_replace`, `prob_sample_no_replace`) and `sample_int` without `prob` agree with R, so the
+difference is in the Walker alias branch.
+
+Cause: not found. R's first two draws, 49 and 153, equal the first two of `set.seed(42); sample.int(300, 3, TRUE)`, but its third (228) does
+not, so the alias branch is not a plain rejection-sampler draw either. metafopy's walker draws `unif_rand() * n`. Compare with R's
+`src/main/random.c` for the reference version before changing it.
+
+Fix direction: fix `RRandom.walker` to draw as R does, then add the two cases above as tests. `RRandom.sample_int` in `gosh`
+(`src/metafopy/methods/gosh.py`) passes `prob` and `replace=True` and may reach the branch for large `k`; not checked.
+
+## Public metafopy helpers with branches have no direct test
+
+<!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->
+Found on 2026-11-21 by the first auditme audit (`agents/audit-reviews/review-1.md`, question T1, at `31d809f`): 162 functions under
+`src/metafopy` that branch have no test calling them directly (under the T1 rulings that review records). Most are public helpers that the
+tests reach only through a higher-level function. The per-function list is in `agents/audit-reviews/ledger/T1.jsonl`: run
+`python3 ~/.claude/skills/auditme/checks/phaseb.py report . --question T1`. Decision D4 of that review (answered 2026-11-21) files the
+catch-up here, one item per package.
+<!-- doc-counts: accept-end -->
+
+Cause: tests were written per feature against the public entry points (`rma_uni`, `escalc`, `selmodel`, ...), so a helper is tested only
+through its caller, which T1 does not count for a public function.
+
+Fix direction: a spec with `/specdev` first. It chooses which helpers deserve a direct test (the branchy numerics and formatters first), and
+which should become private, or stay covered through their callers with a ledger dismissal giving the reason. Then a task list.
+
+Spec: `agents/specs/direct-tests-for-metafopy-helpers/spec.md`; tasks: `agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md`.
+
+Done: 2026-11-22 - agents/specs/direct-tests-for-metafopy-helpers/spec.md, agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md.

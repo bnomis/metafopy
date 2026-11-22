@@ -13,7 +13,7 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['METHODS', 'ContrastSet', 'build_contrasts']
+__all__ = ['METHODS', 'ContrastSet']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Key = int | str | collections.abc.Sequence[int | str]

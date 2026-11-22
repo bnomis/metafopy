@@ -22,7 +22,7 @@ import metafopy.models.sel_spec
 import metafopy.models.tau2
 import metafopy.printing
 
-__all__ = ['SelmodelResult', 'format_selmodel']
+__all__ = ['SelmodelResult']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

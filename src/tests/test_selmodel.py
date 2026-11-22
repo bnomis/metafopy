@@ -1,5 +1,6 @@
 """selmodel() (all selection models, printing, tests, predict, confint, profile, anova, plot data) checked against R metafor 5.2-1."""
 
+import dataclasses
 import functools
 import json
 import math
@@ -17,6 +18,7 @@ import refutil
 import metafopy
 import metafopy.core.bfgs
 import metafopy.core.integrate
+import metafopy.core.labelled
 import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
@@ -758,3 +760,25 @@ def test_plot_boot_draws_with_the_r_exact_generator() -> None:
     lo, hi = numpy.quantile(sims, [x.level / 2, 1 - x.level / 2], axis=0)
     numpy.testing.assert_allclose(out.ys_lb, numpy.maximum(lo, 0), rtol=1e-9, equal_nan=True)
     numpy.testing.assert_allclose(out.ys_ub, numpy.maximum(hi, 0), rtol=1e-9, equal_nan=True)
+
+
+def test_profile_delta_is_the_grid_of_a_selection_parameter() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        pr = metafopy.profile(fit('hack_stepfun_b'), delta=1, steps=6)
+        tau2 = metafopy.profile(fit('hack_stepfun_b'), tau2=True, steps=6)
+    assert isinstance(pr, metafopy.SelProfileResult)
+    assert isinstance(tau2, metafopy.SelProfileResult)
+    numpy.testing.assert_array_equal(pr.delta, pr.grid)
+    with pytest.raises(AttributeError):
+        tau2.delta  # noqa: B018
+
+
+def test_post_init_names_the_hessian_by_parameter() -> None:
+    res = fit('hack_stepfun_b')
+    names = (*res.base.coef_names, 'tau2', *res.delta_names)
+    again = dataclasses.replace(res, hessian=numpy.asarray(res.hessian))
+    assert isinstance(again.hessian, metafopy.core.labelled.LabelledMatrix)
+    assert again.hessian.rownames == names
+    assert again.hessian.colnames == names
+    numpy.testing.assert_allclose(numpy.asarray(again.hessian), numpy.asarray(res.hessian))

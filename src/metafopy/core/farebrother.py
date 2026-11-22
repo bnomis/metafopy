@@ -30,7 +30,7 @@ import scipy.special
 
 import metafopy.errors
 
-__all__ = ['FarebrotherResult', 'farebrother']
+__all__ = ['FarebrotherResult']
 
 
 @dataclasses.dataclass(frozen=True, slots=True)

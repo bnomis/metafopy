@@ -33,8 +33,6 @@ import metafopy.models.rma_peto
 import metafopy.models.rma_uni
 import metafopy.transf
 
-__all__ = ['refit_tables']
-
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Transf = collections.abc.Callable[..., typing.Any] | bool | None
 

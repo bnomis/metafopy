@@ -19,7 +19,7 @@ import metafopy.core.numderiv
 import metafopy.models.mv_lik
 import metafopy.models.mv_structs
 
-__all__ = ['HessianArgs', 'HessianResult', 'coefficient_hessian', 'variance_hessian']
+__all__ = ['HessianArgs', 'HessianResult', 'coefficient_hessian']
 
 UNNAMED = ''
 
