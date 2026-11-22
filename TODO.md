@@ -4,25 +4,23 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## `make_unique` renames a label that occurs once when it collides with a generated one
+## `make_names(unique=True)` keeps the input order where R puts the changed names last
 
 <!-- doc-counts: accept-start found on 2026-11-22 - a dated record, not a claim about the present -->
-Found on 2026-11-22 by the property test of `make_unique` (Task 8 of `agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md`).
-`metafopy.metadata.make_unique(['a', 'a', 'a.1'])` returns `('a', 'a.1', 'a.1.1')`: the label `a.1` that the caller supplied is renamed
-to `a.1.1`. R's `make.unique(c("a", "a", "a.1"))` returns `"a" "a.2" "a.1"`, the case `?make.unique` documents (`LC_ALL=C.UTF-8 Rscript`,
-metafor 5.2-1). The hypothesis shrunk example is `['a', 'a', 'a.1']`.
+Found on 2026-11-22 while fixing `make_unique` (`agents/tasks/make-unique-first-occurrences/tasks-1.md`, Task 1).
+`metafopy.effects.datatools.make_names(['a b', 'a b', 'a.b'], unique=True)` returns `['a.b', 'a.b.1', 'a.b.2']`. R's
+`make.names(c("a b", "a b", "a.b"), unique = TRUE)` returns `"a.b.1" "a.b.2" "a.b"` (`LC_ALL=C.UTF-8 Rscript`, metafor 5.2-1).
 <!-- doc-counts: accept-end -->
 
-Cause: `make_unique` in `src/metafopy/metadata.py` (lines 31 to 50) checks a candidate only against the labels it has already emitted
-(`seen`), so a later input label that equals a generated one is treated as a duplicate. R's `make.unique` keeps every first occurrence and
-generates a suffix that avoids every input label. The caller at `src/metafopy/metadata.py:359` makes the study labels (`slab`) shown in
-output. `metafopy.effects.datatools.make_names` with `unique=True` calls it too; whether that path shows the same fault is not checked.
+Cause: R's `make.names` body is `o <- order(names != names2); names2[o] <- make.unique(names2[o])` (read with `print(body(make.names))`
+in `Rscript` on 2026-11-22), so names that `make.names` left unchanged come first and keep their label, and the changed ones are made unique
+after them. `make_names` in `src/metafopy/effects/datatools.py` calls `metafopy.metadata.make_unique` on the names in input order.
 
-Fix direction: seed `seen` with the set of all input labels before generating suffixes; this changes an output, so it needs the operator's
-confirmation first. Then remove the strict `xfail` marker of
-`src/tests/test_name_matching_properties.py::test_make_unique_keeps_first_occurrences`.
+Fix direction: order the names as R does before calling `make_unique`, then put them back in input order. This changes an output, so it needs
+the operator's confirmation first (on 2026-11-22 the operator chose to leave it as it is for the `make_unique` fix). Then remove the strict
+`xfail` marker of `src/tests/test_name_matching_properties.py::test_make_names_unique_orders_changed_names_last`.
 
-Spec: none (small item); tasks: `agents/tasks/make-unique-first-occurrences/tasks-1.md`.
+Spec: none (small item); tasks: none yet.
 
 ## Audit-harness and bin helpers with branches have no direct test
 

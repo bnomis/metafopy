@@ -219,8 +219,22 @@ def test_make_unique_has_no_duplicates(labels: list[str]) -> None:
     assert len(set(out)) == len(out)
 
 
-# R: make.unique(c("a", "a", "a.1")) gives "a" "a.2" "a.1" (checked 2026-11-22), so R keeps the first "a.1"; metafopy gives "a" "a.1" "a.1.1".
-@pytest.mark.xfail(strict=True, reason="make_unique renames the first 'a.1' in ['a', 'a', 'a.1'] where R's make.unique keeps it")
+@pytest.mark.parametrize(
+    ('labels', 'expected'),
+    [
+        (['a', 'a', 'a.1'], ['a', 'a.2', 'a.1']),
+        (['a', 'a.1', 'a'], ['a', 'a.1', 'a.2']),
+        (['a', 'a', 'a', 'a.2'], ['a', 'a.1', 'a.3', 'a.2']),
+        (['b', 'b.1', 'b', 'b.1'], ['b', 'b.1', 'b.2', 'b.1.1']),
+        (['x', 'x', 'x.1', 'x.1'], ['x', 'x.2', 'x.1', 'x.1.1']),
+        (['1', '1'], ['1', '1.1']),
+    ],
+)
+def test_make_unique_equals_r_make_unique(labels: list[str], expected: list[str]) -> None:
+    """src/metafopy/metadata.py::make_unique equals R's ``make.unique(labels)`` (``LC_ALL=C.UTF-8 Rscript``, checked 2026-11-22)."""
+    assert list(metafopy.metadata.make_unique(labels)) == expected
+
+
 @SETTINGS
 @hypothesis.given(labels=st.lists(COLLIDING_LABELS, max_size=8))
 def test_make_unique_keeps_first_occurrences(labels: list[str]) -> None:
@@ -229,6 +243,16 @@ def test_make_unique_keeps_first_occurrences(labels: list[str]) -> None:
     for i, label in enumerate(labels):
         if label not in labels[:i]:
             assert out[i] == label
+
+
+# R: make.names(c("a b", "a b", "a.b"), unique = TRUE) gives "a.b.1" "a.b.2" "a.b" (checked 2026-11-22): the names it changed are made unique last.
+@pytest.mark.xfail(
+    strict=True,
+    reason='make_names(unique=True) keeps input order where R makes changed names unique last; TODO.md: `make_names(unique=True)` keeps the input order',
+)
+def test_make_names_unique_orders_changed_names_last() -> None:
+    """src/metafopy/effects/datatools.py::make_names: with unique=True, names that make.names changed are made unique after the unchanged ones."""
+    assert metafopy.effects.datatools.make_names(['a b', 'a b', 'a.b'], unique=True) == ['a.b.1', 'a.b.2', 'a.b']
 
 
 # methods/anova.py, methods/common.py
