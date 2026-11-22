@@ -42,4 +42,4 @@ row's cell names the stop that fires only if the run finds such a change.
 |---|---|---|---|---|
 | 1 | `qtukey-nan/tasks-1.md` | - | a grid point or the emmeans case differing from R (Task 1), only if one does | merged 9a30721 |
 | 2 | `weibull-shape-start/tasks-1.md` | - | a fivenum parity test changing outcome (Task 1), only if one does | merged 0c6a376 |
-| 3 | `make-unique-first-occurrences/tasks-1.md` | - | a label list differing from R's (Task 1), only if one does | waiting: make_names(unique=True) label order differs from R (Task 3) |
+| 3 | `make-unique-first-occurrences/tasks-1.md` | - | a label list differing from R's (Task 1), only if one does | running |
