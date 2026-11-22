@@ -1,6 +1,7 @@
 """rma_mv (fits, structures, tests, printing, weights, hat values) checked against R metafor 5.2-1."""
 
 import collections.abc
+import dataclasses
 import json
 import pathlib
 import types
@@ -13,6 +14,7 @@ import pytest
 import refutil
 
 import metafopy
+import metafopy.core.labelled
 import metafopy.errors
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase4' / 'rma_mv.json').read_text(encoding='utf-8'))
@@ -388,3 +390,49 @@ def test_confint_all_components() -> None:
     out = ci_model('kon').confint()
     assert isinstance(out, list)
     assert len(out) == 2
+
+
+def test_random_is_the_formulas_as_given() -> None:
+    assert CASES['kon_list']().random == ['~ 1 | district', '~ 1 | study']
+    assert CASES['ber_un']().random == ['~ outcome | trial']
+    assert CASES['kon_fe']().random is None
+
+
+def test_weight_matrix_is_the_given_weights_or_the_inverse_of_m() -> None:
+    given = CASES['kon_weights']()
+    numpy.testing.assert_allclose(given.weight_matrix(), numpy.diag(1 / kon()['vi'].to_numpy()), rtol=1e-12)
+    res = CASES['ber_un']()
+    numpy.testing.assert_allclose(res.weight_matrix() @ numpy.asarray(res.M), numpy.eye(res.M.shape[0]), atol=1e-8)
+
+
+def test_hat_matrix_diagonal_is_hatvalues() -> None:
+    res = CASES['ber_un']()
+    numpy.testing.assert_allclose(numpy.diag(res.hat_matrix()), res.hatvalues(), rtol=1e-10)
+
+
+def test_dimnames_of_names_the_rows_of_g_by_structure() -> None:
+    res = CASES['ber_un']()
+    assert res.dimnames_of(res.group_g, res.struct[0], res.g_names, 0) == ('AL', 'PD')
+    assert res.dimnames_of(None, 'UN', res.g_names, 0) == ()
+    assert res.dimnames_of(res.group_g, 'SPEXP', res.g_names, 3) == ('1', '2', '3')
+    assert res.dimnames_of(res.group_g, 'GEN', ('a', 'b', 'c'), 0) == ('a', 'b')
+
+
+def test_named_inner_names_the_columns_of_z1_by_level() -> None:
+    res = CASES['ber_un']()
+    assert res.group_g is not None
+    z1 = res.named_inner(res.group_g)
+    assert z1.shape == (res.X.shape[0], 2)
+
+
+def test_post_init_labels_g_and_the_model_matrix() -> None:
+    res = CASES['ber_un']()
+    again = dataclasses.replace(res, G=numpy.asarray(res.G))
+    assert isinstance(again.G, metafopy.core.labelled.LabelledMatrix)
+    assert again.G.rownames == ('AL', 'PD')
+    assert again.G.colnames == ('AL', 'PD')
+    numpy.testing.assert_allclose(numpy.asarray(again.G), numpy.asarray(res.G))
+    x = again.X
+    assert isinstance(x, metafopy.core.labelled.LabelledMatrix)
+    assert x.rownames is not None
+    assert len(x.rownames) == res.X.shape[0]

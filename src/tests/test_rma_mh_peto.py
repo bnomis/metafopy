@@ -214,3 +214,24 @@ def test_identical_tables_mh_i2_is_zero(measure: str) -> None:
 def test_identical_tables_peto_i2_is_zero() -> None:
     fit = metafopy.rma_peto(ai=[1, 2, 3], n1i=[10, 20, 30], ci=[1, 2, 3], n2i=[10, 20, 30])
     assert fit.I2 == 0.0
+
+
+def test_weight_values_are_the_mantel_haenszel_weights() -> None:
+    res = CASES['mh_bcg_or']()
+    assert isinstance(res, metafopy.MHResult)
+    c = res.tables.cells
+    n = c['ai'] + c['bi'] + c['ci'] + c['di']
+    numpy.testing.assert_allclose(res.weight_values(), c['bi'] * c['ci'] / n, rtol=1e-12)
+    numpy.testing.assert_allclose(res.weight_values()[:2], [4.99618321, 14.28571429], rtol=1e-8)
+    rr = CASES['mh_bcg_rr']()
+    assert isinstance(rr, metafopy.MHResult)
+    numpy.testing.assert_allclose(rr.weight_values(), rr.tables.cells['ci'] * (rr.tables.cells['ai'] + rr.tables.cells['bi']) / n, rtol=1e-12)
+
+
+@pytest.mark.parametrize('name', ['mh_bcg_or', 'mh_bcg_or_nocorrect', 'mh_bcg_rr'])
+def test_render_is_the_printed_fit(name: str) -> None:
+    res = CASES[name]()
+    assert isinstance(res, metafopy.MHResult)
+    assert res.render(res.digits, False) == str(res)
+    assert 'logLik' in res.render(res.digits, True)
+    assert 'logLik' not in res.render(res.digits, False)

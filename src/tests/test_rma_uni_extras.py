@@ -184,3 +184,18 @@ def test_identical_effects_equal_effects_i2_is_zero(method: str) -> None:
 def test_identical_effects_reml_i2_is_zero() -> None:
     fit = metafopy.rma_uni(yi=[0.0, 0.0, 0.0, 0.0], vi=[0.1, 0.2, 0.3, 0.4], method='REML')
     assert (fit.I2, fit.H2) == (0.0, 1.0)
+
+
+def test_control_reads_an_ignored_entry_as_an_attribute(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma(data=dat, control={'vc.min': 0.25})
+    assert res.control.vc_min == 0.25
+    with pytest.raises(AttributeError, match='nothere'):
+        res.control.__getattr__('nothere')
+
+
+def test_hat_matrix_diagonal_is_hatvalues(dat: pandas.DataFrame) -> None:
+    res = metafopy.rma(data=dat, mods='~ year')
+    hat = res.hat_matrix()
+    numpy.testing.assert_allclose(numpy.diag(hat), res.hatvalues(), rtol=1e-10)
+    numpy.testing.assert_allclose(hat @ hat, hat, atol=1e-8)
+    assert numpy.trace(hat) == pytest.approx(2.0)

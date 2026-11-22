@@ -191,3 +191,24 @@ def test_errors() -> None:
 def test_um_rs_warns_about_nagq() -> None:
     with pytest.warns(UserWarning, match='nAGQ'):
         glmm_cases.CASES['rs_ml']()
+
+
+def test_title_and_heterogeneity_lines_are_the_printed_blocks() -> None:
+    res = fit('rs_ml')
+    title = res.title_lines(4, True)
+    assert title[1] == 'Random-Effects Model (k = 13; tau^2 estimator: ML)'
+    assert title[2] == 'Model Type: Unconditional Model with Random Study Effects'
+    assert title[4].splitlines()[0].split() == ['logLik', 'deviance', 'AIC', 'BIC', 'AICc']
+    assert len(res.title_lines(4, False)) == len(title) - 2
+    lines = res.heterogeneity_lines(4)
+    assert lines[0] == 'tau^2 (estimated amount of total heterogeneity): 0.3199'
+    assert 'I^2 (total heterogeneity / total variability):   91.67%' in lines
+    assert '\n'.join(lines) in str(res)
+
+
+def test_render_is_str_without_the_fit_statistics() -> None:
+    res = fit('rs_ml')
+    assert res.render(res.digits, False) == str(res)
+    assert res.render(res.digits, True) == res.summary()
+    assert 'logLik' in res.render(res.digits, True)
+    assert 'logLik' not in res.render(res.digits, False)

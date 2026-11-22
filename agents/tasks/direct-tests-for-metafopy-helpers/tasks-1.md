@@ -178,7 +178,7 @@ regression in it is caught where it is.
 
 ## Task 5: Direct tests for the `models` result classes
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 3
@@ -188,20 +188,20 @@ regression in it is caught where it is.
 
 **Subtasks:**
 
-- [ ] For each public candidate in `open-after-privatise.md` under `models/`, write a direct test in that model's test file. A `render`,
+- [x] For each public candidate in `open-after-privatise.md` under `models/`, write a direct test in that model's test file. A `render`,
       `title_lines` or `heterogeneity_lines` test calls the method on a fit and compares it with the lines `str(fit)` already prints. A
       `hat_matrix` test checks the diagonal against `hatvalues()`. A `__post_init__` test builds the result through `dataclasses.replace`
       on a fit. A `Control.__getattr__` test reads an ignored control entry on an `rma_uni` fit
-- [ ] Run each changed test file
+- [x] Run each changed test file
 
 **Acceptance Criteria:**
 
-- [ ] Each of these candidates has a direct test that asserts a value
+- [x] Each of these candidates has a direct test that asserts a value
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] Each changed test file passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] Each changed test file passes, named in the commit body
 
 **Notes:**
 
