@@ -2,7 +2,10 @@
 
 import math
 
+import hypothesis
+import hypothesis.strategies
 import pytest
+import rstrategies
 
 import metafopy.core.tukey
 
@@ -57,3 +60,49 @@ def test_qtukey_invalid_arguments_give_nan() -> None:
     assert math.isnan(metafopy.core.tukey.qtukey(0.95, 3, 1.5))
     assert math.isnan(metafopy.core.tukey.qtukey(1.5, 3, 10))
     assert math.isnan(metafopy.core.tukey.qtukey(math.nan, 3, 10))
+
+
+TUKEY_TOLERANCE = 1e-6
+# qtukey's secant search diverges for many means and a small p (ptukey is flat at 0 there). R: qtukey(0.25, 17, Inf) gives NaN with the
+# warning "convergence failed in 'qtukey'", so R keeps no round trip there either; the round trip is tested where R converges.
+nmeans_values = hypothesis.strategies.floats(min_value=2.0, max_value=10.0)
+tukey_df_values = hypothesis.strategies.floats(min_value=2.0, max_value=1000.0) | hypothesis.strategies.just(math.inf)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(q=rstrategies.finite_floats(0.0, 20.0), nmeans=nmeans_values, df=tukey_df_values)
+def test_ptukey_property_bounds_monotone_and_complementary(q: float, nmeans: float, df: float) -> None:
+    """Candidate ``src/metafopy/core/tukey.py::ptukey``: in [0, 1], non-decreasing in q, and the two tails sum to 1."""
+    lower = metafopy.core.tukey.ptukey(q, nmeans, df)
+    upper = metafopy.core.tukey.ptukey(q, nmeans, df, lower_tail=False)
+    assert -TUKEY_TOLERANCE <= lower <= 1 + TUKEY_TOLERANCE
+    assert lower + upper == pytest.approx(1.0, abs=TUKEY_TOLERANCE)
+    assert metafopy.core.tukey.ptukey(q + 0.5, nmeans, df) >= lower - TUKEY_TOLERANCE
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.99), nmeans=nmeans_values, df=tukey_df_values)
+def test_qtukey_property_round_trip_through_ptukey(p: float, nmeans: float, df: float) -> None:
+    """Candidate ``src/metafopy/core/tukey.py::qtukey``: ``ptukey(qtukey(p))`` is within 1e-4 of ``p`` (the stopping rule of R's ``qtukey``)."""
+    q = metafopy.core.tukey.qtukey(p, nmeans, df)
+    assert metafopy.core.tukey.ptukey(q, nmeans, df) == pytest.approx(p, abs=1e-4)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.9), nmeans=nmeans_values, df=tukey_df_values)
+def test_qtukey_property_non_decreasing_in_p(p: float, nmeans: float, df: float) -> None:
+    """Candidate ``src/metafopy/core/tukey.py::qtukey``: a larger probability gives a quantile no smaller (probabilities 0.05 apart)."""
+    assert metafopy.core.tukey.qtukey(p, nmeans, df) <= metafopy.core.tukey.qtukey(p + 0.05, nmeans, df)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    w=rstrategies.finite_floats(0.0, 20.0),
+    rr=hypothesis.strategies.floats(min_value=1.0, max_value=5.0),
+    cc=hypothesis.strategies.integers(min_value=2, max_value=50),
+)
+def test_wprob_property_bounds_and_monotone_in_w(w: float, rr: float, cc: int) -> None:
+    """Candidate ``src/metafopy/core/tukey.py::wprob``: in [0, 1] and non-decreasing in w for fixed ``rr`` and ``cc``."""
+    value = metafopy.core.tukey.wprob(w, rr, float(cc))
+    assert -TUKEY_TOLERANCE <= value <= 1 + TUKEY_TOLERANCE
+    assert metafopy.core.tukey.wprob(w + 0.5, rr, float(cc)) >= value - TUKEY_TOLERANCE

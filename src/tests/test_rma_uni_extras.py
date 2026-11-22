@@ -1,13 +1,17 @@
 """rma_uni features beyond the per-dataset grid, checked against R metafor."""
 
 import json
+import math
 import pathlib
 import typing
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
+import rstrategies
 
 import metafopy
 import metafopy.datasets
@@ -199,3 +203,14 @@ def test_hat_matrix_diagonal_is_hatvalues(dat: pandas.DataFrame) -> None:
     numpy.testing.assert_allclose(numpy.diag(hat), res.hatvalues(), rtol=1e-10)
     numpy.testing.assert_allclose(hat @ hat, hat, atol=1e-8)
     assert numpy.trace(hat) == pytest.approx(2.0)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(q=rstrategies.finite_floats(1e-6, 1e9), df=rstrategies.finite_floats(0.5, 1e6))
+def test_i2_from_q_property_bounds_zero_below_df_and_non_decreasing(q: float, df: float) -> None:
+    """Candidate ``src/metafopy/models/tau2.py::i2_from_q``: in [0, 100), 0 whenever ``q <= df``, and non-decreasing in ``q``."""
+    value = metafopy.models.tau2.i2_from_q(q, df)
+    assert 0.0 <= value < 100.0
+    if q <= df:
+        assert value == 0.0
+    assert metafopy.models.tau2.i2_from_q(q * 1.5, df) >= value - 4 * math.ulp(100.0)

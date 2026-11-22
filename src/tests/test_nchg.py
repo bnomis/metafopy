@@ -5,6 +5,8 @@ import math
 import types
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
@@ -165,3 +167,83 @@ def test_ml_se_matches_spec_measurement_at_tight_optimum(frame: pandas.DataFrame
     # rel: 10 times the largest deviation measured on 2026-11-17 across the development Mac, the arm64 Linux container and the three CI platforms (2.2e-08,
     # the Nelder-Mead end points differ in the eighth decimal); see agents/specs/cross-platform-numerics/measurements.md
     assert ml_se(frame, result.x) == pytest.approx(expected, rel=2.5e-7)
+
+
+@hypothesis.strategies.composite
+def urn_tables(draw: hypothesis.strategies.DrawFn, max_total: int) -> tuple[int, int, int, int]:
+    """``(draws, m, total, x)`` with ``x`` in the support of the hypergeometric table."""
+    total = draw(hypothesis.strategies.integers(min_value=1, max_value=max_total))
+    m = draw(hypothesis.strategies.integers(min_value=0, max_value=total))
+    draws = draw(hypothesis.strategies.integers(min_value=0, max_value=total))
+    x = draw(hypothesis.strategies.integers(min_value=max(0, m + draws - total), max_value=min(draws, m)))
+    return draws, m, total, x
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=0, max_value=10**6))
+def test_ln_fac_property_matches_lgamma_and_is_non_decreasing(n: int) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::ln_fac``: ``lgamma(n + 1)`` on both sides of the table boundary, and non-decreasing in n."""
+    value = metafopy.core.nchg.ln_fac(n)
+    assert value == pytest.approx(math.lgamma(n + 1), rel=1e-8, abs=1e-12)
+    assert metafopy.core.nchg.ln_fac(n + 1) >= value - 4 * math.ulp(value)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=metafopy.core.nchg.FAK_LEN - 3, max_value=metafopy.core.nchg.FAK_LEN + 3))
+def test_ln_fac_property_matches_lgamma_across_the_table_boundary(n: int) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::ln_fac``: the table and the Stirling series agree with ``lgamma`` at ``FAK_LEN``."""
+    assert metafopy.core.nchg.ln_fac(n) == pytest.approx(math.lgamma(n + 1), rel=1e-12)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(table=urn_tables(max_total=40), odds=hypothesis.strategies.floats(min_value=1e-3, max_value=1e3))
+def test_fisher_log_probability_property_sums_to_one_over_the_support(table: tuple[int, int, int, int], odds: float) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::fisher_log_probability``: ``exp`` of it lies in [0, 1] and sums to 1 over the support."""
+    draws, m, total, _ = table
+    xmin, xmax = max(0, m + draws - total), min(draws, m)
+    probabilities = [math.exp(metafopy.core.nchg.fisher_log_probability(draws, m, total, x, odds, 1e-10)) for x in range(xmin, xmax + 1)]
+    assert all(0.0 <= p <= 1.0 + 1e-9 for p in probabilities)
+    assert math.fsum(probabilities) == pytest.approx(1.0, abs=1e-8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(table=urn_tables(max_total=3000), odds=hypothesis.strategies.floats(min_value=1e-3, max_value=1e3))
+def test_fisher_log_probability_property_matches_scipy_fisher_distribution(table: tuple[int, int, int, int], odds: float) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::fisher_log_probability``: the log pmf of ``scipy.stats.nchypergeom_fisher`` (total, m, draws, odds)."""
+    draws, m, total, x = table
+    value = metafopy.core.nchg.fisher_log_probability(draws, m, total, x, odds, 1e-10)
+    expected = float(scipy.stats.nchypergeom_fisher.logpmf(x, total, m, draws, odds))
+    # scipy loses accuracy in the far tail: at (draws, m, total, x, odds) = (290, 122, 384, 28, 806) it gives -733.91983239 where exact
+    # Decimal arithmetic and the port give -733.91984342, so the comparison is made only where the probability is above e^-30.
+    hypothesis.assume(expected > -30.0)
+    assert value == pytest.approx(expected, rel=1e-8, abs=1e-8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    table=urn_tables(max_total=40),
+    odds=hypothesis.strategies.floats(min_value=1e-3, max_value=1e3),
+    data=hypothesis.strategies.data(),
+)
+def test_fisher_log_probability_property_minus_infinity_outside_the_support(
+    table: tuple[int, int, int, int], odds: float, data: hypothesis.strategies.DataObject
+) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::fisher_log_probability``: ``-inf`` for an ``x`` outside the support."""
+    draws, m, total, _ = table
+    xmin, xmax = max(0, m + draws - total), min(draws, m)
+    outside = data.draw(hypothesis.strategies.one_of(hypothesis.strategies.integers(max_value=xmin - 1), hypothesis.strategies.integers(min_value=xmax + 1)))
+    assert metafopy.core.nchg.fisher_log_probability(draws, m, total, outside, odds, 1e-10) == -math.inf
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(table=urn_tables(max_total=60), logodds=hypothesis.strategies.floats(min_value=-6.0, max_value=6.0), data=hypothesis.strategies.data())
+def test_tabulated_log_probability_property_non_positive_and_sums_to_one(
+    table: tuple[int, int, int, int], logodds: float, data: hypothesis.strategies.DataObject
+) -> None:
+    """Candidate ``src/metafopy/core/nchg.py::tabulated_log_probability``: ``<= 0``, and ``exp`` of it sums to 1 over the support."""
+    draws, m, total, _ = table
+    xmin, xmax = max(0, m + draws - total), min(draws, m)
+    mean = data.draw(hypothesis.strategies.integers(min_value=xmin, max_value=xmax))
+    values = [metafopy.core.nchg.tabulated_log_probability(draws, m, total, x, logodds, mean, 1e-12) for x in range(xmin, xmax + 1)]
+    assert all(v <= 1e-12 for v in values)
+    assert math.fsum(math.exp(v) for v in values) == pytest.approx(1.0, abs=1e-8)
