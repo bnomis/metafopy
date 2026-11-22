@@ -40,6 +40,6 @@ row's cell names the stop that fires only if the run finds such a change.
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `qtukey-nan/tasks-1.md` | - | a grid point or the emmeans case differing from R (Task 1), only if one does | running |
+| 1 | `qtukey-nan/tasks-1.md` | - | a grid point or the emmeans case differing from R (Task 1), only if one does | merged 9a30721 |
 | 2 | `weibull-shape-start/tasks-1.md` | - | a fivenum parity test changing outcome (Task 1), only if one does | todo |
 | 3 | `make-unique-first-occurrences/tasks-1.md` | - | a label list differing from R's (Task 1), only if one does | todo |
