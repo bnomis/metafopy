@@ -115,7 +115,7 @@ fresh verdict for each candidate tells the later tasks exactly what to test.
 
 ## Task 3: The R snippet fixture and its helpers
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Module location; API; Implementation step 3; Settings; decision D2
