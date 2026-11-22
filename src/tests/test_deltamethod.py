@@ -3,6 +3,8 @@
 import collections.abc
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
@@ -10,6 +12,8 @@ import refutil
 
 import metafopy
 import metafopy.errors
+import metafopy.methods.deltamethod
+import metafopy.mfopt
 
 REF = refutil.load_phase7('deltamethod')
 B = numpy.array(REF['b'])
@@ -106,3 +110,27 @@ def test_errors() -> None:
         metafopy.deltamethod(B, VB, fun=regression, H0=[0, 1])
     with pytest.raises(metafopy.errors.EstimationError, match='applying the function'):
         metafopy.deltamethod(B, VB, fun=lambda r: r[10])
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(places=hypothesis.strategies.integers(min_value=-3, max_value=15))
+def test_get_digits_spreads_a_scalar_over_every_key(places: int) -> None:
+    """methods/deltamethod.py::get_digits: a scalar sets every key; None keeps the defaults."""
+    out = metafopy.methods.deltamethod.get_digits(places)
+    assert set(out) == set(metafopy.mfopt.DIGIT_KEYS[:5])
+    assert set(out.values()) == {places}
+    assert metafopy.methods.deltamethod.get_digits(None) == dict.fromkeys(metafopy.mfopt.DIGIT_KEYS[:5], 4)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    given=hypothesis.strategies.dictionaries(
+        hypothesis.strategies.sampled_from(metafopy.mfopt.DIGIT_KEYS), hypothesis.strategies.integers(min_value=0, max_value=12)
+    )
+)
+def test_get_digits_overrides_only_the_named_keys(given: dict[str, int]) -> None:
+    """methods/deltamethod.py::get_digits: a mapping overrides the keys it names, the rest keep their defaults, unknown keys are dropped."""
+    out = metafopy.methods.deltamethod.get_digits(given)
+    assert set(out) == set(metafopy.mfopt.DIGIT_KEYS[:5])
+    for key, val in out.items():
+        assert val == given.get(key, 4)

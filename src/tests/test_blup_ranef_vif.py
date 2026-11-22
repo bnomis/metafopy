@@ -1,11 +1,14 @@
 """blup(), ranef() and vif() for rma_uni fits, checked against R metafor (src/tests/r/generate_blup_vif.R)."""
 
 import concurrent.futures
+import itertools
 import json
 import math
 import pathlib
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
@@ -281,3 +284,82 @@ def test_vif_sim_btt_groups_reestimate_and_executor(fits: dict[str, typing.Any])
     assert single.prop is not None
     assert str(single).splitlines()[2].endswith(f', prop = {single.prop[0]:.2f}')
     assert not math.isnan(float(single.prop[0]))
+
+
+BLUP_CELL = hypothesis.strategies.text(alphabet='abcXYZ0123456789.-', min_size=1, max_size=8)
+
+
+@hypothesis.strategies.composite
+def frames(draw: hypothesis.strategies.DrawFn) -> tuple[list[tuple[str, list[str]]], list[str]]:
+    """Columns of formatted cells and the row names of a frame."""
+    nrow = draw(hypothesis.strategies.integers(min_value=1, max_value=4))
+    ncol = draw(hypothesis.strategies.integers(min_value=1, max_value=6))
+    names = draw(hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='rowABC', min_size=1, max_size=6), min_size=nrow, max_size=nrow))
+    columns = [(draw(BLUP_CELL), draw(hypothesis.strategies.lists(BLUP_CELL, min_size=nrow, max_size=nrow))) for _ in range(ncol)]
+    return columns, names
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(frame=frames(), width=hypothesis.strategies.integers(min_value=20, max_value=100))
+def test_format_r_frame_wraps_columns_into_blocks(frame: tuple[list[tuple[str, list[str]]], list[str]], width: int) -> None:
+    """methods/blup.py::format_r_frame: every line fits ``width``, each block has a header and one line per row, all cells appear."""
+    columns, names = frame
+    lines = metafopy.methods.blup.format_r_frame(columns, names, width=width)
+    assert len(lines) % (len(names) + 1) == 0
+    assert all(len(line) <= width for line in lines)
+    assert all(line == line.rstrip() for line in lines)
+    cells = [tok for line in lines for tok in line.split()]
+    for head, col in columns:
+        assert head in cells
+        assert all(c in cells for c in col)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(frame=frames())
+def test_format_r_frame_one_block_when_wide(frame: tuple[list[tuple[str, list[str]]], list[str]]) -> None:
+    """methods/blup.py::format_r_frame: with room enough there is one block, each row is its name then its cells."""
+    columns, names = frame
+    lines = metafopy.methods.blup.format_r_frame(columns, names, width=10_000)
+    assert len(lines) == len(names) + 1
+    assert lines[0].split() == [head for head, _ in columns]
+    for i, name in enumerate(names):
+        assert lines[i + 1].split() == [name, *(col[i] for _, col in columns)]
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(idx=hypothesis.strategies.sets(hypothesis.strategies.integers(min_value=-5, max_value=40), max_size=15))
+def test_format_btt_round_trips_to_maximal_runs(idx: set[int]) -> None:
+    """methods/vif.py::format_btt: ``a:b`` for runs of two or more, single numbers otherwise; expands back to the sorted input."""
+    out = metafopy.methods.vif.format_btt(idx)
+    parts = out.split(',') if out else []
+    expanded: list[int] = []
+    spans: list[tuple[int, int]] = []
+    for part in parts:
+        if ':' in part:
+            a, b = (int(v) for v in part.split(':'))
+            assert b > a
+        else:
+            a = b = int(part)
+        spans.append((a, b))
+        expanded.extend(range(a, b + 1))
+    assert expanded == sorted(idx)
+    assert all(nxt[0] > prev[1] + 1 for prev, nxt in itertools.pairwise(spans))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    pairs=hypothesis.strategies.lists(hypothesis.strategies.tuples(BLUP_CELL, BLUP_CELL), min_size=1, max_size=6),
+    gap=hypothesis.strategies.integers(min_value=1, max_value=4),
+)
+def test_format_vector_right_aligns_names_over_values(pairs: list[tuple[str, str]], gap: int) -> None:
+    """methods/vif.py::format_vector: two lines of equal width, each column right aligned to its longer cell, ``gap`` apart."""
+    names = [n for n, _ in pairs]
+    values = [v for _, v in pairs]
+    row_n, row_v = metafopy.methods.vif.format_vector(names, values, gap)
+    widths = [max(len(n), len(v)) for n, v in pairs]
+    assert len(row_n) == len(row_v) == sum(widths) + gap * (len(widths) - 1)
+    start = 0
+    for w, n, v in zip(widths, names, values, strict=True):
+        assert row_n[start : start + w] == n.rjust(w)
+        assert row_v[start : start + w] == v.rjust(w)
+        start += w + gap

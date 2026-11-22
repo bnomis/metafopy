@@ -5,15 +5,21 @@ functions return and the geometry they draw (polygons, segments, texts, points, 
 """
 
 import collections.abc
+import importlib
+import math
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import matplotlib.axes
+import matplotlib.colors
 import matplotlib.pyplot
 import numpy
 import pandas
 import plotref
 import pytest
 import refutil
+import rstrategies
 import scipy.stats
 
 import metafopy
@@ -25,12 +31,16 @@ import metafopy.plot.baujat
 import metafopy.plot.draw
 import metafopy.plot.forest
 import metafopy.plot.funnel
+import metafopy.plot.gosh
+import metafopy.plot.infl
 import metafopy.plot.labbe
 import metafopy.plot.plain
 import metafopy.plot.qqnorm
 import metafopy.plot.radial
 import metafopy.plot.rutils
 import metafopy.transf
+
+forest_module = importlib.import_module('metafopy.plot.forest')
 
 
 @pytest.fixture(scope='module')
@@ -1016,3 +1026,221 @@ def test_plot_gosh_rejects_tau2_for_equal_effects_models(dat: pandas.DataFrame, 
         metafopy.plot.plot_gosh(g, het='tau2', ax=ax)
     with pytest.raises(ValueError, match='het'):
         metafopy.plot.plot_gosh(g, het='bad', ax=ax)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(level=hypothesis.strategies.floats(min_value=0.0, max_value=100.0, allow_nan=False))
+def test_rutils_level_to_alpha_is_a_probability(level: float) -> None:
+    """plot/rutils.py::level_to_alpha: 0 gives 1, 1 to 100 a percent, up to 0.5 an alpha already, above 0.5 a proportion; always in [0, 1]."""
+    alpha = metafopy.plot.rutils.level_to_alpha(level)
+    assert 0.0 <= alpha <= 1.0
+    if level == 0:
+        assert alpha == 1.0
+    elif level >= 1:
+        assert alpha == pytest.approx((100 - level) / 100, abs=1e-12)
+    elif level > 0.5:
+        assert alpha == pytest.approx(1 - level, abs=1e-12)
+    else:
+        assert alpha == level
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    level=hypothesis.strategies.floats(min_value=100.0, max_value=1e9, exclude_min=True, allow_nan=False)
+    | hypothesis.strategies.floats(min_value=-1e9, max_value=0.0, exclude_max=True, allow_nan=False)
+)
+def test_rutils_level_to_alpha_rejects_levels_outside_0_to_100(level: float) -> None:
+    """plot/rutils.py::level_to_alpha: a level above 100 or below 0 raises InputError."""
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.plot.rutils.level_to_alpha(level)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    x=rstrategies.finite_floats(-1e9, 1e9),
+    places=hypothesis.strategies.integers(min_value=0, max_value=10),
+    drop=hypothesis.strategies.booleans(),
+)
+def test_fmtx1_prints_to_the_places(x: float, places: int, drop: bool) -> None:
+    """plot/rutils.py::fmtx1: ``digits`` decimals within half a unit of the last place; ``drop0ifint`` removes trailing zeros only."""
+    full = metafopy.plot.rutils.fmtx1(x, places)
+    assert len(full.partition('.')[2]) == places
+    assert abs(float(full) - x) <= 0.5 * 10.0**-places * (1 + 1e-9) + 4 * math.ulp(x)
+    out = metafopy.plot.rutils.fmtx1(x, places, drop0ifint=drop)
+    assert float(out) == float(full)
+    if drop and '.' in out:
+        assert not out.endswith(('0', '.'))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=hypothesis.strategies.sampled_from([math.nan, math.inf, -math.inf]), places=hypothesis.strategies.integers(min_value=0, max_value=6))
+def test_fmtx1_names_the_non_finite_values(x: float, places: int) -> None:
+    """plot/rutils.py::fmtx1: NaN prints NA and the infinities Inf and -Inf."""
+    assert metafopy.plot.rutils.fmtx1(x, places) == ('NA' if math.isnan(x) else 'Inf' if x > 0 else '-Inf')
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e9, 1e9), places=hypothesis.strategies.integers(min_value=0, max_value=8))
+def test_rround_rounds_within_half_a_unit_and_is_idempotent(x: float, places: int) -> None:
+    """plot/rutils.py::rround: within half a unit of the last place, and rounding again changes nothing."""
+    r = metafopy.plot.rutils.rround(x, places)
+    assert abs(r - x) <= 0.5 * 10.0**-places * (1 + 1e-9) + 4 * math.ulp(x)
+    assert metafopy.plot.rutils.rround(r, places) == r
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=hypothesis.strategies.sampled_from([math.nan, math.inf, -math.inf]))
+def test_rround_passes_non_finite_values_through(x: float) -> None:
+    """plot/rutils.py::rround: NaN and the infinities are returned as given."""
+    out = metafopy.plot.rutils.rround(x, 2)
+    assert (math.isnan(out) and math.isnan(x)) or out == x
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(a=rstrategies.finite_floats(-1e6, 1e6), b=rstrategies.finite_floats(-1e6, 1e6))
+def test_usr_range_extends_by_four_percent_each_side(a: float, b: float) -> None:
+    """plot/rutils.py::usr_range: the range grows by the same amount on both sides and always contains the data."""
+    lo, hi = min(a, b), max(a, b)
+    ulo, uhi = metafopy.plot.rutils.usr_range(lo, hi)
+    assert ulo <= lo
+    assert uhi >= hi
+    scale = max(1.0, abs(lo), abs(hi))
+    assert (lo - ulo) == pytest.approx(uhi - hi, rel=1e-6, abs=1e-9 * scale)
+    if hi - lo >= 1e-6 * scale or lo == hi:
+        assert ulo < lo
+        assert uhi > hi
+    if hi > lo:
+        assert (lo - ulo) == pytest.approx(0.04 * (hi - lo), rel=1e-6, abs=1e-9 * scale)
+
+
+def hex_byte_colours() -> hypothesis.strategies.SearchStrategy[str]:
+    return hypothesis.strategies.tuples(*[hypothesis.strategies.integers(min_value=0, max_value=255)] * 3).map(lambda t: f'#{t[0]:02X}{t[1]:02X}{t[2]:02X}')
+
+
+def channels(code: str) -> list[int]:
+    return [int(code[i : i + 2], 16) for i in range(1, len(code), 2)]
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(c1=hex_byte_colours(), c2=hex_byte_colours(), n=hypothesis.strategies.integers(min_value=1, max_value=15))
+def test_color_ramp_runs_between_its_end_colours(c1: str, c2: str, n: int) -> None:
+    """plot/rutils.py::color_ramp: n codes, the first is c1, the last is c2 (n > 1), every channel stays between the ends and moves one way."""
+    ramp = metafopy.plot.rutils.color_ramp(c1, c2, n)
+    assert len(ramp) == n
+    assert ramp[0] == c1
+    if n > 1:
+        assert ramp[-1] == c2
+    for k, (e1, e2) in enumerate(zip(channels(c1), channels(c2), strict=True)):
+        vals = [channels(code)[k] for code in ramp]
+        assert min(e1, e2) <= min(vals)
+        assert max(vals) <= max(e1, e2)
+        assert vals == sorted(vals, reverse=e2 < e1)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    lo=rstrategies.finite_floats(-1e6, 1e6),
+    width=hypothesis.strategies.floats(min_value=0.0, max_value=1e6, allow_nan=False, allow_infinity=False),
+    ndiv=hypothesis.strategies.integers(min_value=1, max_value=10),
+    wide=hypothesis.strategies.booleans(),
+)
+def test_r_pretty_covers_the_range_in_1_2_5_steps(lo: float, width: float, ndiv: int, wide: bool) -> None:
+    """plot/rutils.py::r_pretty: the pretty bounds cover [lo, up], are whole multiples of a 1, 2 or 5 times a power of ten, and use at least min_n steps."""
+    up = lo + width
+    args = (ndiv, 1, 0.25, (0.8, 1.7, 1.125), 2) if wide else (ndiv, max(1, ndiv // 3), 0.75, (1.5, 2.75, 2.0**-20), 0)
+    ns, nu, steps, unit = metafopy.plot.rutils.r_pretty(lo, up, *args)
+    slack = 1e-9 * unit + 4 * math.ulp(max(abs(lo), abs(up), 1.0))
+    assert ns == math.floor(ns)
+    assert nu == math.floor(nu)
+    assert ns * unit <= lo + slack
+    assert nu * unit >= up - slack
+    assert steps >= args[1]
+    mantissa = unit / 10.0 ** math.floor(math.log10(unit))
+    assert any(mantissa == pytest.approx(m, rel=1e-9) for m in (1.0, 2.0, 5.0, 10.0))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(symbols=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='[](),;', min_size=1, max_size=3), min_size=3, max_size=5))
+def test_anno_symbol_completes_the_symbol_list(symbols: list[str]) -> None:
+    """plot/forest.py::anno_symbol: 3 or 4 symbols are completed with minus and space; 5 are kept; None and tabfig give 5 symbols."""
+    out = forest_module.anno_symbol(symbols)
+    assert len(out) == 5
+    assert out[: len(symbols)] == symbols
+    assert out[len(symbols) :] == ['-', ' ', ' '][len(symbols) - 3 :][: 5 - len(symbols)]
+    assert len(forest_module.anno_symbol(None)) == 5
+    for tabfig in (1, 2, 3):
+        assert forest_module.anno_symbol(symbols, tabfig) == forest_module.TABFIG_ANNOSYM[tabfig]
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(size=hypothesis.strategies.integers(min_value=0, max_value=9))
+def test_anno_symbol_rejects_other_lengths(size: int) -> None:
+    """plot/forest.py::anno_symbol: fewer than 3 or more than 5 symbols raise InputError."""
+    hypothesis.assume(size < 3 or size > 5)
+    with pytest.raises(metafopy.errors.InputError):
+        forest_module.anno_symbol(['x'] * size)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    raw=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='0123456789-. NA%[],', max_size=12), min_size=1, max_size=6),
+    pi_row=hypothesis.strategies.booleans(),
+)
+def test_finish_annotext_blanks_missing_rows_and_swaps_symbols(raw: list[str], pi_row: bool) -> None:
+    """plot/forest.py::finish_annotext: a row with NA becomes empty, the prediction row loses NA and %, and no plain minus or space is left."""
+    annosym = [' [', ', ', ']', '\u2212', '\u2002']
+    out = forest_module.finish_annotext(raw, annosym, False, pi_row)
+    assert len(out) == len(raw)
+    body = range(len(raw) - 1) if pi_row else range(len(raw))
+    for i in body:
+        if 'NA' in raw[i]:
+            assert out[i] == ''
+    for text in out:
+        assert '-' not in text
+        assert ' ' not in text
+    if pi_row:
+        assert 'NA' not in out[-1]
+        assert '%' not in out[-1]
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e6, 1e6), pred=rstrategies.finite_floats(-1e6, 1e6))
+def test_parse_predtail_reads_numbers_and_signed_strings(x: float, pred: float) -> None:
+    """plot/forest.py::parse_predtail: a number is the value with the upper tail, ``<x`` the lower tail, ``>x`` the upper, None the sign of pred."""
+    assert forest_module.parse_predtail(x, pred) == (x, False)
+    assert forest_module.parse_predtail(f'<{x}', pred) == (x, True)
+    assert forest_module.parse_predtail(f'>{x}', pred) == (x, False)
+    assert forest_module.parse_predtail(f'<={x}', pred) == (x, True)
+    assert forest_module.parse_predtail(None, pred) == (0.0, pred > 0)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(text=hypothesis.strategies.text(alphabet='abxyz', min_size=1, max_size=5))
+def test_parse_predtail_rejects_text(text: str) -> None:
+    """plot/forest.py::parse_predtail: a string that is not a number after removing <, = and > raises InputError."""
+    with pytest.raises(metafopy.errors.InputError):
+        forest_module.parse_predtail(text, 0.5)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(code=hex_byte_colours(), alpha=rstrategies.probabilities(open_interval=False))
+def test_hex_color_matches_matplotlib(code: str, alpha: float) -> None:
+    """plot/gosh.py::hex_color: an eight-digit hex code whose colour bytes are the input's and whose alpha byte is matplotlib's within one."""
+    out = metafopy.plot.gosh.hex_color(code, alpha)
+    assert len(out) == 9
+    assert out.startswith('#')
+    assert out[1:7] == code[1:]
+    ref = matplotlib.colors.to_hex(matplotlib.colors.to_rgba(code, alpha), keep_alpha=True)
+    assert out[1:7] == ref[1:7].upper()
+    assert abs(int(out[7:], 16) - int(ref[7:], 16)) <= 1
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=1, max_value=300))
+def test_n2mfrow_grid_holds_n_panels_without_an_empty_row(n: int) -> None:
+    """plot/infl.py::n2mfrow: rows * columns holds n panels and no row is left empty."""
+    rows, cols = metafopy.plot.infl.n2mfrow(n)
+    assert rows >= 1
+    assert cols >= 1
+    assert rows * cols >= n
+    assert (rows - 1) * cols < n

@@ -4,12 +4,15 @@ import json
 import pathlib
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
 
 import metafopy
 import metafopy.effects.summary
+import metafopy.errors
 import metafopy.transf
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'extras' / 'transf.json').read_text())['summary']
@@ -105,3 +108,37 @@ def test_errors(pft: pandas.DataFrame) -> None:
         metafopy.effects.summary.summary_escalc(pft, var_names=('yi', 'nope'))
     with pytest.raises(ValueError, match="'olim'"):
         metafopy.effects.summary.summary_escalc(pft, olim=(0,))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(level=hypothesis.strategies.floats(min_value=0.0, max_value=100.0, allow_nan=False))
+def test_summary_level_to_alpha_is_a_probability(level: float) -> None:
+    """effects/summary.py::level_to_alpha: 0 gives 1, 1 to 100 a percent, up to 0.5 an alpha already, above 0.5 a proportion; always in [0, 1]."""
+    alpha = metafopy.effects.summary.level_to_alpha(level)
+    assert 0.0 <= alpha <= 1.0
+    if level == 0:
+        assert alpha == 1.0
+    elif level >= 1:
+        assert alpha == pytest.approx((100 - level) / 100, abs=1e-12)
+    elif level > 0.5:
+        assert alpha == pytest.approx(1 - level, abs=1e-12)
+    else:
+        assert alpha == level
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(prop=hypothesis.strategies.floats(min_value=0.51, max_value=0.99, allow_nan=False))
+def test_summary_level_to_alpha_percent_matches_proportion(prop: float) -> None:
+    """effects/summary.py::level_to_alpha: 95 and 0.95 give the same alpha."""
+    assert metafopy.effects.summary.level_to_alpha(100 * prop) == pytest.approx(metafopy.effects.summary.level_to_alpha(prop), abs=1e-12)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    level=hypothesis.strategies.floats(min_value=100.0, max_value=1e9, exclude_min=True, allow_nan=False)
+    | hypothesis.strategies.floats(min_value=-1e9, max_value=0.0, exclude_max=True, allow_nan=False)
+)
+def test_summary_level_to_alpha_rejects_levels_outside_0_to_100(level: float) -> None:
+    """effects/summary.py::level_to_alpha: a level above 100 or below 0 raises InputError."""
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.effects.summary.level_to_alpha(level)

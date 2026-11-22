@@ -136,7 +136,7 @@ for each tells the later tasks exactly which candidates to test.
 - [ ] One property test per open candidate in `open-after-rejudge.md` with Task 3. These are the candidates in `core/bvn.py`,
       `core/dbinom.py`, `core/farebrother.py`, `core/tukey.py`, `core/nchg.py`, `bias/ranktest.py`, `bias/fsn.py`, `effects/rtet.py`,
       `effects/fivenum_estimators.py::weibull_shape_start`, `models/tau2.py` and `methods/ls_anova.py`
-- [ ] Use the oracle the reason names: `scipy.stats.multivariate_normal` for `bvn`; `scipy.stats.binom` and `math.lgamma` for `dbinom`;
+- [x] Use the oracle the reason names: `scipy.stats.multivariate_normal` for `bvn`; `scipy.stats.binom` and `math.lgamma` for `dbinom`;
       `scipy.stats.chi2` for `farebrother`; `scipy.stats.hypergeom` and `scipy.stats.nchypergeom_fisher` for `nchg`; brute-force permutation
       counts for small `n` for `pkendall`
 
@@ -237,7 +237,7 @@ weight functions and parameter maps.
 
 ## Task 6: Property tests for layout and the small numeric helpers of printing and plotting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 4 (group B)
@@ -246,25 +246,28 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 6. These are the group B candidates in `plot/rutils.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 6. These are the group B candidates in `plot/rutils.py`,
       `plot/forest.py` (`anno_symbol`, `finish_annotext`, `parse_predtail`), `plot/gosh.py`, `plot/infl.py::n2mfrow`, `plot/profile.py`,
       `methods/vif.py`, `methods/blup.py`, `methods/ls_common.py`, `methods/deltamethod.py`, `bias/inputs.py`, `effects/summary.py`,
       `models/rma_uni.py` (`coef_span`, `level_to_alpha`), and any group B candidate the record adds
-- [ ] Use `matplotlib.colors.to_rgba` as the oracle for `hex_color`, as its reason names
+- [x] Use `matplotlib.colors.to_rgba` as the oracle for `hex_color`, as its reason names
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 6 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 6 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: tests are written for every Task 6 candidate and pass. `plot/forest.py` is reached through `importlib.import_module(...)`:
+  `metafopy.plot.forest` names the re-exported function for mypy, as with `bias/fsn.py` in Task 3. Only the summary tests keep the
+  "percent matches proportion" check of `level_to_alpha`; the piecewise test in each file covers the same behaviour.
 
 ---
 

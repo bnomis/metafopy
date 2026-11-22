@@ -158,3 +158,18 @@ def test_fmtt_digits_spellings_agree_and_sep_only_removes_spaces(
     assert metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits={'test': n, 'pval': n}, format=form) == scalar
     tight = metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits=n, format=form, sep=False)
     assert tight == squeeze(scalar)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(body=hypothesis.strategies.text(alphabet='abc 12', max_size=10), space=hypothesis.strategies.booleans())
+def test_option_space_drops_one_blank_line_at_each_end(body: str, space: bool) -> None:
+    """mfopt.py::option_space: with ``space`` False one leading and one trailing newline go; with True the text is kept."""
+    text = f'\n\n{body}\n\n'
+    saved = dict(metafopy.mfopt.OPTIONS)
+    try:
+        metafopy.mfopt.OPTIONS['space'] = space
+        out = metafopy.mfopt.option_space(text)
+    finally:
+        metafopy.mfopt.OPTIONS.clear()
+        metafopy.mfopt.OPTIONS.update(saved)
+    assert out == (text if space else f'\n{body}\n')
