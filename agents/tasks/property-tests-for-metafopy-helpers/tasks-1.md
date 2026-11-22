@@ -89,7 +89,7 @@ for each tells the later tasks exactly which candidates to test.
 
 ## Task 2: Shared hypothesis strategies
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Implementation step 2
@@ -98,22 +98,22 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/rstrategies.py` with `probabilities`, `df_values`, `finite_floats` and `r_identifiers`, with the signatures and
+- [x] Write `src/tests/rstrategies.py` with `probabilities`, `df_values`, `finite_floats` and `r_identifiers`, with the signatures and
       docstrings of the spec's API section. `r_identifiers` draws names matching R's syntactic-name rule (a letter, or a dot not followed by a
       digit, then letters, digits, `.` and `_`) and excludes R's reserved words (`if`, `else`, `repeat`, `while`, `function`, `for`, `next`,
       `break`, `TRUE`, `FALSE`, `NULL`, `Inf`, `NaN`, `NA`, `NA_integer_`, `NA_real_`, `NA_character_`, `NA_complex_`, `in`)
-- [ ] Write `src/tests/test_rstrategies.py`: one `given` test per strategy, checking its bounds (open interval, finiteness, positivity,
+- [x] Write `src/tests/test_rstrategies.py`: one `given` test per strategy, checking its bounds (open interval, finiteness, positivity,
       the name rule)
 
 **Acceptance Criteria:**
 
-- [ ] Each strategy draws only values inside its documented domain
+- [x] Each strategy draws only values inside its documented domain
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/rstrategies.py src/tests/test_rstrategies.py` passes
-- [ ] `pytest src/tests/test_rstrategies.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/rstrategies.py src/tests/test_rstrategies.py` passes
+- [x] `pytest src/tests/test_rstrategies.py` passes
 
 **Notes:**
 
