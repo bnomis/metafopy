@@ -306,18 +306,35 @@ def lbfgsb(
 
 
 def weibull_shape_start(mean_hat: float, sd_hat: float) -> float:
-    """The starting value of the Weibull shape: ``nlminb`` matches the coefficient of variation, from ``(mean/sd)^1.086``."""
+    """The starting value of the Weibull shape: the shape whose coefficient of variation is ``sd / mean``.
+
+    estmeansd's ``qe.fit`` calls ``nlminb(start, objective, lower = 1e-3, upper = Inf)`` with ``start = (mean/sd)^1.086`` and the squared
+    difference between ``sd / mean`` and the Weibull coefficient of variation as objective. That objective is 0 at the shape sought, so its
+    minimum is a root of the coefficient of variation minus ``sd / mean``; a root find reaches it to full precision, where a bounded
+    quasi-Newton stop on the near-zero objective ends early for large shapes. Falls back to ``start`` where no bracket is found.
+    """
     start = (mean_hat / sd_hat) ** 1.086
-
-    def objective(k: float) -> float:
-        temp1 = float(scipy.special.gamma((k + 2) / k))
-        temp2 = float(scipy.special.gamma((k + 1) / k))
-        return float((sd_hat / mean_hat - math.sqrt(temp1 / temp2**2 - 1)) ** 2)
-
-    fit = lbfgsb(lambda p: objective(float(p[0])), [start], [1e-3], [math.inf])
-    if fit is None or not math.isfinite(fit[1]):
+    target = sd_hat / mean_hat
+    if not (math.isfinite(start) and math.isfinite(target)) or target <= 0:
         return float(start)
-    return float(fit[0][0])
+
+    log_ratio = math.log1p(target**2)
+
+    def excess(k: float) -> float:
+        """Log of ``1 + cv(k)^2`` minus that of ``1 + target^2``: negative above the root, finite for small shapes where ``gamma`` overflows."""
+        return float(scipy.special.gammaln((k + 2) / k) - 2 * scipy.special.gammaln((k + 1) / k)) - log_ratio
+
+    lower = 1e-3
+    upper = max(2 * start, 1.0)
+    with numpy.errstate(all='ignore'):
+        while not excess(upper) < 0:
+            upper *= 2
+            if upper > 1e6:
+                return float(start)
+        if not excess(lower) > 0:
+            return float(start)
+        root = float(scipy.optimize.brentq(excess, lower, upper, xtol=1e-14, rtol=4 * numpy.finfo(float).eps))
+    return root if math.isfinite(root) else float(start)
 
 
 def qe_fit(quants: FloatArray, n: float, scenario: str) -> dict[str, tuple[FloatArray, float] | None]:

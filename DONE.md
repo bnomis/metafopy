@@ -1700,3 +1700,27 @@ Fix direction: return `NaN` with R's warning as R does; this changes an output, 
 Spec: none (small item); tasks: `agents/tasks/qtukey-nan/tasks-1.md`.
 
 Done: 2026-11-22 - agents/tasks/qtukey-nan/tasks-1.md Task 1 (4625d10); approved in agents/reviews/order-r-parity-fixes-from-property-tests-specs.md item 1.
+
+## `weibull_shape_start` stops at its start value for large shapes
+
+<!-- doc-counts: accept-start found on 2026-11-22 - a dated record, not a claim about the present -->
+Found on 2026-11-22 by the property test of `weibull_shape_start` (Task 3 of `agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md`),
+at `f1bad68`. For mean 1 and sd 0.14836888830451764 (the coefficient of variation of a Weibull shape of 8),
+`weibull_shape_start(1.0, 0.14836888830451764)` returns 7.94188553535, its start value `(mean/sd)^1.086` = 7.94185 to five digits. R's
+`nlminb(start, objective, lower = 1e-3, upper = Inf)` with the same start and objective returns 8 (to ten digits). The coefficient of variation
+of the returned shape is off by 0.7% at a shape of 8 and 2.3% at 20; at shapes of 0.5 to 4 it is within 1e-5.
+<!-- doc-counts: accept-end -->
+
+Cause: suspected, not confirmed: the L-BFGS-B call `lbfgsb` in `src/metafopy/effects/fivenum_estimators.py` (`ftol` 1e7 times epsilon, `gtol`
+0) stops once the squared-error objective, already near 1e-6, changes by less than `ftol`; `nlminb` uses a relative tolerance of 1e-10. The
+only caller is `src/metafopy/effects/fivenum_estimators.py:348`, which uses the shape as a start for a later fit, so the effect on a final
+estimate is not measured.
+
+Fix direction: make the optimiser reach R's stop for this one-parameter problem (a root find on the coefficient of variation would do);
+this changes an output, so it needs the operator's confirmation first. Then remove the `xfail` marker of
+`src/tests/test_conv_fivenum_methods.py::test_weibull_shape_start_property_reproduces_the_coefficient_of_variation` (strict, so it fails once
+fixed).
+
+Spec: none (small item); tasks: `agents/tasks/weibull-shape-start/tasks-1.md`.
+
+Done: 2026-11-22 - agents/tasks/weibull-shape-start/tasks-1.md Task 1 (d8ee4d8); approved in agents/reviews/order-r-parity-fixes-from-property-tests-specs.md item 2.
