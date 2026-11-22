@@ -474,3 +474,9 @@ def test_formulas_are_the_inner_and_outer_of_each_term() -> None:
     assert CASES['ber_un']().formulas == ('~ outcome | trial', None)
     assert CASES['kon_spexp']().formulas == ('~ year | district', None)
     assert CASES['kon_fe']().formulas == (None, None)
+
+
+@pytest.mark.parametrize('name', ['ber_un', 'ber_hcs'])
+def test_predict_fitted_with_inner_factor(name: str) -> None:
+    pr = run(name).predict()
+    vector(pr.pred, REF[name]['fitted'], f'{name} predict fitted', rtol=1e-5, atol=1e-7)

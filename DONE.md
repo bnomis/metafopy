@@ -1634,3 +1634,23 @@ not, so the alias branch is not a plain rejection-sampler draw either. metafopy'
 
 Fix direction: fix `RRandom.walker` to draw as R does, then add the two cases above as tests. `RRandom.sample_int` in `gosh`
 (`src/metafopy/methods/gosh.py`) passes `prob` and `replace=True` and may reach the branch for large `k`; not checked.
+
+## Public metafopy helpers with branches have no direct test
+
+<!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->
+Found on 2026-11-21 by the first auditme audit (`agents/audit-reviews/review-1.md`, question T1, at `31d809f`): 162 functions under
+`src/metafopy` that branch have no test calling them directly (under the T1 rulings that review records). Most are public helpers that the
+tests reach only through a higher-level function. The per-function list is in `agents/audit-reviews/ledger/T1.jsonl`: run
+`python3 ~/.claude/skills/auditme/checks/phaseb.py report . --question T1`. Decision D4 of that review (answered 2026-11-21) files the
+catch-up here, one item per package.
+<!-- doc-counts: accept-end -->
+
+Cause: tests were written per feature against the public entry points (`rma_uni`, `escalc`, `selmodel`, ...), so a helper is tested only
+through its caller, which T1 does not count for a public function.
+
+Fix direction: a spec with `/specdev` first. It chooses which helpers deserve a direct test (the branchy numerics and formatters first), and
+which should become private, or stay covered through their callers with a ledger dismissal giving the reason. Then a task list.
+
+Spec: `agents/specs/direct-tests-for-metafopy-helpers/spec.md`; tasks: `agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md`.
+
+Done: 2026-11-22 - agents/specs/direct-tests-for-metafopy-helpers/spec.md, agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md.

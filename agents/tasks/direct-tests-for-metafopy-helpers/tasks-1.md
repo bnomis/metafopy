@@ -283,7 +283,7 @@ regression in it is caught where it is.
 
 ## Task 8: Re-judge, the full check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 5
@@ -293,28 +293,28 @@ to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Repeat Task 3's plan, filter, judge, check and merge for the 162. `phaseb.py report . --question T1` must show none of them open. A
+- [x] Repeat Task 3's plan, filter, judge, check and merge for the 162. `phaseb.py report . --question T1` must show none of them open. A
       candidate still open goes back to the task that covers its group
-- [ ] Move the `TODO.md` item "Public metafopy helpers with branches have no direct test" to the end of `DONE.md`: append its heading and body
+- [x] Move the `TODO.md` item "Public metafopy helpers with branches have no direct test" to the end of `DONE.md`: append its heading and body
       unchanged, then the line `Done: <date> - agents/specs/direct-tests-for-metafopy-helpers/spec.md,
       agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md.`, and remove it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-21)" to "Implemented"
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved (2026-11-21)" to "Implemented"
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/direct-tests-for-metafopy-helpers/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/direct-tests-for-metafopy-helpers/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] None of the 162 is open in the T1 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
+- [x] None of the 162 is open in the T1 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

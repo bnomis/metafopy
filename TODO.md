@@ -4,24 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Public metafopy helpers with branches have no direct test
-
-<!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->
-Found on 2026-11-21 by the first auditme audit (`agents/audit-reviews/review-1.md`, question T1, at `31d809f`): 162 functions under
-`src/metafopy` that branch have no test calling them directly (under the T1 rulings that review records). Most are public helpers that the
-tests reach only through a higher-level function. The per-function list is in `agents/audit-reviews/ledger/T1.jsonl`: run
-`python3 ~/.claude/skills/auditme/checks/phaseb.py report . --question T1`. Decision D4 of that review (answered 2026-11-21) files the
-catch-up here, one item per package.
-<!-- doc-counts: accept-end -->
-
-Cause: tests were written per feature against the public entry points (`rma_uni`, `escalc`, `selmodel`, ...), so a helper is tested only
-through its caller, which T1 does not count for a public function.
-
-Fix direction: a spec with `/specdev` first. It chooses which helpers deserve a direct test (the branchy numerics and formatters first), and
-which should become private, or stay covered through their callers with a ledger dismissal giving the reason. Then a task list.
-
-Spec: `agents/specs/direct-tests-for-metafopy-helpers/spec.md`; tasks: `agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md`.
-
 ## Numerical cores have no property-based tests
 
 <!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->

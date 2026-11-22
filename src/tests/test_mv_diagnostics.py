@@ -328,3 +328,11 @@ def test_per_observation_na() -> None:
     close(out.to_numpy(), REF['kna']['cooks']['values'], 'cooks')
     assert list(out.index) == REF['kna']['cooks']['names']
     frame_close(metafopy.dfbetas(kna(), na_action='exclude'), REF['kna']['dfbetas'], 'dfbetas')
+
+
+def test_profile_component_grid() -> None:
+    out = metafopy.profile(kres(), sigma2=1, steps=5)
+    assert isinstance(out, metafopy.methods.mv_profile.MVProfileResult)
+    close(out.sigma2, REF['kon']['profile_sigma2_2']['vc'], 'sigma2 grid')
+    with pytest.raises(AttributeError, match='this profile is of sigma2, not rho'):
+        out.rho  # noqa: B018

@@ -74,3 +74,12 @@ def test_selmodel_prec(plain_fit: metafopy.RMAResult, case: dict[str, typing.Any
     refutil.close(out.tau2, case['tau2'], 'tau2', rtol=1e-5)
     refutil.close(out.delta, case['delta'], 'delta', rtol=1e-5)
     refutil.close(out.fit_stats_ml.ll, case['ll'], 'll', rtol=1e-8)
+
+
+def test_funnel_to_frame(plain_fit: metafopy.RMAResult) -> None:
+    case = REF['funnel'][0]
+    out = metafopy.funnel(plain_fit, yaxis=case['yaxis'])
+    frame = out.to_frame()
+    assert list(frame.columns) == ['x', 'y', 'slab']
+    refutil.close(frame['x'], case['x'], 'x')
+    refutil.close(frame['y'], case['y'], 'y')

@@ -1,7 +1,7 @@
 # Direct tests for metafopy helpers
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-21
 
 Every function under `src/metafopy` that branches gets a test that reaches it, in the way the auditme T1 question counts. A public function
