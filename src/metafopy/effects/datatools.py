@@ -70,7 +70,12 @@ def is_missing(value: typing.Any) -> bool:
 
 
 def make_names(names: collections.abc.Sequence[str], unique: bool = False) -> list[str]:
-    """R's ``make.names()``: syntactically valid names (invalid characters become ``.``, an invalid start gets an ``X``)."""
+    """R's ``make.names()``: syntactically valid names (invalid characters become ``.``, an invalid start gets an ``X``).
+
+    With ``unique=True`` the names left unchanged are made unique first and the changed ones after them, as R's
+    ``o <- order(names != names2); names2[o] <- make.unique(names2[o])`` does
+    (https://github.com/wch/r-source/blob/trunk/src/library/base/R/character.R).
+    """
     out: list[str] = []
     for name in names:
         s = ''.join(ch if ch.isalnum() or ch in '._' else '.' for ch in name)
@@ -79,7 +84,13 @@ def make_names(names: collections.abc.Sequence[str], unique: bool = False) -> li
         if s in R_RESERVED:
             s = f'{s}.'
         out.append(s)
-    return list(metafopy.metadata.make_unique(out)) if unique else out
+    if not unique:
+        return out
+    order = sorted(range(len(out)), key=lambda i: out[i] != names[i])
+    made = metafopy.metadata.make_unique([out[i] for i in order])
+    for position, i in enumerate(order):
+        out[i] = made[position]
+    return out
 
 
 def shorten_names(x: collections.abc.Sequence[str | None], minlen: int | None = None) -> list[str | None]:

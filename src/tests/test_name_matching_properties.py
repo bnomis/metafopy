@@ -246,10 +246,6 @@ def test_make_unique_keeps_first_occurrences(labels: list[str]) -> None:
 
 
 # R: make.names(c("a b", "a b", "a.b"), unique = TRUE) gives "a.b.1" "a.b.2" "a.b" (checked 2026-11-22): the names it changed are made unique last.
-@pytest.mark.xfail(
-    strict=True,
-    reason='make_names(unique=True) keeps input order where R makes changed names unique last; TODO.md: `make_names(unique=True)` keeps the input order',
-)
 def test_make_names_unique_orders_changed_names_last() -> None:
     """src/metafopy/effects/datatools.py::make_names: with unique=True, names that make.names changed are made unique after the unchanged ones."""
     assert metafopy.effects.datatools.make_names(['a b', 'a b', 'a.b'], unique=True) == ['a.b.1', 'a.b.2', 'a.b']
