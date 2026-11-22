@@ -1,5 +1,6 @@
 """selmodel() (all selection models, printing, tests, predict, confint, profile, anova, plot data) checked against R metafor 5.2-1."""
 
+import collections.abc
 import dataclasses
 import functools
 import json
@@ -9,6 +10,8 @@ import re
 import typing
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import matplotlib
 import numpy
 import pandas
@@ -782,3 +785,56 @@ def test_post_init_names_the_hessian_by_parameter() -> None:
     assert again.hessian.rownames == names
     assert again.hessian.colnames == names
     numpy.testing.assert_allclose(numpy.asarray(again.hessian), numpy.asarray(res.hessian))
+
+
+WEIGHT_PARAMS = hypothesis.strategies.fixed_dictionaries(
+    {
+        'p1': hypothesis.strategies.floats(min_value=1e-6, max_value=0.99),
+        'p2': hypothesis.strategies.floats(min_value=1e-6, max_value=0.99),
+        's0': hypothesis.strategies.floats(min_value=1e-3, max_value=0.99),
+        'd0': hypothesis.strategies.floats(min_value=0.01, max_value=5.0),
+        'd1': hypothesis.strategies.floats(min_value=0.2, max_value=5.0),
+        'preci': hypothesis.strategies.floats(min_value=0.01, max_value=10.0),
+    }
+)
+
+
+def check_weight(weight: collections.abc.Callable[[float], float], s0: float, p1: float, p2: float) -> None:
+    """The weight is 1 for p <= s[0], lies in (0, 1] and never increases as p rises (4 ulps of slack)."""
+    lo, hi = min(p1, p2), max(p1, p2)
+    w_lo, w_hi = weight(lo), weight(hi)
+    assert 0.0 < w_hi <= 1.0 + 4 * math.ulp(1.0)
+    assert 0.0 < w_lo <= 1.0 + 4 * math.ulp(1.0)
+    assert w_hi <= w_lo + 4 * math.ulp(1.0)
+    assert weight(s0) == 1.0
+    if lo <= s0:
+        assert w_lo == 1.0
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(WEIGHT_PARAMS)
+def test_sel_spec_one_parameter_weights(a: dict[str, float]) -> None:
+    """The ``s_halfnorm``, ``s_negexp``, ``s_logistic``, ``s_power`` and ``s_*1`` weights: 1 for p <= s[0], in (0, 1], non-increasing in p."""
+    d, preci, s = (a['d0'],), a['preci'], (a['s0'],)
+    p1, p2, s0 = a['p1'], a['p2'], a['s0']
+    check_weight(lambda p: metafopy.models.sel_spec.s_halfnorm(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_halfnorm1(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_negexp(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_negexp1(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_logistic(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_logistic1(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_power(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_power1(p, d, preci, s), s0, p1, p2)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(WEIGHT_PARAMS)
+def test_sel_spec_two_parameter_weights(a: dict[str, float]) -> None:
+    """The ``s_negexppow`` and ``s_*2`` weights: 1 for p <= s[0], in (0, 1], non-increasing in p."""
+    d, preci, s = (a['d0'], a['d1']), a['preci'], (a['s0'],)
+    p1, p2, s0 = a['p1'], a['p2'], a['s0']
+    check_weight(lambda p: metafopy.models.sel_spec.s_negexppow(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_halfnorm2(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_negexp2(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_logistic2(p, d, preci, s), s0, p1, p2)
+    check_weight(lambda p: metafopy.models.sel_spec.s_power2(p, d, preci, s), s0, p1, p2)

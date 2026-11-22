@@ -167,7 +167,7 @@ for each tells the later tasks exactly which candidates to test.
 
 ## Task 4: Property tests for the distribution, weight and map functions of `emm_adjust`, `sel_spec` and `sel_lik`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (group A)
@@ -177,22 +177,22 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 4. These are the group A candidates in
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 4. These are the group A candidates in
       `methods/emm_adjust.py` (`pf_cdf`, `pf_sf`, `pt_sf`, `qdunnx`, `qf`, `qt`), `models/sel_spec.py` (the `s_*` weight functions) and
       `models/sel_lik.py`, and any group A candidate the record adds
-- [ ] Use `scipy.stats.f` and `scipy.stats.t` as oracles for the distribution functions, and `scipy.special.expit` for `apply_named`'s
+- [x] Use `scipy.stats.f` and `scipy.stats.t` as oracles for the distribution functions, and `scipy.special.expit` for `apply_named`'s
       `plogis`. One parametrised test may cover the `s_*` weight functions that share the property "1 for p <= s[0], in (0, 1], non-increasing
       in p", provided each function is called directly
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 4 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 4 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
