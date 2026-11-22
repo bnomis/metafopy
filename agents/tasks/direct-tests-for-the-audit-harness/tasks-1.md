@@ -429,7 +429,7 @@ spec is marked implemented and the `TODO.md` item moves to `DONE.md`.
 
 ## Task 11: Cover `r_as_numeric` with passing tests
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 8; group A (decision D2)
@@ -440,18 +440,18 @@ passing test.
 
 **Subtasks:**
 
-- [ ] Add R snippets to the fixture (recorded from R, as Tasks 3-5 do) for `as.numeric` of a factor, of a numeric vector and of a character vector, and a passing
+- [x] Add R snippets to the fixture (recorded from R, as Tasks 3-5 do) for `as.numeric` of a factor, of a numeric vector and of a character vector, and a passing
       `test_shim_agrees_with_r` case for each, or a direct test of `r_as_numeric` for the same inputs
-- [ ] Keep the strict `xfail` for `as_numeric_text` (a single string, the defect filed in `TODO.md`)
+- [x] Keep the strict `xfail` for `as_numeric_text` (a single string, the defect filed in `TODO.md`)
 
 **Acceptance Criteria:**
 
-- [ ] A passing test calls `r_as_numeric` for a factor, a plain vector and a string vector; the T1 verdict re-judged for it is covered
+- [x] A passing test calls `r_as_numeric` for a factor, a plain vector and a string vector; the T1 verdict re-judged for it is covered
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` and the new tests pass
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` and the new tests pass
 
 **Notes:**
 

@@ -89,6 +89,8 @@ snippets <- list(
   as_numeric_text = "as.numeric('3.5')",
   as_numeric_logical = "as.numeric(c(TRUE, FALSE))",
   as_numeric_texts = "as.numeric(c('1', '2'))",
+  as_numeric_factor = "as.numeric(factor(c('b', 'a', 'b')))",
+  as_numeric_vector = "as.numeric(c(1.5, 2, 3))",
   class_numeric = "class(1)",
   class_matrix = "class(matrix(1:4, 2))",
   class_data_frame = "class(dat.bcg)",
