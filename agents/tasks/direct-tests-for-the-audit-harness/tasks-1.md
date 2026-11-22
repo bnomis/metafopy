@@ -74,7 +74,7 @@ docstring their own passing test, so the candidate is still covered.
 
 ## Task 2: Re-judge T1 and T2 and record what is open
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 2
@@ -84,26 +84,26 @@ fresh verdict for each candidate tells the later tasks exactly what to test.
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T1 --out <scratch>/t1`, `<scratch>` a directory outside the
+- [x] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T1 --out <scratch>/t1`, `<scratch>` a directory outside the
       repository. Judge every candidate in every batch by `~/.claude/skills/auditme/phaseb/briefs/T1.md`, reading the candidate's source and
       the tests it lists (do not run them), and write `result-NN.jsonl` beside each `batch-NN.jsonl` in the brief's format
-- [ ] `phaseb.py check <scratch>/t1` must report every batch complete; then `phaseb.py merge . --question T1 <scratch>/t1`
-- [ ] The same three steps for T2, with `briefs/T2.md` and `<scratch>/t2`
-- [ ] Write `agents/specs/direct-tests-for-the-audit-harness/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
+- [x] `phaseb.py check <scratch>/t1` must report every batch complete; then `phaseb.py merge . --question T1 <scratch>/t1`
+- [x] The same three steps for T2, with `briefs/T2.md` and `<scratch>/t2`
+- [x] Write `agents/specs/direct-tests-for-the-audit-harness/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
       every open `src/audit` and `bin` candidate in `phaseb.py report . --question T1` and `--question T2`: its id, question, group (by the
       rules in `measurements.md`, first match wins) and the task that handles it (A: Tasks 4-5, B: 6, C: 7-9 by the module lists there,
       D: 10, E: 9)
-- [ ] Stop as `blocked`, naming the candidate, if the brief does not settle one
-- [ ] Note any open candidate under `src/metafopy` in the record as outside this list; do not test it here
+- [x] Stop as `blocked`, naming the candidate, if the brief does not settle one
+- [x] Note any open candidate under `src/metafopy` in the record as outside this list; do not test it here
 
 **Acceptance Criteria:**
 
-- [ ] Every planned candidate has a fresh ledger verdict, and the open list with its group and task columns is committed
+- [x] Every planned candidate has a fresh ledger verdict, and the open list with its group and task columns is committed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `phaseb.py check <scratch>/t1` and `phaseb.py check <scratch>/t2` report every batch complete
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `phaseb.py check <scratch>/t1` and `phaseb.py check <scratch>/t2` report every batch complete
 
 **Notes:**
 
