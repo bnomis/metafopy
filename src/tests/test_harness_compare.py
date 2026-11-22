@@ -6,9 +6,12 @@ import subprocess
 
 import pytest
 
+import audit.cases
 import audit.cli
 import audit.config
+import audit.domains
 import audit.errors
+import audit.generate
 import audit.printdiff
 import audit.rdriver
 import audit.recall
@@ -314,6 +317,60 @@ def test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused(monk
     monkeypatch.delattr(metafopy.core.dbinom, 'FUSED')
     outcome = audit.steps.check_r(ctx)
     assert 'predates metafopy.core.dbinom.FUSED' in outcome.notes[0]
+
+
+def finding(step: str, case_id: str) -> audit.steps.Finding:
+    return audit.steps.Finding(step, case_id, 'missing-field', '$x', 'detail')
+
+
+def test_result_class_of_a_matrix_or_options_case_is_the_fit_class() -> None:
+    """report.py::result_class: the third id part, without its ``#n`` repeat suffix, names the fit; its class is looked up."""
+    classes = {'uni_reml': 'rma.uni'}
+    assert audit.report.result_class(finding('matrix', 'matrix/confint/uni_reml#2'), classes) == 'rma.uni'
+    assert audit.report.result_class(finding('options', 'options/rma/uni_reml'), classes) == 'rma.uni'
+
+
+def test_result_class_falls_back_to_the_function_in_the_id() -> None:
+    """report.py::result_class: a fit with no known class gives the function of the case, as does an id of two parts."""
+    assert audit.report.result_class(finding('matrix', 'matrix/confint/other'), {}) == 'confint'
+    assert audit.report.result_class(finding('matrix', 'matrix/confint'), {}) == 'confint'
+
+
+def test_result_class_of_a_construct_case_is_the_fixture_class() -> None:
+    """report.py::result_class: a construct case names the fixture in its second id part."""
+    assert audit.report.result_class(finding('construct', 'construct/es_bcg'), {'es_bcg': 'escalc'}) == 'escalc'
+    assert audit.report.result_class(finding('construct', 'construct/other'), {}) == 'other'
+
+
+def test_result_class_of_a_script_finding_names_the_examples() -> None:
+    """report.py::result_class: a scripts finding is about the results of the metafor examples and tests, whatever its id."""
+    assert audit.report.result_class(finding('scripts', 'scripts/a/b'), {'b': 'x'}) == 'results of the metafor examples and tests'
+
+
+def test_result_class_of_another_step_is_the_function() -> None:
+    """report.py::result_class: any other step gives the function of the case."""
+    assert audit.report.result_class(finding('print', 'print/confint/fit'), {}) == 'confint'
+
+
+def test_generate_cases_generates_once_and_records_the_coverage(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    """steps.py::generate_cases: the first call generates and stores what is uncovered; the second returns the stored result untouched."""
+    calls: list[int] = []
+    generated = audit.generate.Generated(cases=[], uncovered=['f/arg'], unaccounted=['g'])
+
+    def fake_generate(*args: object) -> audit.generate.Generated:
+        calls.append(1)
+        return generated
+
+    monkeypatch.setattr(audit.generate, 'generate', fake_generate)
+    monkeypatch.setattr(audit.cases, 'load_fixtures', list)
+    monkeypatch.setattr(audit.domains.Domains, 'load', classmethod(lambda cls: object()))
+    monkeypatch.setattr(audit.domains.Recipes, 'load', classmethod(lambda cls: object()))
+    ctx = audit.steps.Context(work=tmp_path, jobs=1, timeout=1.0, quick=False, only=None)
+    ctx.universe = audit.universe.Universe({'fixtures': {}, 'functions': {}, 'methods': []})
+    assert audit.steps.generate_cases(ctx) is generated
+    assert ctx.coverage == {'uncovered_arguments': ['f/arg'], 'unaccounted': ['g']}
+    assert audit.steps.generate_cases(ctx) is generated
+    assert calls == [1]
 
 
 @pytest.mark.parametrize('value', ['abc', '999', '1,x'])

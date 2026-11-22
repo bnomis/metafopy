@@ -267,7 +267,7 @@ R's value, `unparse` against R's `deparse()`, and a refused construct against `a
 
 ## Task 7: Group C, comparison and report helpers
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 6; decision D1
@@ -277,24 +277,25 @@ counts as a difference and how it reports it, each have a direct test.
 
 **Subtasks:**
 
-- [ ] For each group C T1 row in these modules: a direct test on hand-built inputs asserting the value its docstring and
+- [x] For each group C T1 row in these modules: a direct test on hand-built inputs asserting the value its docstring and
       `src/audit/README.md` state (for example: two printed numbers differing in the last digit are `close_numbers`; `0` against `0.0000` is
       not), in `src/tests/test_harness_compare.py`, or `src/tests/test_harness_apidiff.py` (new) for `apidiff`
-- [ ] `apidiff` tests use small fits of bundled datasets
+- [x] `apidiff` tests use small fits of bundled datasets
 
 **Acceptance Criteria:**
 
-- [ ] Each group C T1 candidate in these modules has a passing direct test
+- [x] Each group C T1 candidate in these modules has a passing direct test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_harness_compare.py src/tests/test_harness_apidiff.py` passes
-- [ ] `pytest src/tests/test_harness_compare.py src/tests/test_harness_apidiff.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_harness_compare.py src/tests/test_harness_apidiff.py` passes
+- [x] `pytest src/tests/test_harness_compare.py src/tests/test_harness_apidiff.py` passes
 
 **Notes:**
 
 - Depends on Task 2
+- The T1 report still lists these candidates as `new`: their verdicts are re-judged in Task 10, after the last test is written
 
 ---
 
