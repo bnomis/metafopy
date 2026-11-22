@@ -104,3 +104,10 @@ def test_an_unexpected_error_in_a_property_is_not_hidden() -> None:
 
     with pytest.raises(SystemError):
         audit.valuetree.lookup(Holder(), 'broken')
+
+
+def test_readable_turns_plain_plotmath_into_the_text_it_draws() -> None:
+    """``readable``: ``plain(Imputed ~ Studies)`` is ``Imputed Studies``; the p-value range legend is ``0.1 < p <= 0.5``; other text is unchanged."""
+    assert audit.pyrun.readable('plain(Imputed ~ Studies)') == 'Imputed Studies'
+    assert audit.pyrun.readable('paste("0.1" < p, phantom() <= "0.5")') == '0.1 < p <= 0.5'
+    assert audit.pyrun.readable('Effect size') == 'Effect size'

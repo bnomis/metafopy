@@ -301,7 +301,7 @@ counts as a difference and how it reports it, each have a direct test.
 
 ## Task 8: Group C, the other harness helpers
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 6; decision D1
@@ -311,21 +311,21 @@ any module not in Task 7) has a direct test.
 
 **Subtasks:**
 
-- [ ] For each remaining group C T1 row: a direct test on hand-built inputs in the file the spec's Module location names
+- [x] For each remaining group C T1 row: a direct test on hand-built inputs in the file the spec's Module location names
       (`test_harness_pycall.py`, `test_harness_accounts.py` for `generate`, `domains`, `ledger` and `universe`, `test_harness_engine.py`,
       `test_harness_errors.py` for `pyrun`); a module the spec does not name goes in the harness test file that already imports it
-- [ ] `universe` tests build a `Universe` from a small dict in the shape of `src/audit/data/universe.json`; `pycall` tests use small fits of
+- [x] `universe` tests build a `Universe` from a small dict in the shape of `src/audit/data/universe.json`; `pycall` tests use small fits of
       bundled datasets
 
 **Acceptance Criteria:**
 
-- [ ] Each group C T1 candidate has a passing direct test
+- [x] Each group C T1 candidate has a passing direct test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on each test file the task changed
-- [ ] `pytest src/tests/test_harness_pycall.py src/tests/test_harness_accounts.py src/tests/test_harness_engine.py src/tests/test_harness_errors.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on each test file the task changed
+- [x] `pytest src/tests/test_harness_pycall.py src/tests/test_harness_accounts.py src/tests/test_harness_engine.py src/tests/test_harness_errors.py`
       passes, with any other file the task changed
 
 **Notes:**
