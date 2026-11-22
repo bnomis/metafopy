@@ -183,12 +183,10 @@ class RRandom:
                     lo += 1
                 if lo >= n:
                     break
-        q = q + numpy.arange(n)
         out = numpy.empty(nans, dtype=numpy.intp)
         for i in range(nans):
-            ru = self.unif_rand() * n
-            kk = int(ru)
-            out[i] = kk + 1 if ru < q[kk] else a[kk] + 1
+            kk = self.unif_index(n)
+            out[i] = kk + 1 if self.unif_rand() < q[kk] else a[kk] + 1
         return out
 
 

@@ -211,7 +211,7 @@ regression in it is caught where it is.
 
 ## Task 6: Caller tests for private helpers in core, effects, bias and the top-level modules
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 4
@@ -220,26 +220,28 @@ regression in it is caught where it is.
 
 **Subtasks:**
 
-- [ ] For each private candidate in `open-after-privatise.md` under `core/`, `effects/`, `bias/` or a top-level module, find a caller (grep
+- [x] For each private candidate in `open-after-privatise.md` under `core/`, `effects/`, `bias/` or a top-level module, find a caller (grep
       its full module path) and an input that takes the helper's branch. Add the test to the caller's test file. Examples:
   - `glm_fit` through `rma_glmm`;
   - `clogit` through `rma_glmm(control={'optimizer': 'clogit'})`;
   - `farebrother` through `rma(method='GENQM')`.
-- [ ] A helper that no public function can reach is dead code. Stop as `blocked` and name it; do not delete it
-- [ ] Run each changed test file
+- [x] A helper that no public function can reach is dead code. Stop as `blocked` and name it; do not delete it
+- [x] Run each changed test file
 
 **Acceptance Criteria:**
 
-- [ ] Each of these candidates is reached by a test of a caller
+- [x] Each of these candidates is reached by a test of a caller
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] Each changed test file passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] Each changed test file passes, named in the commit body
 
 **Notes:**
 
 - Depends on Task 3
+
+- A branch-coverage run of the suite found every listed candidate already reached by a caller test except `RRandom.walker` and `prob_sample_no_replace`; `src/tests/test_rng.py` reaches both through `sample_int`, against values printed by R. `walker` drew differently from R (R 4.6.2 draws `R_unif_index(n)` then `unif_rand()`), so it was fixed in the same task and its `TODO.md` item moved to `DONE.md`. What remains uncovered in the other helpers is defensive guards that no caller input reaches.
 
 ---
 
