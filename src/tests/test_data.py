@@ -7,7 +7,7 @@ import metafopy.metadata
 
 
 def test_make_unique_matches_r() -> None:
-    assert metafopy.metadata.make_unique(['a', 'b', 'a', 'a', 'a.1']) == ('a', 'b', 'a.1', 'a.2', 'a.1.1')
+    assert metafopy.metadata.make_unique(['a', 'b', 'a', 'a', 'a.1']) == ('a', 'b', 'a.2', 'a.3', 'a.1')
 
 
 def test_defaults_add_intercept_only() -> None:

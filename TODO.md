@@ -24,6 +24,24 @@ confirmation first. Then remove the strict `xfail` marker of
 
 Spec: none (small item); tasks: `agents/tasks/make-unique-first-occurrences/tasks-1.md`.
 
+## `make_names(unique=True)` keeps the input order where R puts the changed names last
+
+<!-- doc-counts: accept-start found on 2026-11-22 - a dated record, not a claim about the present -->
+Found on 2026-11-22 while fixing `make_unique` (`agents/tasks/make-unique-first-occurrences/tasks-1.md`, Task 1).
+`metafopy.effects.datatools.make_names(['a b', 'a b', 'a.b'], unique=True)` returns `['a.b', 'a.b.1', 'a.b.2']`. R's
+`make.names(c("a b", "a b", "a.b"), unique = TRUE)` returns `"a.b.1" "a.b.2" "a.b"` (`LC_ALL=C.UTF-8 Rscript`, metafor 5.2-1).
+<!-- doc-counts: accept-end -->
+
+Cause: R's `make.names` body is `o <- order(names != names2); names2[o] <- make.unique(names2[o])` (read with `print(body(make.names))`
+in `Rscript` on 2026-11-22), so names that `make.names` left unchanged come first and keep their label, and the changed ones are made unique
+after them. `make_names` in `src/metafopy/effects/datatools.py` calls `metafopy.metadata.make_unique` on the names in input order.
+
+Fix direction: order the names as R does before calling `make_unique`, then put them back in input order. This changes an output, so it needs
+the operator's confirmation first (on 2026-11-22 the operator chose to leave it as it is for the `make_unique` fix). Then remove the strict
+`xfail` marker of `src/tests/test_name_matching_properties.py::test_make_names_unique_orders_changed_names_last`.
+
+Spec: none (small item); tasks: none yet.
+
 ## Audit-harness and bin helpers with branches have no direct test
 
 <!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->

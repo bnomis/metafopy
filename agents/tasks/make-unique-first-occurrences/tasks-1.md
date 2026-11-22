@@ -19,7 +19,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 1: Make `make_unique` avoid every input label, as R's `make.unique` does
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"; review item 3
@@ -35,22 +35,22 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 - [x] In `src/metafopy/metadata.py::make_unique`, keep each first occurrence. Seed the set of labels to avoid with every input label, then
       give each later duplicate `label.k` with the smallest `k` (counting on from that label's last `k`) not in the set, and add it. This is
       R's `do_makeunique` in `src/main/unique.c`
-- [ ] Compare `make_unique` and `metafopy.effects.datatools.make_names(..., unique=True)` with `<scratch>/r.json`. A difference stops the
+- [x] Compare `make_unique` and `metafopy.effects.datatools.make_names(..., unique=True)` with `<scratch>/r.json`. A difference stops the
       task as `blocked`, naming the input and both outputs
-- [ ] Remove the strict `xfail` marker of `src/tests/test_name_matching_properties.py::test_make_unique_keeps_first_occurrences`. Add the
+- [x] Remove the strict `xfail` marker of `src/tests/test_name_matching_properties.py::test_make_unique_keeps_first_occurrences`. Add the
       R cases above as an example test of both functions in `src/tests/test_name_matching_properties.py`
-- [ ] Run `src/tests/test_data.py` and `src/tests/test_datatools.py`. A test whose expected study labels (`slab`) change stops the task as
+- [x] Run `src/tests/test_data.py` and `src/tests/test_datatools.py`. A test whose expected study labels (`slab`) change stops the task as
       `blocked`, naming the test and both label lists, unless the new labels equal R's for the same input
 
 **Acceptance Criteria:**
 
-- [ ] Both functions give R's output on every case above, and the property test passes without `xfail`
+- [x] Both functions give R's output on every case above, and the property test passes without `xfail`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/metadata.py src/tests/test_name_matching_properties.py` passes
-- [ ] `pytest src/tests/test_name_matching_properties.py src/tests/test_data.py src/tests/test_datatools.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/metadata.py src/tests/test_name_matching_properties.py` passes
+- [x] `pytest src/tests/test_name_matching_properties.py src/tests/test_data.py src/tests/test_datatools.py` passes
 
 **Notes:**
 
@@ -101,7 +101,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 3: Blocked finding - `make_names(unique=True)` orders changed names last, as R does
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 
@@ -120,20 +120,20 @@ metafopy's output beyond what review item 3 approved, so it needs the operator's
 
 **Subtasks:**
 
-- [ ] File the difference in `TODO.md` with `/todo-add`. Place it after the item this list closes, with today's date, the input, R's output,
+- [x] File the difference in `TODO.md` with `/todo-add`. Place it after the item this list closes, with today's date, the input, R's output,
       metafopy's output and the cause (R's `make.names` body: `o <- order(names != names2); names2[o] <- make.unique(names2[o])`, checked
       in `Rscript` on 2026-11-22). Its Fix direction says that matching R changes an output and needs the operator's confirmation
-- [ ] Add a strict `xfail` test of that input in `src/tests/test_name_matching_properties.py`, asserting R's output, with a reason naming the
+- [x] Add a strict `xfail` test of that input in `src/tests/test_name_matching_properties.py`, asserting R's output, with a reason naming the
       `TODO.md` item
-- [ ] Task 1's subtask that compares both functions with R is then met: `make_unique` matches R on every case, and the one `make_names`
+- [x] Task 1's subtask that compares both functions with R is then met: `make_unique` matches R on every case, and the one `make_names`
       difference is filed with its strict `xfail`. Tick it, and set Task 1 to `done`
 
 **Acceptance Criteria:**
 
-- [ ] The `TODO.md` item and the strict `xfail` exist, and `pytest src/tests/test_name_matching_properties.py` passes
+- [x] The `TODO.md` item and the strict `xfail` exist, and `pytest src/tests/test_name_matching_properties.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_name_matching_properties.py` passes
-- [ ] `pytest src/tests/test_name_matching_properties.py src/tests/test_datatools.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_name_matching_properties.py` passes
+- [x] `pytest src/tests/test_name_matching_properties.py src/tests/test_datatools.py` passes
