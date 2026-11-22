@@ -10,6 +10,8 @@ import pathlib
 import typing
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import matplotlib.axes
 import matplotlib.figure
 import matplotlib.pyplot
@@ -23,6 +25,7 @@ import metafopy
 import metafopy.datasets
 import metafopy.errors
 import metafopy.plot
+import metafopy.plot.profile
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase11' / 'profile_plots.json').read_text(encoding='utf-8'))
 SKIP = ['axis', 'mtext', 'usr']
@@ -183,3 +186,27 @@ def test_pipeline_through_figure_without_axes() -> None:
     assert sum(1 for a in matplotlib.pyplot.gcf().axes if a.get_xlabel()) == 2
     matplotlib.pyplot.close('all')
     numpy.testing.assert_array_equal(numpy.sort(res[0].tau2), res[0].tau2)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    value=hypothesis.strategies.none() | hypothesis.strategies.text(max_size=5),
+    n=hypothesis.strategies.integers(min_value=1, max_value=8),
+)
+def test_per_panel_repeats_a_single_value(value: str | None, n: int) -> None:
+    """plot/profile.py::per_panel: None, a string or a one-element list is repeated for every panel."""
+    assert metafopy.plot.profile.per_panel(value, n, 'x') == [value] * n
+    if value is not None:
+        assert metafopy.plot.profile.per_panel([value], n, 'x') == [value] * n
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    values=hypothesis.strategies.lists(hypothesis.strategies.text(max_size=5), min_size=2, max_size=8),
+    extra=hypothesis.strategies.integers(min_value=1, max_value=4),
+)
+def test_per_panel_takes_one_per_panel_or_raises(values: list[str], extra: int) -> None:
+    """plot/profile.py::per_panel: one value per panel passes through; any other length raises InputError."""
+    assert metafopy.plot.profile.per_panel(values, len(values), 'x') == values
+    with pytest.raises(metafopy.errors.InputError):
+        metafopy.plot.profile.per_panel(values, len(values) + extra, 'x')

@@ -1,7 +1,9 @@
 import typing
 import warnings
 
+import hypothesis
 import pytest
+import rstrategies
 
 import metafopy
 import metafopy.formula
@@ -87,3 +89,13 @@ def test_scale_with_a_logical_or_fits_as_r(bcg: typing.Any) -> None:
         warnings.simplefilter('ignore')
         res = metafopy.rma('yi', 'vi', mods='~ ablat + year', scale='~ 0 + I(1|ablat)', data=dat)
     assert res.fit_stats_for(True).ll == pytest.approx(-8.10687, abs=1e-5)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e300, 1e300))
+def test_r_number_is_fifteen_digits_and_integers_are_plain(x: float) -> None:
+    """Candidate ``src/metafopy/formula.py::r_number``."""
+    text = metafopy.formula.r_number(x)
+    assert float(text) == float(f'{x:.15g}')
+    if x == int(x) and abs(x) < 1e15:
+        assert text == str(int(x))

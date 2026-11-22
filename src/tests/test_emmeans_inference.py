@@ -1,11 +1,17 @@
 """One-sided and equivalence tests (side, delta) and matrix weights in emmeans against R's emmeans package (src/tests/r/generate_emmeans.R)."""
 
+import math
+
 import emmcheck
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
+import rstrategies
 
 import metafopy
+import metafopy.core.tukey
 import metafopy.errors
 import metafopy.methods.emm_adjust
 
@@ -139,3 +145,71 @@ def test_matrix_weights(additive: metafopy.EmmGrid, crossed: metafopy.EmmGrid) -
 def test_matrix_weights_must_fit(additive: metafopy.EmmGrid) -> None:
     with pytest.raises(metafopy.errors.InputError, match='Nonconforming number of weights -- need 3'):
         metafopy.emmeans(additive, 'lat', weights=numpy.ones((2, 2)))
+
+
+P_INNER = hypothesis.strategies.floats(min_value=1e-6, max_value=1 - 1e-6)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    x=rstrategies.finite_floats(0.0, 1e3), df1=rstrategies.df_values(), df2=rstrategies.df_values(allow_inf=True), y=rstrategies.finite_floats(0.0, 1e3)
+)
+def test_pf_cdf_pf_sf_complement_and_bounds(x: float, y: float, df1: float, df2: float) -> None:
+    """``pf_cdf`` and ``pf_sf``: cdf + sf = 1, both lie in [0, 1], and the sf is non-increasing in x."""
+    cdf = metafopy.methods.emm_adjust.pf_cdf(x, df1, df2)
+    sf = metafopy.methods.emm_adjust.pf_sf(x, df1, df2)
+    assert 0.0 <= cdf <= 1.0
+    assert 0.0 <= sf <= 1.0
+    assert cdf + sf == pytest.approx(1.0, abs=1e-8)
+    lo, hi = min(x, y), max(x, y)
+    assert metafopy.methods.emm_adjust.pf_sf(hi, df1, df2) <= metafopy.methods.emm_adjust.pf_sf(lo, df1, df2) + 4 * math.ulp(1.0)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(p=P_INNER, df1=rstrategies.df_values(), df2=rstrategies.df_values(allow_inf=True))
+def test_qf_pf_cdf_round_trip(p: float, df1: float, df2: float) -> None:
+    """``qf``: pf_cdf(qf(p)) = p for p in (0, 1), including df2 = inf."""
+    q = metafopy.methods.emm_adjust.qf(p, df1, df2)
+    assert q >= 0.0
+    assert metafopy.methods.emm_adjust.pf_cdf(q, df1, df2) == pytest.approx(p, rel=1e-6, abs=1e-9)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(p=P_INNER, df=rstrategies.df_values(allow_inf=True))
+def test_qt_pt_sf_round_trip_and_symmetry(p: float, df: float) -> None:
+    """``qt`` and ``pt_sf``: pt_sf(qt(p)) = 1 - p, qt(1 - p) = -qt(p), and pt_sf lies in [0, 1]."""
+    q = metafopy.methods.emm_adjust.qt(p, df)
+    sf = metafopy.methods.emm_adjust.pt_sf(q, df)
+    assert 0.0 <= sf <= 1.0
+    assert sf == pytest.approx(1 - p, abs=1e-8)
+    assert metafopy.methods.emm_adjust.qt(1 - p, df) == pytest.approx(-q, rel=1e-6, abs=1e-8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-50.0, 50.0), df=rstrategies.df_values(allow_inf=True))
+def test_pt_sf_symmetry(x: float, df: float) -> None:
+    """``pt_sf``: pt_sf(x) + pt_sf(-x) = 1."""
+    assert metafopy.methods.emm_adjust.pt_sf(x, df) + metafopy.methods.emm_adjust.pt_sf(-x, df) == pytest.approx(1.0, abs=1e-8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    p1=hypothesis.strategies.floats(min_value=0.5, max_value=0.99),
+    p2=hypothesis.strategies.floats(min_value=0.5, max_value=0.99),
+    k=hypothesis.strategies.floats(min_value=1.005, max_value=40.0),
+    df=hypothesis.strategies.floats(min_value=2.0, max_value=1e3),
+)
+def test_qdunnx_between_tukey_and_sidak(p1: float, p2: float, k: float, df: float) -> None:
+    """``qdunnx``: for k >= 1.005 the result lies between the Tukey and Sidak approximations (to uniroot's tolerance) and does not fall as p rises.
+
+    qtukey raises ZeroDivisionError for 17 or more means with a small p (filed in TODO.md), so k <= 40 (at most 10 means) and p >= 0.5.
+    """
+    fam = (1 + math.sqrt(1 + 8 * k)) / 2
+    tol = 2e-3
+    for p in (p1, p2):
+        v = metafopy.methods.emm_adjust.qdunnx(p, k, df)
+        xtuk = metafopy.core.tukey.qtukey(p, fam, df) / math.sqrt(2)
+        xsid = math.sqrt(metafopy.methods.emm_adjust.qf(p ** (1 / k), 1, df))
+        assert min(xtuk, xsid) - tol <= v <= max(xtuk, xsid) + tol
+    lo, hi = min(p1, p2), max(p1, p2)
+    assert metafopy.methods.emm_adjust.qdunnx(lo, k, df) <= metafopy.methods.emm_adjust.qdunnx(hi, k, df) + tol

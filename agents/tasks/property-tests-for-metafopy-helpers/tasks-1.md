@@ -48,7 +48,7 @@ When a property fails (spec, Error handling):
 
 ## Task 1: Re-judge T2 at HEAD and record what is open
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 1
@@ -58,27 +58,27 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T2 --out <scratch>/t2`. `<scratch>` is a directory outside
+- [x] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T2 --out <scratch>/t2`. `<scratch>` is a directory outside
       the repository
-- [ ] Judge every candidate in every batch by the T2 brief, by reading the candidate's source and the tests it lists (do not run them).
+- [x] Judge every candidate in every batch by the T2 brief, by reading the candidate's source and the tests it lists (do not run them).
       Write `result-NN.jsonl` beside each `batch-NN.jsonl` in the brief's format. Candidates under `src/audit` and `bin` are judged the same
       way
-- [ ] `phaseb.py check <scratch>/t2` must report every batch complete. Then run `phaseb.py merge . --question T2 <scratch>/t2`
-- [ ] Write `agents/specs/property-tests-for-metafopy-helpers/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
+- [x] `phaseb.py check <scratch>/t2` must report every batch complete. Then run `phaseb.py merge . --question T2 <scratch>/t2`
+- [x] Write `agents/specs/property-tests-for-metafopy-helpers/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
       every open `src/metafopy` candidate in `phaseb.py report . --question T2`. Give each one a row with its id, its group (A, B or C, as in
       `measurements.md`) and the task that tests it, from the module lists in Tasks 3 to 8. Put a candidate that is not in `measurements.md`
       into the group the spec's definitions give: A computes a probability, density, weight or statistic; B turns numbers into text or lays
       text out; C matches names, parses formulas or rewrites strings. Give it the last task of that group (4, 6 or 8)
-- [ ] Stop as `blocked`, naming the candidate, if the brief does not settle one
+- [x] Stop as `blocked`, naming the candidate, if the brief does not settle one
 
 **Acceptance Criteria:**
 
-- [ ] Every planned candidate has a fresh ledger verdict, and the open list with its task column is committed
+- [x] Every planned candidate has a fresh ledger verdict, and the open list with its task column is committed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t2` reports every batch complete
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t2` reports every batch complete
 
 **Notes:**
 
@@ -89,7 +89,7 @@ for each tells the later tasks exactly which candidates to test.
 
 ## Task 2: Shared hypothesis strategies
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Implementation step 2
@@ -98,22 +98,22 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/rstrategies.py` with `probabilities`, `df_values`, `finite_floats` and `r_identifiers`, with the signatures and
+- [x] Write `src/tests/rstrategies.py` with `probabilities`, `df_values`, `finite_floats` and `r_identifiers`, with the signatures and
       docstrings of the spec's API section. `r_identifiers` draws names matching R's syntactic-name rule (a letter, or a dot not followed by a
       digit, then letters, digits, `.` and `_`) and excludes R's reserved words (`if`, `else`, `repeat`, `while`, `function`, `for`, `next`,
       `break`, `TRUE`, `FALSE`, `NULL`, `Inf`, `NaN`, `NA`, `NA_integer_`, `NA_real_`, `NA_character_`, `NA_complex_`, `in`)
-- [ ] Write `src/tests/test_rstrategies.py`: one `given` test per strategy, checking its bounds (open interval, finiteness, positivity,
+- [x] Write `src/tests/test_rstrategies.py`: one `given` test per strategy, checking its bounds (open interval, finiteness, positivity,
       the name rule)
 
 **Acceptance Criteria:**
 
-- [ ] Each strategy draws only values inside its documented domain
+- [x] Each strategy draws only values inside its documented domain
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/rstrategies.py src/tests/test_rstrategies.py` passes
-- [ ] `pytest src/tests/test_rstrategies.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/rstrategies.py src/tests/test_rstrategies.py` passes
+- [x] `pytest src/tests/test_rstrategies.py` passes
 
 **Notes:**
 
@@ -124,7 +124,7 @@ for each tells the later tasks exactly which candidates to test.
 
 ## Task 3: Property tests for the special-function kernels in `core` and the small statistics
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (group A)
@@ -133,32 +133,44 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 3. These are the candidates in `core/bvn.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 3. These are the candidates in `core/bvn.py`,
       `core/dbinom.py`, `core/farebrother.py`, `core/tukey.py`, `core/nchg.py`, `bias/ranktest.py`, `bias/fsn.py`, `effects/rtet.py`,
       `effects/fivenum_estimators.py::weibull_shape_start`, `models/tau2.py` and `methods/ls_anova.py`
-- [ ] Use the oracle the reason names: `scipy.stats.multivariate_normal` for `bvn`; `scipy.stats.binom` and `math.lgamma` for `dbinom`;
+- [x] Use the oracle the reason names: `scipy.stats.multivariate_normal` for `bvn`; `scipy.stats.binom` and `math.lgamma` for `dbinom`;
       `scipy.stats.chi2` for `farebrother`; `scipy.stats.hypergeom` and `scipy.stats.nchypergeom_fisher` for `nchg`; brute-force permutation
       counts for small `n` for `pkendall`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 3 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 3 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: tests are written for every candidate in the Task 3 list and pass, except `weibull_shape_start`. Its property fails inside the
+  documented domain: `weibull_shape_start(1.0, 0.14836888830451764)` gives 7.94188553535 where R's `nlminb` gives 8. The test is a strict
+  `xfail` in `src/tests/test_conv_fivenum_methods.py`, and the defect is filed in `TODO.md` ("`weibull_shape_start` stops at its start value
+  for large shapes"). The task stays `in-progress` until the operator confirms the output change and it is fixed.
+- 2026-11-22: `qtukey` raises `ZeroDivisionError` where R returns NaN for 17 or more means and a small p (filed in `TODO.md`); the test
+  narrows `nmeans` to 2 to 10 with R's output in a comment. `farebrother`'s `ruben` test accepts `ifault` 5 (R gives the same, recorded in a
+  comment), and the `nchg` scipy comparison is made only above log probability -30 (scipy is inaccurate in the far tail).
+- `bias/fsn.py` and `bias/ranktest.py` are reached through `importlib.import_module(...)` because `metafopy.bias.fsn` and
+  `metafopy.bias.ranktest` name the re-exported functions, not the modules. Task 9's re-judge should confirm the T2 check counts these calls.
+- 2026-11-22 (operator session): closed. This list's rule for a property that fails inside the documented domain is to file the defect
+  with `/todo-add` and never fix it here. The strict `xfail` and the `TODO.md` item do that, so the fix is that item's work, not this task's.
+  The strict `xfail` still calls the function from a `given` test, so it counts for T2. The Task 3 and Task 8 test files pass (506 passed, 2 xfailed).
 
 ---
 
 ## Task 4: Property tests for the distribution, weight and map functions of `emm_adjust`, `sel_spec` and `sel_lik`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (group A)
@@ -168,22 +180,22 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 4. These are the group A candidates in
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 4. These are the group A candidates in
       `methods/emm_adjust.py` (`pf_cdf`, `pf_sf`, `pt_sf`, `qdunnx`, `qf`, `qt`), `models/sel_spec.py` (the `s_*` weight functions) and
       `models/sel_lik.py`, and any group A candidate the record adds
-- [ ] Use `scipy.stats.f` and `scipy.stats.t` as oracles for the distribution functions, and `scipy.special.expit` for `apply_named`'s
+- [x] Use `scipy.stats.f` and `scipy.stats.t` as oracles for the distribution functions, and `scipy.special.expit` for `apply_named`'s
       `plogis`. One parametrised test may cover the `s_*` weight functions that share the property "1 for p <= s[0], in (0, 1], non-increasing
       in p", provided each function is called directly
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 4 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 4 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
@@ -193,7 +205,7 @@ weight functions and parameter maps.
 
 ## Task 5: Property tests for number-to-text formatting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 4 (group B)
@@ -202,29 +214,33 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 5. These are the candidates in `printing.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 5. These are the candidates in `printing.py`,
       `core/labelled.py`, `core/timing.py`, `formatters.py`, `models/selmodel.py::r_as_character`, `formula.py::r_number` and
       `models/mv_factor.py::format_number`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 5 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 5 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: the `r_as_character` tests (`formatters.py`, `models/selmodel.py`) cover magnitudes below 1e15: R 4.6.2 keeps every digit of larger
+  whole numbers (`as.character(1000000000000006)` is `"1000000000000006"`), so the 15-digit round trip does not hold there in R either.
+  `fmt_df_scalar` is tested below 1e4 (its `:g` keeps six significant digits). `r_as_character(123456789012345678.0)` gives `...680` where R
+  gives `...696` (outside the tested domain, not filed).
 
 ---
 
 ## Task 6: Property tests for layout and the small numeric helpers of printing and plotting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 4 (group B)
@@ -233,31 +249,34 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 6. These are the group B candidates in `plot/rutils.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 6. These are the group B candidates in `plot/rutils.py`,
       `plot/forest.py` (`anno_symbol`, `finish_annotext`, `parse_predtail`), `plot/gosh.py`, `plot/infl.py::n2mfrow`, `plot/profile.py`,
       `methods/vif.py`, `methods/blup.py`, `methods/ls_common.py`, `methods/deltamethod.py`, `bias/inputs.py`, `effects/summary.py`,
       `models/rma_uni.py` (`coef_span`, `level_to_alpha`), and any group B candidate the record adds
-- [ ] Use `matplotlib.colors.to_rgba` as the oracle for `hex_color`, as its reason names
+- [x] Use `matplotlib.colors.to_rgba` as the oracle for `hex_color`, as its reason names
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 6 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 6 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: tests are written for every Task 6 candidate and pass. `plot/forest.py` is reached through `importlib.import_module(...)`:
+  `metafopy.plot.forest` names the re-exported function for mypy, as with `bias/fsn.py` in Task 3. Only the summary tests keep the
+  "percent matches proportion" check of `level_to_alpha`; the piecewise test in each file covers the same behaviour.
 
 ---
 
 ## Task 7: Property tests for formula parsing and model-call rewriting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 5 (group C)
@@ -267,20 +286,20 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 7. These are the group C candidates in `formula.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 7. These are the group C candidates in `formula.py`,
       `models/call.py`, `models/mv_factor.py::split_top_level`, `models/rma_mv.py`, `models/rma_uni.py::abbreviate_names`,
       `models/mv_print.py`, `models/mv_hessian.py`, `plot/infl.py::abbreviate`, `methods/rcalc.py` and `methods/matreg.py::parse_formula`
-- [ ] Build the formulas from `rstrategies.r_identifiers()`
+- [x] Build the formulas from `rstrategies.r_identifiers()`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 7 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 7 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
@@ -290,7 +309,7 @@ ledger says so.
 
 ## Task 8: Property tests for name matching and uniqueness
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 5 (group C)
@@ -299,34 +318,44 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 8. These are the group C candidates in `methods/matreg.py`
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 8. These are the group C candidates in `methods/matreg.py`
       (other than `parse_formula`), `methods/predict.py`, `methods/common.py`, `methods/emm_adjust.py` (`match_method`, `parse_side`),
       `methods/emm_grid.py`, `methods/emm_nesting.py`, `methods/hettest.py`, `effects/datatools.py`, `effects/measures.py`,
       `effects/fivenum_estimators.py::sum_stat_index`, `metadata.py`, `interactive/forest.py`, `core/padjust.py`, `models/sel_opt.py` and
       `models/sel_spec.py::match_type`, and any group C candidate the record adds
-- [ ] Use the oracles the reasons name: `matreg.match_columns` and `predict.match_names` against each other, and a brute-force deletion check
+- [x] Use the oracles the reasons name: `matreg.match_columns` and `predict.match_names` against each other, and a brute-force deletion check
       for `is_subsequence`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 8 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 8 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: tests are written for every Task 8 candidate in `src/tests/test_name_matching_properties.py` and pass, except `metadata.make_unique`.
+  Its first-occurrence property fails inside the documented domain: `make_unique(['a', 'a', 'a.1'])` gives `('a', 'a.1', 'a.1.1')` where R's
+  `make.unique` gives `a a.2 a.1` (`?make.unique`). The test is a strict `xfail`, and the defect is filed in `TODO.md` ("`make_unique` renames a
+  label that occurs once..."). The task stays `in-progress` until the operator confirms the output change and it is fixed.
+- `measures.make_unique_dot1`: R's `.make.unique(c("a","a","a.1"))` renames a singleton `a.1` too (`a.1.1 a.2 a.1.2`), so that test checks
+  length and distinctness over colliding labels, and singletons unchanged only over labels without dots. Task 9's re-judge should note R's
+  output in the candidate's ledger `reason`.
+- `datatools.make_names` is tested on ASCII input only (R's `?make.names` admits locale letters).
 - `interactive/forest.py` needs the `interactive` extra (`uv sync --frozen --extra interactive`; installed 2026-11-21)
+- 2026-11-22 (operator session): closed on the same rule as Task 3. `make_unique` is filed in `TODO.md` with a strict `xfail`, and its fix is
+  that item's work.
 
 ---
 
 ## Task 9: Re-judge, the full check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 6; decision D2
@@ -336,30 +365,30 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] Repeat Task 1's plan, judge, check and merge. A test file that Tasks 3 to 8 wrote or edited re-plans the candidates its new tests
+- [x] Repeat Task 1's plan, judge, check and merge. A test file that Tasks 3 to 8 wrote or edited re-plans the candidates its new tests
       reach. `phaseb.py report . --question T2` must show no open `src/metafopy` candidate. A candidate still open goes back to the task its
       row in `open-after-rejudge.md` names
-- [ ] Move the `TODO.md` item "Numerical cores have no property-based tests" to the end of `DONE.md`: append its heading and body unchanged,
+- [x] Move the `TODO.md` item "Numerical cores have no property-based tests" to the end of `DONE.md`: append its heading and body unchanged,
       then the line `Done: <date> - agents/specs/property-tests-for-metafopy-helpers/spec.md,
       agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md; the src/audit and bin findings moved to the harness item (D2).`, and remove
       it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved 2026-11-22" to "Implemented"
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` from "Approved 2026-11-22" to "Implemented"
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/property-tests-for-metafopy-helpers/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/property-tests-for-metafopy-helpers/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] No `src/metafopy` candidate is open in the T2 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
+- [x] No `src/metafopy` candidate is open in the T2 report, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

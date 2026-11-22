@@ -2,13 +2,18 @@
 
 import collections.abc
 import json
+import math
 import pathlib
 import typing
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pytest
 import refutil
+import rstrategies
+import scipy.stats
 
 import metafopy
 import metafopy.core.clubsandwich
@@ -143,3 +148,38 @@ def test_saddlepoint_zero_statistic() -> None:
     s, p = metafopy.core.clubsandwich.saddlepoint_pval(0.0, numpy.eye(3))
     assert numpy.isnan(s)
     assert p == 1.0
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    x=rstrategies.finite_floats(0.0, 1e3),
+    y=rstrategies.finite_floats(0.0, 1e3),
+    df1=rstrategies.df_values(),
+    df2=rstrategies.df_values(allow_inf=True),
+)
+def test_f_sf_bounds_monotone_and_chi_square(x: float, y: float, df1: float, df2: float) -> None:
+    """``clubsandwich.f_sf``: in [0, 1], 1 at 0, non-increasing in x, and the scaled chi-square tail when df2 is inf."""
+    lo, hi = min(x, y), max(x, y)
+    s_lo = metafopy.core.clubsandwich.f_sf(lo, df1, df2)
+    s_hi = metafopy.core.clubsandwich.f_sf(hi, df1, df2)
+    assert 0.0 <= s_hi <= s_lo + 4 * math.ulp(1.0) <= 1.0 + 8 * math.ulp(1.0)
+    assert metafopy.core.clubsandwich.f_sf(0.0, df1, df2) == 1.0
+    if math.isinf(df2):
+        assert s_lo == pytest.approx(float(scipy.stats.chi2.sf(lo * df1, df1)), rel=1e-8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    Q=hypothesis.strategies.floats(min_value=0.0, max_value=1e3),
+    q=hypothesis.strategies.integers(min_value=1, max_value=10),
+    nu=hypothesis.strategies.floats(min_value=0.5, max_value=1e3),
+)
+def test_hotelling_bounds(Q: float, q: int, nu: float) -> None:
+    """``clubsandwich.hotelling``: delta in [0, 1], F = delta * Q / q, p in [0, 1] when df > 0 and NaN otherwise."""
+    f, delta, df, p_val = metafopy.core.clubsandwich.hotelling(Q, q, nu)
+    assert 0.0 <= delta <= 1.0
+    assert f == pytest.approx(delta * Q / q, rel=1e-12, abs=1e-300)
+    if df > 0:
+        assert 0.0 <= p_val <= 1.0
+    else:
+        assert math.isnan(p_val)

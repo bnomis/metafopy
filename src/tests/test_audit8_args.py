@@ -3,14 +3,18 @@
 import contextlib
 import io
 import math
+import re
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import matplotlib
 import matplotlib.pyplot
 import numpy
 import pandas
 import pytest
 import refutil
+import rstrategies
 
 import metafopy
 import metafopy.core.timing
@@ -270,3 +274,23 @@ def test_addpoly_cr_aliases(bcg: pandas.DataFrame) -> None:
     metafopy.addpoly(0.1, ci_lb=0.0, ci_ub=0.2, cr_lb=-0.1, cr_ub=0.3, ax=ax)
     assert len(ax.lines) + len(ax.patches) > n
     matplotlib.pyplot.close(fig)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e12, 1e12))
+def test_timing_number_round_trips_and_whole_numbers_have_no_point(x: float) -> None:
+    """Candidate ``src/metafopy/core/timing.py::number``."""
+    text = metafopy.core.timing.number(x)
+    assert float(text) == x
+    if x == int(x):
+        assert '.' not in text
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(0.0, 1e7))
+def test_format_time_parses_back_to_the_seconds(x: float) -> None:
+    """Candidate ``src/metafopy/core/timing.py::format_time``."""
+    match = re.fullmatch(r'\nProcessing time: (\d+) hours?, (\d+) minutes?, ([\d.]+) seconds?\n', metafopy.core.timing.format_time(x))
+    assert match is not None
+    hours, minutes, seconds = int(match[1]), int(match[2]), float(match[3])
+    assert abs(3600 * hours + 60 * minutes + seconds - x) <= (0.5 if x > 60 else 0.005) + 1e-6

@@ -1,13 +1,18 @@
 """regtest(), ranktest(), trimfill(), fsn(), hc() and tes() checked against R metafor (tests/r/generate_bias.R)."""
 
 import collections.abc
+import importlib
+import itertools
 import math
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
 import refutil
+import rstrategies
 
 import metafopy
 import metafopy.bias.fsn
@@ -409,3 +414,35 @@ def test_tes_errors(dat: pandas.DataFrame) -> None:
         metafopy.bias.tes(dat.yi)
     with pytest.raises(ValueError, match='alpha'):
         metafopy.bias.tes(dat.yi, dat.vi, alpha=2)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e9, 1e9))
+def test_rnd_fsn_property_whole_number_just_above_or_at_x(x: float) -> None:
+    """Candidate ``src/metafopy/bias/fsn.py::rnd_fsn``: a whole number with ``x - sqrt(EPS) <= result < x + 1``."""
+    result = importlib.import_module('metafopy.bias.fsn').rnd_fsn(x)
+    assert result == math.floor(result)
+    assert x - importlib.import_module('metafopy.bias.fsn').EPS ** 0.5 <= result < x + 1
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=hypothesis.strategies.sampled_from([math.inf, -math.inf, math.nan]))
+def test_rnd_fsn_property_non_finite_unchanged(x: float) -> None:
+    """Candidate ``src/metafopy/bias/fsn.py::rnd_fsn``: a non-finite ``x`` is returned unchanged."""
+    result = importlib.import_module('metafopy.bias.fsn').rnd_fsn(x)
+    assert (math.isnan(result) and math.isnan(x)) or result == x
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=1, max_value=7), data=hypothesis.strategies.data())
+def test_pkendall_property_matches_brute_force_and_is_a_distribution(n: int, data: hypothesis.strategies.DataObject) -> None:
+    """Candidate ``src/metafopy/bias/ranktest.py::pkendall``: the permutation count, non-decreasing, 1 at the maximum and symmetric."""
+    top = n * (n - 1) // 2
+    q = data.draw(hypothesis.strategies.integers(min_value=-1, max_value=top + 1))
+    inversions = [sum(a > b for i, a in enumerate(p) for b in p[i + 1 :]) for p in itertools.permutations(range(n))]
+    value = importlib.import_module('metafopy.bias.ranktest').pkendall(q, n)
+    assert value == pytest.approx(sum(v <= q for v in inversions) / len(inversions), abs=1e-12)
+    assert importlib.import_module('metafopy.bias.ranktest').pkendall(q + 1, n) >= value
+    assert importlib.import_module('metafopy.bias.ranktest').pkendall(top, n) == pytest.approx(1.0, abs=1e-12)
+    if 0 <= q < top:
+        assert value + importlib.import_module('metafopy.bias.ranktest').pkendall(top - q - 1, n) == pytest.approx(1.0, abs=1e-12)

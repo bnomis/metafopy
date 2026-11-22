@@ -3,6 +3,7 @@
 import collections.abc
 import dataclasses
 import json
+import math
 import pathlib
 import re
 import types
@@ -11,10 +12,13 @@ import warnings
 
 import correctness.cases
 import correctness.formulas
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
 import refutil
+import rstrategies
 import scipy.stats
 
 import metafopy
@@ -1046,3 +1050,38 @@ def test_post_init_labels_the_matrices_of_a_replaced_fit() -> None:
     assert again.X.colnames == tuple(res.coef_names)
     assert again.Z.colnames == tuple(res.alpha_names)
     assert again.X.rownames == tuple(res.data.rownames)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    stat=rstrategies.finite_floats(0.0, 1e6),
+    m=hypothesis.strategies.integers(min_value=1, max_value=50),
+    ddf_den=rstrategies.finite_floats(0.5, 1e4),
+)
+def test_omnibus_property_f_test_scales_the_statistic_and_bounds_the_p_value(stat: float, m: int, ddf_den: float) -> None:
+    """Candidate ``src/metafopy/methods/ls_anova.py::omnibus``: with ``ddf_den`` the statistic is divided by ``m`` and p is in [0, 1]."""
+    scaled, df, p = metafopy.methods.ls_anova.omnibus(stat, m, ddf_den)
+    assert scaled == stat / m
+    assert df == (m, ddf_den)
+    assert 0.0 <= p <= 1.0
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(stat=rstrategies.finite_floats(0.0, 1e6), m=hypothesis.strategies.integers(min_value=1, max_value=50))
+def test_omnibus_property_without_ddf_den_is_the_chi_square_tail(stat: float, m: int) -> None:
+    """Candidate ``src/metafopy/methods/ls_anova.py::omnibus``: ``ddf_den = None`` leaves the statistic unscaled and gives the chi-square tail."""
+    unscaled, df, p = metafopy.methods.ls_anova.omnibus(stat, m, None)
+    assert unscaled == stat
+    assert df == (m, None)
+    assert p == float(scipy.stats.chi2.sf(stat, m))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    stat=rstrategies.finite_floats(0.0, 1e6),
+    m=hypothesis.strategies.integers(min_value=1, max_value=50),
+    ddf_den=rstrategies.finite_floats(-100.0, 0.0),
+)
+def test_omnibus_property_p_value_is_nan_without_denominator_degrees_of_freedom(stat: float, m: int, ddf_den: float) -> None:
+    """Candidate ``src/metafopy/methods/ls_anova.py::omnibus``: p is NaN when ``ddf_den <= 0``."""
+    assert math.isnan(metafopy.methods.ls_anova.omnibus(stat, m, ddf_den)[2])

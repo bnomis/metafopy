@@ -1,15 +1,20 @@
 """fmtx, fmtp, fmtp2, fmtt and setmfopt/getmfopt against R (src/tests/r/generate_formatters.R)."""
 
 import collections.abc
+import re
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
 import refutil
+import rstrategies
 
 import metafopy
 import metafopy.errors
+import metafopy.formatters
 import metafopy.mfopt
 
 REF = refutil.load_phase7('formatters')
@@ -116,3 +121,55 @@ def test_mfopt_printing(options: None) -> None:
     assert refutil.r_print(res.summary(digits=4, showfit=False)) == refutil.r_print('\n'.join(REF['print_default']))
     metafopy.setmfopt(digits=None, space=False)
     assert refutil.r_print(str(res)) == refutil.r_print('\n'.join(REF['print_nospace']))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-1e15, 1e15))
+def test_r_as_character_round_trips_to_fifteen_digits(x: float) -> None:
+    """Candidate ``src/metafopy/formatters.py::r_as_character``.
+
+    Below 1e15 in magnitude: R keeps every digit of larger whole numbers (R 4.6.2 ``as.character(1000000000000006)`` is ``"1000000000000006"``),
+    so the 15-digit rounding holds only there.
+    """
+    text = metafopy.formatters.r_as_character(x)
+    assert float(text) == float(f'{x:.15g}')
+    assert metafopy.formatters.r_as_character(float(text)) == text
+
+
+def squeeze(text: str) -> str:
+    return re.sub(r'\(.*?\)', lambda m: m[0].replace(', ', ','), re.sub(r' ?([=<]) ?', r'\1', text))
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    val=rstrategies.finite_floats(-1e3, 1e3),
+    pval=rstrategies.probabilities(open_interval=False),
+    n=hypothesis.strategies.integers(min_value=1, max_value=6),
+    form=hypothesis.strategies.sampled_from([1, 2]),
+    dfs=hypothesis.strategies.sampled_from([(None, None, None), (7.0, None, None), (None, 2.0, 11.25)]),
+)
+def test_fmtt_digits_spellings_agree_and_sep_only_removes_spaces(
+    val: float, pval: float, n: int, form: int, dfs: tuple[float | None, float | None, float | None]
+) -> None:
+    """Candidate ``src/metafopy/formatters.py::fmtt``."""
+    df, df1, df2 = dfs
+    scalar = metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits=n, format=form)
+    assert metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits=[n, n], format=form) == scalar
+    assert metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits={'test': n, 'pval': n}, format=form) == scalar
+    tight = metafopy.formatters.fmtt(val, 't', df=df, df1=df1, df2=df2, pval=pval, digits=n, format=form, sep=False)
+    assert tight == squeeze(scalar)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(body=hypothesis.strategies.text(alphabet='abc 12', max_size=10), space=hypothesis.strategies.booleans())
+def test_option_space_drops_one_blank_line_at_each_end(body: str, space: bool) -> None:
+    """mfopt.py::option_space: with ``space`` False one leading and one trailing newline go; with True the text is kept."""
+    text = f'\n\n{body}\n\n'
+    saved = dict(metafopy.mfopt.OPTIONS)
+    try:
+        metafopy.mfopt.OPTIONS['space'] = space
+        out = metafopy.mfopt.option_space(text)
+    finally:
+        metafopy.mfopt.OPTIONS.clear()
+        metafopy.mfopt.OPTIONS.update(saved)
+    assert out == (text if space else f'\n{body}\n')

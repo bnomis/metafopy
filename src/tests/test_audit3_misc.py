@@ -1,14 +1,19 @@
 """update() of trim-and-fill results, gosh() with a seed and the standard errors of location-scale models, checked against R metafor 5.2-1
 (tests/r/generate_audit3.R)."""
 
+import math
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import matplotlib
 import matplotlib.pyplot
 import numpy
 import pandas
 import pytest
 import refutil
+import rstrategies
+import scipy.stats
 
 import metafopy
 import metafopy.core.dbinom
@@ -171,3 +176,82 @@ def test_addpoly_explicit_rows_of_prediction(escalc_frame: pandas.DataFrame) -> 
     metafopy.addpoly(pr, rows=-1, ax=ax)
     assert ax.texts[-1].get_position()[1] == -1 != first
     matplotlib.pyplot.close(fig)
+
+
+fused_modes = hypothesis.strategies.booleans()
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e3), ratio=hypothesis.strategies.floats(min_value=0.25, max_value=4.0), fused=fused_modes)
+def test_bd0_property_non_negative_and_matches_naive_away_from_np(x: float, ratio: float, fused: bool) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::bd0``: non-negative, and equal to ``x log(x/np) + np - x`` when x is not close to np."""
+    np = x / ratio
+    value = metafopy.core.dbinom.bd0(x, np, fused)
+    assert value >= -4 * math.ulp(x)
+    if abs(ratio - 1.0) > 0.2:
+        naive = x * math.log(x / np) + np - x
+        assert value == pytest.approx(naive, rel=1e-8, abs=1e-12)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e6), fused=fused_modes)
+def test_bd0_property_zero_at_x_equal_np(x: float, fused: bool) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::bd0``: ``bd0(x, x)`` is 0."""
+    assert metafopy.core.dbinom.bd0(x, x, fused) == 0.0
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    n=hypothesis.strategies.integers(min_value=0, max_value=200),
+    p=hypothesis.strategies.one_of(
+        hypothesis.strategies.sampled_from([0.0, 1.0]),
+        hypothesis.strategies.floats(min_value=1e-100, max_value=1.0, exclude_max=True),
+    ),
+    fused=fused_modes,
+    data=hypothesis.strategies.data(),
+)
+def test_dbinom_raw_property_matches_scipy_and_is_a_probability(n: int, p: float, fused: bool, data: hypothesis.strategies.DataObject) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::dbinom_raw``: in [0, 1] and equal to the scipy binomial pmf.
+
+    p starts at 1e-100: scipy's pmf overflows in ``ibeta_derivative`` for subnormal p, so the oracle gives no value there.
+    """
+    x = data.draw(hypothesis.strategies.integers(min_value=0, max_value=n))
+    value = metafopy.core.dbinom.dbinom_raw(x, n, p, 1.0 - p, fused)
+    assert 0.0 <= value <= 1.0
+    assert value == pytest.approx(float(scipy.stats.binom.pmf(x, n, p)), rel=1e-8, abs=1e-300)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=0, max_value=100), p=rstrategies.probabilities(open_interval=False), fused=fused_modes)
+def test_dbinom_raw_property_pmf_sums_to_one(n: int, p: float, fused: bool) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::dbinom_raw``: the pmf sums to 1 over x = 0..n."""
+    total = math.fsum(metafopy.core.dbinom.dbinom_raw(x, n, p, 1.0 - p, fused) for x in range(n + 1))
+    assert total == pytest.approx(1.0, abs=1e-12)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=rstrategies.finite_floats(-0.9, 10.0), y=hypothesis.strategies.integers(min_value=0, max_value=60), fused=fused_modes)
+def test_pow1p_property_matches_direct_power(x: float, y: int, fused: bool) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::pow1p``: ``(1 + x) ** y`` for a non-negative integer ``y``."""
+    assert metafopy.core.dbinom.pow1p(x, float(y), fused) == pytest.approx((1.0 + x) ** y, rel=1e-8, abs=1e-300)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=1, max_value=1000))
+def test_stirlerr_property_matches_lgamma_definition_and_is_positive(n: int) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::stirlerr``: ``lgamma(n + 1) - log(sqrt(2 pi n) (n / e) ** n)``, and positive."""
+    value = metafopy.core.dbinom.stirlerr(n)
+    assert value > 0.0
+    definition = math.lgamma(n + 1) - (0.5 * math.log(2 * math.pi * n) + n * (math.log(n) - 1.0))
+    assert value == pytest.approx(definition, abs=1e-10)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=1, max_value=10**8))
+def test_stirlerr_property_decreasing_in_n(n: int) -> None:
+    """Candidate ``src/metafopy/core/dbinom.py::stirlerr``: the error of Stirling's formula does not increase with n.
+
+    n starts at 1: ``stirlerr(0)`` is 0 by convention (R's ``sferr_halves[0]``), below ``stirlerr(1)``.
+    """
+    here = metafopy.core.dbinom.stirlerr(n)
+    assert metafopy.core.dbinom.stirlerr(n + 1) <= here + 4 * math.ulp(here)

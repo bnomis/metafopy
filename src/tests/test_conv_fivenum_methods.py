@@ -5,14 +5,18 @@ same seed; 'qe' minimises with SciPy's L-BFGS-B instead of R's, so it agrees to 
 """
 
 import json
+import math
 import pathlib
 import typing
 import warnings
 
+import hypothesis
+import hypothesis.strategies
 import numpy
 import pandas
 import pytest
 import refutil
+import scipy.special
 
 import metafopy
 import metafopy.core.rng
@@ -138,3 +142,23 @@ def test_blue_singular(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(numpy.linalg, 'inv', singular)
     with pytest.raises(metafopy.errors.EstimationError, match='singular'):
         metafopy.effects.fivenum_estimators.blue_s([1.0, 2.0, 3.0], 20, 'S1')
+
+
+def weibull_cv(k: float) -> float:
+    """The coefficient of variation of a Weibull distribution with shape ``k``."""
+    return math.sqrt(float(scipy.special.gamma(1 + 2 / k) / scipy.special.gamma(1 + 1 / k) ** 2 - 1))
+
+
+# R: nlminb(start, objective, lower = 1e-3) from start (1 / 0.14836888830451764) ** 1.086 = 7.94185 returns the shape 8 (to 10 digits), while
+# weibull_shape_start(1.0, 0.14836888830451764) returns 7.94188553535, so its CV is 0.14938 instead of 0.14837. The L-BFGS-B stop is too early for k >= 8.
+@pytest.mark.xfail(strict=True, reason='weibull_shape_start stops at the start value for large shapes where R nlminb converges (see TODO.md)')
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    k=hypothesis.strategies.floats(min_value=0.5, max_value=20.0),
+    mean=hypothesis.strategies.floats(min_value=0.1, max_value=100.0),
+)
+def test_weibull_shape_start_property_reproduces_the_coefficient_of_variation(k: float, mean: float) -> None:
+    """Candidate ``src/metafopy/effects/fivenum_estimators.py::weibull_shape_start``: the shape found matches ``sd / mean`` to optimiser tolerance."""
+    sd = mean * weibull_cv(k)
+    found = metafopy.effects.fivenum_estimators.weibull_shape_start(mean, sd)
+    assert weibull_cv(found) == pytest.approx(sd / mean, rel=1e-3)
