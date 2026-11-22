@@ -48,7 +48,7 @@ When a property fails (spec, Error handling):
 
 ## Task 1: Re-judge T2 at HEAD and record what is open
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 1
@@ -58,27 +58,27 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T2 --out <scratch>/t2`. `<scratch>` is a directory outside
+- [x] Run `python3 ~/.claude/skills/auditme/checks/phaseb.py plan . --question T2 --out <scratch>/t2`. `<scratch>` is a directory outside
       the repository
-- [ ] Judge every candidate in every batch by the T2 brief, by reading the candidate's source and the tests it lists (do not run them).
+- [x] Judge every candidate in every batch by the T2 brief, by reading the candidate's source and the tests it lists (do not run them).
       Write `result-NN.jsonl` beside each `batch-NN.jsonl` in the brief's format. Candidates under `src/audit` and `bin` are judged the same
       way
-- [ ] `phaseb.py check <scratch>/t2` must report every batch complete. Then run `phaseb.py merge . --question T2 <scratch>/t2`
-- [ ] Write `agents/specs/property-tests-for-metafopy-helpers/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
+- [x] `phaseb.py check <scratch>/t2` must report every batch complete. Then run `phaseb.py merge . --question T2 <scratch>/t2`
+- [x] Write `agents/specs/property-tests-for-metafopy-helpers/open-after-rejudge.md`, a dated record ("measured on <date> at <commit>") of
       every open `src/metafopy` candidate in `phaseb.py report . --question T2`. Give each one a row with its id, its group (A, B or C, as in
       `measurements.md`) and the task that tests it, from the module lists in Tasks 3 to 8. Put a candidate that is not in `measurements.md`
       into the group the spec's definitions give: A computes a probability, density, weight or statistic; B turns numbers into text or lays
       text out; C matches names, parses formulas or rewrites strings. Give it the last task of that group (4, 6 or 8)
-- [ ] Stop as `blocked`, naming the candidate, if the brief does not settle one
+- [x] Stop as `blocked`, naming the candidate, if the brief does not settle one
 
 **Acceptance Criteria:**
 
-- [ ] Every planned candidate has a fresh ledger verdict, and the open list with its task column is committed
+- [x] Every planned candidate has a fresh ledger verdict, and the open list with its task column is committed
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t2` reports every batch complete
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `python3 ~/.claude/skills/auditme/checks/phaseb.py check <scratch>/t2` reports every batch complete
 
 **Notes:**
 
