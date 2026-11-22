@@ -149,9 +149,7 @@ def weibull_cv(k: float) -> float:
     return math.sqrt(float(scipy.special.gamma(1 + 2 / k) / scipy.special.gamma(1 + 1 / k) ** 2 - 1))
 
 
-# R: nlminb(start, objective, lower = 1e-3) from start (1 / 0.14836888830451764) ** 1.086 = 7.94185 returns the shape 8 (to 10 digits), while
-# weibull_shape_start(1.0, 0.14836888830451764) returns 7.94188553535, so its CV is 0.14938 instead of 0.14837. The L-BFGS-B stop is too early for k >= 8.
-@pytest.mark.xfail(strict=True, reason='weibull_shape_start stops at the start value for large shapes where R nlminb converges (see TODO.md)')
+# R: nlminb(start, objective, lower = 1e-3) from start (1 / 0.14836888830451764) ** 1.086 = 7.94185 returns the shape 8 (to 10 digits).
 @hypothesis.settings(max_examples=100, deadline=None)
 @hypothesis.given(
     k=hypothesis.strategies.floats(min_value=0.5, max_value=20.0),

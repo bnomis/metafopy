@@ -19,7 +19,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 1: Find the Weibull start shape by a root find on the coefficient of variation
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** `TODO.md`, "`weibull_shape_start` stops at its start value for large shapes"; review item 2
@@ -29,30 +29,30 @@ R's `nlminb` minimum lies, instead of the start value L-BFGS-B stops at.
 
 **Subtasks:**
 
-- [ ] Before changing anything, run `src/tests/test_conv_fivenum.py` and `src/tests/test_conv_fivenum_methods.py`, saving the outcome of every
+- [x] Before changing anything, run `src/tests/test_conv_fivenum.py` and `src/tests/test_conv_fivenum_methods.py`, saving the outcome of every
       test. For mean 1, record `weibull_shape_start` for the coefficients of variation of shapes 0.5, 1, 2, 4, 8, 20 and 50. Get R's
       `nlminb` value for the same inputs, with R's start and objective as in the item
-- [ ] In `src/metafopy/effects/fivenum_estimators.py::weibull_shape_start`, replace the `lbfgsb` call with
+- [x] In `src/metafopy/effects/fivenum_estimators.py::weibull_shape_start`, replace the `lbfgsb` call with
       `scipy.optimize.brentq(lambda k: cv(k) - sd_hat / mean_hat, 1e-3, upper)`. `cv(k)` is the existing `sqrt(temp1 / temp2**2 - 1)`, and
       `upper` starts at `max(2 * start, 1.0)` and doubles until `cv(upper) < sd_hat / mean_hat`, up to 1e6. Keep the fallback to `start`
       where no bracket is found or the input is not finite. Update the docstring: cite R's `nlminb` call, and say a root find reaches its
       minimum because the objective is 0 there
-- [ ] Compare the seven shapes with R's: each within 1e-8 relative. Shapes 0.5 to 4 within 1e-5 of the old values
-- [ ] Remove the strict `xfail` marker of
+- [x] Compare the seven shapes with R's: each within 1e-8 relative. Shapes 0.5 to 4 within 1e-5 of the old values
+- [x] Remove the strict `xfail` marker of
       `src/tests/test_conv_fivenum_methods.py::test_weibull_shape_start_property_reproduces_the_coefficient_of_variation`
-- [ ] Rerun both fivenum test files. Every test that passed before passes. A parity fixture that now fails, or a final estimate that
+- [x] Rerun both fivenum test files. Every test that passed before passes. A parity fixture that now fails, or a final estimate that
       moves past its fixture's tolerance, stops the task as `blocked`, naming the test and both values
 
 **Acceptance Criteria:**
 
-- [ ] The seven shapes match R's `nlminb` to 1e-8 relative, and the property test passes without `xfail`
-- [ ] No fivenum test changes outcome except the former `xfail`
+- [x] The seven shapes match R's `nlminb` to 1e-8 relative, and the property test passes without `xfail`
+- [x] No fivenum test changes outcome except the former `xfail`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/effects/fivenum_estimators.py src/tests/test_conv_fivenum_methods.py` passes
-- [ ] `pytest src/tests/test_conv_fivenum.py src/tests/test_conv_fivenum_methods.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/effects/fivenum_estimators.py src/tests/test_conv_fivenum_methods.py` passes
+- [x] `pytest src/tests/test_conv_fivenum.py src/tests/test_conv_fivenum_methods.py` passes
 
 **Notes:**
 
