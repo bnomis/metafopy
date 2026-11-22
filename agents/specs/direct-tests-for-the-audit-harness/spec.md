@@ -1,7 +1,7 @@
 # Direct tests for the audit harness
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-22
 
 Every function under `src/audit` and `bin` that the auditme T1 question (a branching function has no test) or T2 question (a pure function

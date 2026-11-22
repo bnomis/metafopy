@@ -373,7 +373,7 @@ any module not in Task 7) has a direct test.
 
 ## Task 10: Re-judge, dismiss, the full check and closing
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 8; decisions D1, D4
@@ -383,45 +383,46 @@ spec is marked implemented and the `TODO.md` item moves to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Repeat Task 2's plan, judge, check and merge for T1 and T2. A candidate still open, other than a group D or `bin/logo.py` one, goes back to the task
+- [x] Repeat Task 2's plan, judge, check and merge for T1 and T2. A candidate still open, other than a group D or `bin/logo.py` one, goes back to the task
       its row in `open-after-rejudge.md` names
-- [ ] After the last merge, dismiss each open group D candidate on each of T1 and T2 it is open on:
+- [x] After the last merge, dismiss each open group D candidate on each of T1 and T2 it is open on:
       `python3 ~/.claude/skills/auditme/checks/phaseb.py dismiss . --question <Q> <id> --reason "Group D of agents/specs/direct-tests-for-the-audit-harness/spec.md (decision D1): drives R, git, subprocesses, sockets, signals or the network; covered end to end by bin/metafor-audit.sh --recall, which runs the harness steps against R on the commits of earlier audits."`
-- [ ] Dismiss each open `bin/logo.py` candidate the same way, with the reason
+- [x] Dismiss each open `bin/logo.py` candidate the same way, with the reason
       `"bin/logo.py (decision D4 of agents/specs/direct-tests-for-the-audit-harness/spec.md): a PEP 723 script whose dependencies (uharfbuzz among them) are outside the project environment; its output is the committed logo, checked by eye."`
-- [ ] `phaseb.py report . --question T1` and `--question T2` list no open `src/audit` or `bin` candidate
-- [ ] Hoist anything the new test modules duplicate from the existing harness tests or `refutil.py` to a single owner: grep the tree for each
+- [x] `phaseb.py report . --question T1` and `--question T2` list no open `src/audit` or `bin` candidate
+- [x] Hoist anything the new test modules duplicate from the existing harness tests or `refutil.py` to a single owner: grep the tree for each
       literal collection, constant and one-line helper they define, and import rather than copy
-- [ ] Move the `TODO.md` item "Audit-harness and bin helpers with branches have no direct test" to the end of `DONE.md`: append its heading
+- [x] Move the `TODO.md` item "Audit-harness and bin helpers with branches have no direct test" to the end of `DONE.md`: append its heading
       and body unchanged, then the line `Done: <date> - agents/specs/direct-tests-for-the-audit-harness/spec.md,
       agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md; group D and bin/logo.py dismissed in the ledger (D1, D4).`, and remove it
       from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/direct-tests-for-the-audit-harness/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/direct-tests-for-the-audit-harness/tasks-1/final-tests.log`
-- [ ] In the task's Notes, record that `bin/metafor-audit.sh --recall` is due after the `ast()` move of Task 3, with that command; the
+- [x] In the task's Notes, record that `bin/metafor-audit.sh --recall` is due after the `ast()` move of Task 3, with that command; the
       operator starts it
 
 **Acceptance Criteria:**
 
-- [ ] No `src/audit` or `bin` candidate is open in the T1 or T2 report, the spec says `implemented`, and the item is in `DONE.md` with its
+- [x] No `src/audit` or `bin` candidate is open in the T1 or T2 report, the spec says `implemented`, and the item is in `DONE.md` with its
       body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
 
 - Depends on Tasks 4-9
 - Dismiss only after the last merge: a merge keeps a dismissal only while the candidate's hash and findings are unchanged (spec step 8)
+- `bin/metafor-audit.sh --recall` is due after the `ast()` move of Task 3; the operator starts it.
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
   exit status before going on
 
