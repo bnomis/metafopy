@@ -30,12 +30,13 @@ type BoolArray = numpy.typing.NDArray[numpy.bool_]
 
 def make_unique(labels: collections.abc.Sequence[str]) -> tuple[str, ...]:
     """Make labels unique the way R's ``make.unique`` does (``a``, ``a.1``, ``a.2``)."""
-    seen: set[str] = set()
+    seen: set[str] = set(labels)
+    first: set[str] = set()
     counts: dict[str, int] = {}
     out: list[str] = []
     for label in labels:
-        if label not in seen:
-            seen.add(label)
+        if label not in first:
+            first.add(label)
             out.append(label)
             continue
         n = counts.get(label, 0)

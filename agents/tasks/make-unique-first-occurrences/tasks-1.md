@@ -19,7 +19,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 1: Make `make_unique` avoid every input label, as R's `make.unique` does
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"; review item 3
@@ -28,11 +28,11 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 **Subtasks:**
 
-- [ ] Get R's `make.unique(x)` and `make.names(x, unique = TRUE)` for these inputs, saved to `<scratch>/r.json` (`<scratch>` is outside the
+- [x] Get R's `make.unique(x)` and `make.names(x, unique = TRUE)` for these inputs, saved to `<scratch>/r.json` (`<scratch>` is outside the
       repository):
       `c("a","a","a.1")`, `c("a","a.1","a")`, `c("a","a","a","a.2")`, `c("b","b.1","b","b.1")`, `c("x","x","x.1","x.1")`, `c("1","1")` and
       `c("a b","a b","a.b")`
-- [ ] In `src/metafopy/metadata.py::make_unique`, keep each first occurrence. Seed the set of labels to avoid with every input label, then
+- [x] In `src/metafopy/metadata.py::make_unique`, keep each first occurrence. Seed the set of labels to avoid with every input label, then
       give each later duplicate `label.k` with the smallest `k` (counting on from that label's last `k`) not in the set, and add it. This is
       R's `do_makeunique` in `src/main/unique.c`
 - [ ] Compare `make_unique` and `metafopy.effects.datatools.make_names(..., unique=True)` with `<scratch>/r.json`. A difference stops the
@@ -96,3 +96,21 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 - Depends on Task 1
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
   exit status before going on
+
+---
+
+## Task 3: Blocked finding - `make_names(unique=True)` orders changed names last, as R does
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+
+Found in Task 1 (2026-11-22). `make_unique` now equals R's `make.unique` on every Task 1 case. `metafopy.effects.datatools.make_names(..., unique=True)` differs from R's
+`make.names(x, unique = TRUE)` on one input:
+
+- input `["a b", "a b", "a.b"]`
+- R: `a.b.1`, `a.b.2`, `a.b`
+- metafopy: `a.b`, `a.b.1`, `a.b.2`
+
+R's `make.names` with `unique = TRUE` runs `make.unique` over the names with those that `make.names` changed placed last, so an unchanged name keeps its label. Changing this alters
+metafopy's output beyond what review item 3 approved, so it needs the operator's approval before Task 1 can finish (the Task 1 subtask that compares both functions with R).
