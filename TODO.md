@@ -23,6 +23,8 @@ Cause: for a small p and many means `ptukey` is flat at 0 around the start value
 Fix direction: return `NaN` with R's warning as R does; this changes an output, so it needs the operator's confirmation first. The test
 `src/tests/test_tukey.py` narrows `nmeans` to 2 to 10 with a comment; widen it to 2 to 50 when this is fixed.
 
+Spec: none (small item); tasks: `agents/tasks/qtukey-nan/tasks-1.md`.
+
 ## `weibull_shape_start` stops at its start value for large shapes
 
 <!-- doc-counts: accept-start found on 2026-11-22 - a dated record, not a claim about the present -->
@@ -43,6 +45,8 @@ this changes an output, so it needs the operator's confirmation first. Then remo
 `src/tests/test_conv_fivenum_methods.py::test_weibull_shape_start_property_reproduces_the_coefficient_of_variation` (strict, so it fails once
 fixed).
 
+Spec: none (small item); tasks: `agents/tasks/weibull-shape-start/tasks-1.md`.
+
 ## `make_unique` renames a label that occurs once when it collides with a generated one
 
 <!-- doc-counts: accept-start found on 2026-11-22 - a dated record, not a claim about the present -->
@@ -60,6 +64,8 @@ output. `metafopy.effects.datatools.make_names` with `unique=True` calls it too;
 Fix direction: seed `seen` with the set of all input labels before generating suffixes; this changes an output, so it needs the operator's
 confirmation first. Then remove the strict `xfail` marker of
 `src/tests/test_name_matching_properties.py::test_make_unique_keeps_first_occurrences`.
+
+Spec: none (small item); tasks: `agents/tasks/make-unique-first-occurrences/tasks-1.md`.
 
 ## Audit-harness and bin helpers with branches have no direct test
 

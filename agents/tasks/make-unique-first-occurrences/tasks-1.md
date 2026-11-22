@@ -1,0 +1,98 @@
+# Tasks: make_unique keeps every first occurrence
+
+**Source:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"
+**Created:** 2026-11-22
+**Version:** 1
+
+How to run things, in every task (from the worktree root):
+
+- **Tests:** `export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest <files>`
+- **Type check:** `mypy <files>`, with the same `PATH`.
+- **R:** `LC_ALL=C.UTF-8 R_LIBS=/Users/simonb/src/metafopy/.audit/Rlib Rscript -e '<code>'`. Worktrees have no `.audit/Rlib`, so use the main
+  checkout's.
+
+The fix and its output change were approved on 2026-11-22 (item 3 of `agents/reviews/order-r-parity-fixes-from-property-tests-specs.md`, Answers section). That approval covers only the change the
+item describes. Any other change to metafopy's output stops the task as `blocked`, naming the function, the input and both values
+(`claude/rules/metafopy.md`).
+
+---
+
+## Task 1: Make `make_unique` avoid every input label, as R's `make.unique` does
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"; review item 3
+
+**Technical Goal:** a label the caller gave keeps its first occurrence, and a generated suffix never takes it, as in R's `do_makeunique`.
+
+**Subtasks:**
+
+- [ ] Get R's `make.unique(x)` and `make.names(x, unique = TRUE)` for these inputs, saved to `<scratch>/r.json` (`<scratch>` is outside the
+      repository):
+      `c("a","a","a.1")`, `c("a","a.1","a")`, `c("a","a","a","a.2")`, `c("b","b.1","b","b.1")`, `c("x","x","x.1","x.1")`, `c("1","1")` and
+      `c("a b","a b","a.b")`
+- [ ] In `src/metafopy/metadata.py::make_unique`, keep each first occurrence. Seed the set of labels to avoid with every input label, then
+      give each later duplicate `label.k` with the smallest `k` (counting on from that label's last `k`) not in the set, and add it. This is
+      R's `do_makeunique` in `src/main/unique.c`
+- [ ] Compare `make_unique` and `metafopy.effects.datatools.make_names(..., unique=True)` with `<scratch>/r.json`. A difference stops the
+      task as `blocked`, naming the input and both outputs
+- [ ] Remove the strict `xfail` marker of `src/tests/test_name_matching_properties.py::test_make_unique_keeps_first_occurrences`. Add the
+      R cases above as an example test of both functions in `src/tests/test_name_matching_properties.py`
+- [ ] Run `src/tests/test_data.py` and `src/tests/test_datatools.py`. A test whose expected study labels (`slab`) change stops the task as
+      `blocked`, naming the test and both label lists, unless the new labels equal R's for the same input
+
+**Acceptance Criteria:**
+
+- [ ] Both functions give R's output on every case above, and the property test passes without `xfail`
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy src/metafopy/metadata.py src/tests/test_name_matching_properties.py` passes
+- [ ] `pytest src/tests/test_name_matching_properties.py src/tests/test_data.py src/tests/test_datatools.py` passes
+
+**Notes:**
+
+- `metafopy.effects.measures.make_unique_dot1` copies metafor's own `.make.unique`, which renames singletons too. It is a different function
+  and stays as it is
+- Callers: `src/metafopy/metadata.py:359` (study labels) and `src/metafopy/effects/datatools.py:82` (at `ea53581`)
+
+---
+
+## Task 2: Full check and closing
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** `TODO.md`, "`make_unique` renames a label that occurs once when it collides with a generated one"
+
+**Technical Goal:** the branch passes every check once, and the `TODO.md` item moves to `DONE.md`.
+
+**Subtasks:**
+
+- [ ] Move the `TODO.md` item "`make_unique` renames a label that occurs once when it collides with a generated one" to the end of `DONE.md`: append its heading and body unchanged, then the line
+      `Done: <date> - agents/tasks/make-unique-first-occurrences/tasks-1.md Task 1 (<commit>); approved in agents/reviews/order-r-parity-fixes-from-property-tests-specs.md item 3.`, and remove it from `TODO.md`
+- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+      `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
+      `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/make-unique-first-occurrences/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/make-unique-first-occurrences/tasks-1/final-tests.log`
+
+**Acceptance Criteria:**
+
+- [ ] The item is in `DONE.md` with its body unchanged, and the final run passes
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `pre-commit run --all-files` passes
+- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [ ] `mypy` passes
+- [ ] The final test run above passes
+- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/make-unique-first-occurrences/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+      `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
+
+**Notes:**
+
+- Depends on Task 1
+- The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
+  exit status before going on
