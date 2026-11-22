@@ -124,7 +124,7 @@ for each tells the later tasks exactly which candidates to test.
 
 ## Task 3: Property tests for the special-function kernels in `core` and the small statistics
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 3 (group A)
@@ -133,7 +133,7 @@ for each tells the later tasks exactly which candidates to test.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 3. These are the candidates in `core/bvn.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 3. These are the candidates in `core/bvn.py`,
       `core/dbinom.py`, `core/farebrother.py`, `core/tukey.py`, `core/nchg.py`, `bias/ranktest.py`, `bias/fsn.py`, `effects/rtet.py`,
       `effects/fivenum_estimators.py::weibull_shape_start`, `models/tau2.py` and `methods/ls_anova.py`
 - [x] Use the oracle the reason names: `scipy.stats.multivariate_normal` for `bvn`; `scipy.stats.binom` and `math.lgamma` for `dbinom`;
@@ -142,13 +142,13 @@ for each tells the later tasks exactly which candidates to test.
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 3 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 3 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
@@ -162,6 +162,9 @@ for each tells the later tasks exactly which candidates to test.
   comment), and the `nchg` scipy comparison is made only above log probability -30 (scipy is inaccurate in the far tail).
 - `bias/fsn.py` and `bias/ranktest.py` are reached through `importlib.import_module(...)` because `metafopy.bias.fsn` and
   `metafopy.bias.ranktest` name the re-exported functions, not the modules. Task 9's re-judge should confirm the T2 check counts these calls.
+- 2026-11-22 (operator session): closed. This list's rule for a property that fails inside the documented domain is to file the defect
+  with `/todo-add` and never fix it here. The strict `xfail` and the `TODO.md` item do that, so the fix is that item's work, not this task's.
+  The strict `xfail` still calls the function from a `given` test, so it counts for T2. The Task 3 and Task 8 test files pass (506 passed, 2 xfailed).
 
 ---
 
@@ -306,7 +309,7 @@ ledger says so.
 
 ## Task 8: Property tests for name matching and uniqueness
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 5 (group C)
@@ -345,6 +348,8 @@ ledger says so.
   output in the candidate's ledger `reason`.
 - `datatools.make_names` is tested on ASCII input only (R's `?make.names` admits locale letters).
 - `interactive/forest.py` needs the `interactive` extra (`uv sync --frozen --extra interactive`; installed 2026-11-21)
+- 2026-11-22 (operator session): closed on the same rule as Task 3. `make_unique` is filed in `TODO.md` with a strict `xfail`, and its fix is
+  that item's work.
 
 ---
 
