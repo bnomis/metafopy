@@ -66,7 +66,7 @@ bit the same.
 
 ## Task 2: Full check and closing
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`qtukey` raises ZeroDivisionError where R returns NaN"
@@ -75,24 +75,24 @@ bit the same.
 
 **Subtasks:**
 
-- [ ] Move the `TODO.md` item "`qtukey` raises ZeroDivisionError where R returns NaN" to the end of `DONE.md`: append its heading and body unchanged, then the line
+- [x] Move the `TODO.md` item "`qtukey` raises ZeroDivisionError where R returns NaN" to the end of `DONE.md`: append its heading and body unchanged, then the line
       `Done: <date> - agents/tasks/qtukey-nan/tasks-1.md Task 1 (<commit>); approved in agents/reviews/order-r-parity-fixes-from-property-tests-specs.md item 1.`, and remove it from `TODO.md`
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run the final tests from the worktree and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/qtukey-nan/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The item is in `DONE.md` with its body unchanged, and the final run passes
+- [x] The item is in `DONE.md` with its body unchanged, and the final run passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/qtukey-nan/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/qtukey-nan/tasks-1.md):TODO.md > <scratch>/todo-before.md` and
       `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
@@ -105,7 +105,7 @@ bit the same.
 
 ## Task 3: Fix `test_usr_range_extends_by_four_percent_each_side` failing on a subnormal input
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** final run of Task 2, `ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
@@ -114,17 +114,17 @@ bit the same.
 
 **Subtasks:**
 
-- [ ] Find why the property fails on a subnormal input, and fix the test (or the code if it is a real bug; a change of output stops the task as `blocked`)
-- [ ] Re-run `pytest src/tests` in full and save the output to `/Users/simonb/src/metafopy/ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
+- [x] Find why the property fails on a subnormal input, and fix the test (or the code if it is a real bug; a change of output stops the task as `blocked`)
+- [x] Re-run `pytest src/tests` in full and save the output to `/Users/simonb/src/metafopy/ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] The full test run passes
+- [x] The full test run passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] Task 2's checks pass again
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] Task 2's checks pass again
 
 **Notes:**
 
