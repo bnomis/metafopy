@@ -66,7 +66,7 @@ bit the same.
 
 ## Task 2: Full check and closing
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`qtukey` raises ZeroDivisionError where R returns NaN"
@@ -100,3 +100,32 @@ bit the same.
 - Depends on Task 1
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
   exit status before going on
+
+---
+
+## Task 3: Fix `test_usr_range_extends_by_four_percent_each_side` failing on a subnormal input
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Source Reference:** final run of Task 2, `ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
+
+**Technical Goal:** `pytest src/tests/test_plots.py::test_usr_range_extends_by_four_percent_each_side` passes. The final run failed it with `assert 5e-324 < 5e-324`, a subnormal float that the property's strict inequality cannot hold for. The test and the plots code it exercises are untouched by this branch, so the failure is out of scope for Task 1.
+
+**Subtasks:**
+
+- [ ] Find why the property fails on a subnormal input, and fix the test (or the code if it is a real bug; a change of output stops the task as `blocked`)
+- [ ] Re-run `pytest src/tests` in full and save the output to `/Users/simonb/src/metafopy/ralpher-logs/qtukey-nan/tasks-1/final-tests.log`
+
+**Acceptance Criteria:**
+
+- [ ] The full test run passes
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] Task 2's checks pass again
+
+**Notes:**
+
+- Task 2 stays `in-progress` until this passes; then tick its remaining boxes and mark it `done`
