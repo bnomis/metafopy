@@ -19,7 +19,7 @@ Fix direction: a spec with `/specdev`, starting with the numerical cores, where 
 `core/dbinom.py`, `core/farebrother.py`, `core/tukey.py`, `core/nchg.py`, the distribution functions in `methods/emm_adjust.py`, the weight
 functions in `models/sel_spec.py`, and `models/sel_lik.py::map_delta`/`map_inverse`. Then the formatting helpers, then the harness.
 
-Spec: `agents/specs/property-tests-for-metafopy-helpers/spec.md`; tasks: not yet written.
+Spec: `agents/specs/property-tests-for-metafopy-helpers/spec.md`; tasks: `agents/tasks/property-tests-for-metafopy-helpers/tasks-1.md`.
 
 Note 2026-11-22: the T2 findings under `src/audit` and `bin` move to the item "Audit-harness and bin helpers with branches have no
 direct test" (decision D2 of `agents/reviews/property-tests-for-metafopy-helpers-spec.md`); this item now covers `src/metafopy` only.
