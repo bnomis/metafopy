@@ -114,3 +114,26 @@ Found in Task 1 (2026-11-22). `make_unique` now equals R's `make.unique` on ever
 
 R's `make.names` with `unique = TRUE` runs `make.unique` over the names with those that `make.names` changed placed last, so an unchanged name keeps its label. Changing this alters
 metafopy's output beyond what review item 3 approved, so it needs the operator's approval before Task 1 can finish (the Task 1 subtask that compares both functions with R).
+
+**Operator answer (2026-11-22, in the operator session):** leave `make_names(unique=True)` as it is. Do not change it to R's order. The
+`make_unique` fix finishes alone.
+
+**Subtasks:**
+
+- [ ] File the difference in `TODO.md` with `/todo-add`. Place it after the item this list closes, with today's date, the input, R's output,
+      metafopy's output and the cause (R's `make.names` body: `o <- order(names != names2); names2[o] <- make.unique(names2[o])`, checked
+      in `Rscript` on 2026-11-22). Its Fix direction says that matching R changes an output and needs the operator's confirmation
+- [ ] Add a strict `xfail` test of that input in `src/tests/test_name_matching_properties.py`, asserting R's output, with a reason naming the
+      `TODO.md` item
+- [ ] Task 1's subtask that compares both functions with R is then met: `make_unique` matches R on every case, and the one `make_names`
+      difference is filed with its strict `xfail`. Tick it, and set Task 1 to `done`
+
+**Acceptance Criteria:**
+
+- [ ] The `TODO.md` item and the strict `xfail` exist, and `pytest src/tests/test_name_matching_properties.py` passes
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy src/tests/test_name_matching_properties.py` passes
+- [ ] `pytest src/tests/test_name_matching_properties.py src/tests/test_datatools.py` passes
