@@ -4,6 +4,8 @@ This runs on the committed snapshot of the R universe (``src/audit/data/universe
 shows up when ``bin/metafor-audit.sh --update-universe`` refreshes the snapshot and these tests fail on what is new.
 """
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import audit.cases
@@ -171,3 +173,31 @@ def test_ledger_classify_returns_the_first_matching_entry_and_counts_it() -> Non
     assert second.used == 0
     assert ledger.classify('b/1', finding) is None
     assert ledger.stale() == [second]
+
+
+QUOTE_FREE = hypothesis.strategies.text(max_size=12).filter(lambda text: '"' not in text)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(text=QUOTE_FREE)
+def test_default_string_unquotes_a_quoted_default(text: str) -> None:
+    """``default_string`` (T2): for any ``s`` without a double quote, ``default_string('"' + s + '"') == s``; an unquoted default gives ``None``."""
+    assert audit.generate.default_string(f'"{text}"') == text
+    assert audit.generate.default_string(f'  "{text}"  ') == text
+    if not text.strip().startswith('"'):
+        assert audit.generate.default_string(text) is None
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(glob=hypothesis.strategies.text(max_size=12).filter(lambda text: '[' not in text))
+def test_bracket_sets_is_empty_for_a_glob_without_a_bracket(glob: str) -> None:
+    """``bracket_sets`` (T2): a glob without ``[`` has no sets."""
+    assert audit.ledger.bracket_sets(glob) == []
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(body=hypothesis.strategies.text(min_size=1, max_size=8).filter(lambda text: ']' not in text and text != '!'))
+def test_bracket_sets_finds_a_wrapped_set_body(body: str) -> None:
+    """``bracket_sets`` (T2): a set body free of ``]`` (and not the lone ``!``, which ``fnmatch`` reads as an unclosed set), in brackets, gives that body."""
+    assert audit.ledger.bracket_sets(f'[{body}]') == [body]
+    assert audit.ledger.bracket_sets(f'a*[{body}]?') == [body]

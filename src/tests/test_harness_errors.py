@@ -2,6 +2,8 @@
 
 import typing
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
 import audit.domains
@@ -111,3 +113,21 @@ def test_readable_turns_plain_plotmath_into_the_text_it_draws() -> None:
     assert audit.pyrun.readable('plain(Imputed ~ Studies)') == 'Imputed Studies'
     assert audit.pyrun.readable('paste("0.1" < p, phantom() <= "0.5")') == '0.1 < p <= 0.5'
     assert audit.pyrun.readable('Effect size') == 'Effect size'
+
+
+DRAWN_STRINGS = hypothesis.strategies.lists(
+    hypothesis.strategies.one_of(
+        hypothesis.strategies.text(alphabet='ab $=^()~<>"p.', max_size=20),
+        hypothesis.strategies.sampled_from(['plain(Imputed ~ Studies)', 'paste("0.1" < p, phantom() <= "0.5")', 'Effect size', 'x[i] == 1/sqrt(v[i])']),
+    ),
+    max_size=6,
+)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(strings=DRAWN_STRINGS)
+def test_plain_text_keeps_only_plain_readable_strings(strings: list[str]) -> None:
+    """``plain_text`` (T2): no returned string matches ``MATH_MARKUP``, and the result is a subset of the ``readable`` of the input strings."""
+    kept = audit.pyrun.plain_text(strings)
+    assert all(audit.pyrun.MATH_MARKUP.search(text) is None for text in kept)
+    assert kept <= {audit.pyrun.readable(text) for text in strings}

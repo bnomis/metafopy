@@ -336,7 +336,7 @@ any module not in Task 7) has a direct test.
 
 ## Task 9: Group C property tests and the bin scripts
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation steps 6 and 7; decision D4
@@ -346,24 +346,24 @@ any module not in Task 7) has a direct test.
 
 **Subtasks:**
 
-- [ ] For each group C T2 row: a hypothesis test of the property in its ledger `reason`
+- [x] For each group C T2 row: a hypothesis test of the property in its ledger `reason`
       (`grep -F '"id": "<candidate id>"' agents/audit-reviews/ledger/T2.jsonl`), in the file Tasks 7 and 8 use for its module
-- [ ] `bin/metafor-audit.py`: load it by path with `importlib.util.spec_from_file_location`, as `src/tests/test_platform_probe.py` does, and
+- [x] `bin/metafor-audit.py`: load it by path with `importlib.util.spec_from_file_location`, as `src/tests/test_platform_probe.py` does, and
       give each open candidate (`metafopy_source` among them) a direct test and, for its T2 row, a property test, in
       `src/tests/test_metafor_audit_script.py` (new)
-- [ ] `bin/platform-probe.py`: a direct test per open candidate in `src/tests/test_platform_probe.py`, and a `main()` run on the groups that
+- [x] `bin/platform-probe.py`: a direct test per open candidate in `src/tests/test_platform_probe.py`, and a `main()` run on the groups that
       reach `ls_runs` and `measure_selmodel_decreasing`
-- [ ] Do not test `bin/logo.py` (D4: dismissed in Task 10)
+- [x] Do not test `bin/logo.py` (D4: dismissed in Task 10)
 
 **Acceptance Criteria:**
 
-- [ ] Each group C T2 candidate has a passing property test, and each open `metafor-audit.py` and `platform-probe.py` candidate a passing test
+- [x] Each group C T2 candidate has a passing property test, and each open `metafor-audit.py` and `platform-probe.py` candidate a passing test
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes on each test file the task changed
-- [ ] `pytest src/tests/test_metafor_audit_script.py src/tests/test_platform_probe.py` passes, with every other test file the task changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes on each test file the task changed
+- [x] `pytest src/tests/test_metafor_audit_script.py src/tests/test_platform_probe.py` passes, with every other test file the task changed
 
 **Notes:**
 
