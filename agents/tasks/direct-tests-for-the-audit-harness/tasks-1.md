@@ -373,7 +373,7 @@ any module not in Task 7) has a direct test.
 
 ## Task 10: Re-judge, dismiss, the full check and closing
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 8; decisions D1, D4
@@ -424,3 +424,38 @@ spec is marked implemented and the `TODO.md` item moves to `DONE.md`.
 - Dismiss only after the last merge: a merge keeps a dismissal only while the candidate's hash and findings are unchanged (spec step 8)
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
   exit status before going on
+
+---
+
+## Task 11: Cover `r_as_numeric` with passing tests
+
+**Status:** todo
+**Priority:** high
+**Complexity:** small
+**Spec Reference:** Implementation step 8; group A (decision D2)
+
+**Technical Goal:** `src/audit/rlib.py::r_as_numeric` is open on T1 after the re-judge of Task 10 (2026-11-22): the only `as.numeric` snippet in
+`src/tests/test_harness_rlib.py` (`as_numeric_text`) is a strict `xfail`, which covers nothing. Give each branch that agrees with R its own
+passing test.
+
+**Subtasks:**
+
+- [ ] Add R snippets to the fixture (recorded from R, as Tasks 3-5 do) for `as.numeric` of a factor, of a numeric vector and of a character vector, and a passing
+      `test_shim_agrees_with_r` case for each, or a direct test of `r_as_numeric` for the same inputs
+- [ ] Keep the strict `xfail` for `as_numeric_text` (a single string, the defect filed in `TODO.md`)
+
+**Acceptance Criteria:**
+
+- [ ] A passing test calls `r_as_numeric` for a factor, a plain vector and a string vector; the T1 verdict re-judged for it is covered
+
+**Definition of Done:**
+
+- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [ ] `mypy` and the new tests pass
+
+**Notes:**
+
+- Depends on Task 10's re-judge. Task 10 resumes after this task: it re-runs the re-judge for `r_as_numeric`, then does its remaining subtasks (dismissals of
+  group D and `bin/logo.py`, closing). The re-judge of Task 10 was merged on 2026-11-22; open after it were `r_as_numeric` (this task), `bin/logo.py` (D4) and
+  group D (`cli.main`, `pyrun.run_guarded`, `rdriver.run`, `recall.checkout`, `recall.run_audit`, `scripts.fetch_source`, `steps.build_universe`, `steps.scripts_step`)
+
