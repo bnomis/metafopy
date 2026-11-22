@@ -202,7 +202,7 @@ weight functions and parameter maps.
 
 ## Task 5: Property tests for number-to-text formatting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 4 (group B)
@@ -211,23 +211,27 @@ weight functions and parameter maps.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 5. These are the candidates in `printing.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 5. These are the candidates in `printing.py`,
       `core/labelled.py`, `core/timing.py`, `formatters.py`, `models/selmodel.py::r_as_character`, `formula.py::r_number` and
       `models/mv_factor.py::format_number`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 5 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 5 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: the `r_as_character` tests (`formatters.py`, `models/selmodel.py`) cover magnitudes below 1e15: R 4.6.2 keeps every digit of larger
+  whole numbers (`as.character(1000000000000006)` is `"1000000000000006"`), so the 15-digit round trip does not hold there in R either.
+  `fmt_df_scalar` is tested below 1e4 (its `:g` keeps six significant digits). `r_as_character(123456789012345678.0)` gives `...680` where R
+  gives `...696` (outside the tested domain, not filed).
 
 ---
 

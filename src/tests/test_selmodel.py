@@ -838,3 +838,15 @@ def test_sel_spec_two_parameter_weights(a: dict[str, float]) -> None:
     check_weight(lambda p: metafopy.models.sel_spec.s_negexp2(p, d, preci, s), s0, p1, p2)
     check_weight(lambda p: metafopy.models.sel_spec.s_logistic2(p, d, preci, s), s0, p1, p2)
     check_weight(lambda p: metafopy.models.sel_spec.s_power2(p, d, preci, s), s0, p1, p2)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=hypothesis.strategies.floats(min_value=-1e15, max_value=1e15, allow_nan=False))
+def test_selmodel_r_as_character_round_trips_to_fifteen_digits(x: float) -> None:
+    """Candidate ``src/metafopy/models/selmodel.py::r_as_character``.
+
+    Below 1e15 in magnitude: R keeps every digit of larger whole numbers (R 4.6.2 ``as.character(1000000000000006)`` is ``"1000000000000006"``).
+    """
+    text = metafopy.models.selmodel.r_as_character(x)
+    assert float(text) == float(f'{x:.15g}')
+    assert metafopy.models.selmodel.r_as_character(float(text)) == text
