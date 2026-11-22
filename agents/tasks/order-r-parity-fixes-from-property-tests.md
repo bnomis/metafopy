@@ -36,10 +36,10 @@ row's cell names the stop that fires only if the run finds such a change.
 | test pass line | `passed` |
 | test fail pattern | `FAILED\|ERROR` |
 | always wait for | `claude/rules/metafopy.md` |
-| progress page | |
+| progress page | https://claude.ai/artifact/SJ48yWkK7GKEicbTZBc8av |
 
 | # | Task list | Waits for | Stops for you | Status |
 |---|---|---|---|---|
-| 1 | `qtukey-nan/tasks-1.md` | - | a grid point or the emmeans case differing from R (Task 1), only if one does | todo |
+| 1 | `qtukey-nan/tasks-1.md` | - | a grid point or the emmeans case differing from R (Task 1), only if one does | running |
 | 2 | `weibull-shape-start/tasks-1.md` | - | a fivenum parity test changing outcome (Task 1), only if one does | todo |
 | 3 | `make-unique-first-occurrences/tasks-1.md` | - | a label list differing from R's (Task 1), only if one does | todo |
