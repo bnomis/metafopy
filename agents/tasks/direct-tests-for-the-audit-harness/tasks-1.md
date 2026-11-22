@@ -161,7 +161,7 @@ transpiler and shims and compare it with R, so groups A and B test against R wit
 
 ## Task 4: Group A, R-library shims (first half)
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 4; decision D1
