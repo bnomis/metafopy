@@ -22,4 +22,4 @@ Note 2026-11-22: this item also takes the T2 (property test) findings under `src
 have no property-based tests" (decision D2 of `agents/reviews/property-tests-for-metafopy-helpers-spec.md`). The list is in
 `agents/audit-reviews/ledger/T2.jsonl`.
 
-Spec: `agents/specs/direct-tests-for-the-audit-harness/spec.md`; tasks: none yet.
+Spec: `agents/specs/direct-tests-for-the-audit-harness/spec.md`; tasks: `agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md`.
