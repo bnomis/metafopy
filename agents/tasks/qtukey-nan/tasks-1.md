@@ -19,7 +19,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 1: Make `qtukey` follow R's C code on a flat secant step and on non-convergence
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** `TODO.md`, "`qtukey` raises ZeroDivisionError where R returns NaN"; review item 1
@@ -29,33 +29,33 @@ bit the same.
 
 **Subtasks:**
 
-- [ ] Before changing anything, save `qtukey(p, nmeans, df)` over the item's grid to `<scratch>/before.json`, recording which points raise.
+- [x] Before changing anything, save `qtukey(p, nmeans, df)` over the item's grid to `<scratch>/before.json`, recording which points raise.
       The grid is p in {0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99}, nmeans in {2, 3, 5, 10, 17, 30, 50} and df in {2, 3, 5, 10, 30, 100,
       1000, 1e6, inf}. `<scratch>` is a directory outside the repository
-- [ ] Get R's values and warnings on the same grid (`qtukey(p, nmeans, df)` in base R), saved to `<scratch>/r.json`
-- [ ] In `src/metafopy/core/tukey.py::qtukey`, do the secant division with C's rules: a zero denominator gives `+-inf`, or NaN for `0/0`, as
+- [x] Get R's values and warnings on the same grid (`qtukey(p, nmeans, df)` in base R), saved to `<scratch>/r.json`
+- [x] In `src/metafopy/core/tukey.py::qtukey`, do the secant division with C's rules: a zero denominator gives `+-inf`, or NaN for `0/0`, as
       `numpy.float64` division does with errors silenced. Carry the iteration on as C does. After the last iteration without convergence,
       warn "convergence failed in 'qtukey'" as R's `ML_WARNING(ME_NOCONV)` does. Warn "NaNs produced" when the result is NaN from finite,
       in-domain input. Use `warnings.warn(..., stacklevel=2)` as `src/metafopy/methods/vcalc.py` does
-- [ ] Compare the new grid with both files. Every point that did not raise gives the same value bit for bit. Every point that raised gives
+- [x] Compare the new grid with both files. Every point that did not raise gives the same value bit for bit. Every point that raised gives
       what R gives: NaN with R's warnings. A point that is neither stops the task as `blocked`, naming it and the three values
-- [ ] In `src/tests/test_tukey.py`, widen the property test's `nmeans` from 2-10 to 2-50 and drop the comment that narrowed it. Let the
+- [x] In `src/tests/test_tukey.py`, widen the property test's `nmeans` from 2-10 to 2-50 and drop the comment that narrowed it. Let the
       property allow NaN where R returns NaN. Add a direct test of `qtukey(0.25, 17, math.inf)`: it gives NaN with both warnings
       (`pytest.warns`)
-- [ ] Find a Tukey family of 17 or more means that reaches `src/metafopy/methods/emm_adjust.py:231` (or `:125`) with a small level. Compare
+- [x] Find a Tukey family of 17 or more means that reaches `src/metafopy/methods/emm_adjust.py:231` (or `:125`) with a small level. Compare
       its result with R's emmeans on the same input (`emmeans` is in the Rlib). Add a test of that case to `src/tests/test_emmeans_inference.py`
       that asserts R's output. If metafopy then differs from R, stop as `blocked` with both outputs
 
 **Acceptance Criteria:**
 
-- [ ] No grid point raises, and the non-raising points are unchanged bit for bit
-- [ ] The raising points give R's NaN and warnings, and the emmeans case matches R
+- [x] No grid point raises, and the non-raising points are unchanged bit for bit
+- [x] The raising points give R's NaN and warnings, and the emmeans case matches R
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/core/tukey.py src/tests/test_tukey.py src/tests/test_emmeans_inference.py` passes
-- [ ] `pytest src/tests/test_tukey.py src/tests/test_emmeans_inference.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/core/tukey.py src/tests/test_tukey.py src/tests/test_emmeans_inference.py` passes
+- [x] `pytest src/tests/test_tukey.py src/tests/test_emmeans_inference.py` passes
 
 **Notes:**
 
