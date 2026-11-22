@@ -19,7 +19,7 @@ item describes. Any other change to metafopy's output stops the task as `blocked
 
 ## Task 1: Make `qtukey` follow R's C code on a flat secant step and on non-convergence
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** `TODO.md`, "`qtukey` raises ZeroDivisionError where R returns NaN"; review item 1

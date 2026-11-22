@@ -9,7 +9,9 @@ https://doi.org/10.1080/00949658808811068.
 """
 
 import math
+import warnings
 
+import numpy
 import scipy.special
 
 __all__ = ['ptukey', 'qtukey']
@@ -191,7 +193,8 @@ def qtukey(p: float, nmeans: float, df: float, nranges: float = 1.0) -> float:
     valx1 = ptukey(x1, nmeans, df, nranges) - p
     ans = 0.0
     for _ in range(1, 50):
-        ans = x1 - ((valx1 * (x1 - x0)) / (valx1 - valx0))
+        with numpy.errstate(all='ignore'):
+            ans = float(numpy.float64(x1) - ((numpy.float64(valx1) * (x1 - x0)) / (numpy.float64(valx1) - numpy.float64(valx0))))
         valx0 = valx1
         x0 = x1
         if ans < 0.0:
@@ -200,4 +203,7 @@ def qtukey(p: float, nmeans: float, df: float, nranges: float = 1.0) -> float:
         x1 = ans
         if abs(x1 - x0) < 0.0001:
             return ans
+    warnings.warn("convergence failed in 'qtukey'", stacklevel=2)
+    if math.isnan(ans):
+        warnings.warn('NaNs produced', stacklevel=2)
     return ans
