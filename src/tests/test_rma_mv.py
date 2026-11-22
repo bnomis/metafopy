@@ -436,3 +436,41 @@ def test_post_init_labels_g_and_the_model_matrix() -> None:
     assert isinstance(x, metafopy.core.labelled.LabelledMatrix)
     assert x.rownames is not None
     assert len(x.rownames) == res.X.shape[0]
+
+
+def test_v_given_as_a_list_of_blocks_is_the_block_diagonal_matrix() -> None:
+    full = matrix('ber_V')
+    blocks = [full[i : i + 2, i : i + 2] for i in range(0, full.shape[0], 2)]
+    fit = metafopy.rma_mv('yi', blocks, data=ber(), mods='~ 0 + outcome', random='~ outcome | trial', struct='UN')
+    ref = CASES['ber_un']()
+    numpy.testing.assert_allclose(fit.beta, ref.beta, rtol=RTOL)
+    numpy.testing.assert_allclose(numpy.asarray(fit.V), full, rtol=1e-12)
+
+
+def test_v_blocks_must_be_square() -> None:
+    with pytest.raises(metafopy.errors.InputError, match='square'):
+        metafopy.rma_mv('yi', [numpy.ones((2, 3))] * 5, data=ber(), mods='~ 0 + outcome')
+
+
+def test_dist_given_as_a_matrix_is_the_euclidean_distance_between_levels() -> None:
+    years = sorted(kon()['year'].unique())
+    labels = [str(y) for y in years]
+    d = numpy.abs(numpy.subtract.outer(years, years)).astype(float)
+    dist = pandas.DataFrame(d, index=labels, columns=labels)
+    fit = konst(random='~ year | district', struct='SPEXP', dist=dist)
+    ref = CASES['kon_spexp']()
+    numpy.testing.assert_allclose(fit.beta, ref.beta, rtol=1e-4)
+    numpy.testing.assert_allclose(numpy.asarray(fit.rho), numpy.asarray(ref.rho), rtol=1e-3)
+
+
+def test_dist_matrix_must_be_symmetric() -> None:
+    labels = [str(y) for y in sorted(kon()['year'].unique())]
+    dist = pandas.DataFrame(numpy.triu(numpy.ones((len(labels), len(labels)))), index=labels, columns=labels)
+    with pytest.raises(metafopy.errors.InputError, match='symmetric'):
+        konst(random='~ year | district', struct='SPEXP', dist=dist)
+
+
+def test_formulas_are_the_inner_and_outer_of_each_term() -> None:
+    assert CASES['ber_un']().formulas == ('~ outcome | trial', None)
+    assert CASES['kon_spexp']().formulas == ('~ year | district', None)
+    assert CASES['kon_fe']().formulas == (None, None)

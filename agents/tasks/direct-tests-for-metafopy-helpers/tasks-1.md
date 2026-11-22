@@ -245,7 +245,7 @@ regression in it is caught where it is.
 
 ## Task 7: Caller tests for private helpers in methods, models and plot
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation step 4
@@ -254,25 +254,28 @@ regression in it is caught where it is.
 
 **Subtasks:**
 
-- [ ] As Task 6's subtasks, for the private candidates under `methods/`, `models/` and `plot/`. These include:
+- [x] As Task 6's subtasks, for the private candidates under `methods/`, `models/` and `plot/`. These include:
   - `block_diagonal`: `rma_mv` with `V` given as a list of block matrices;
   - `distance_from_matrix`: `rma_mv` with `dist` given as a matrix;
   - `fitted_levels`: `predict` with no `newmods` on an `rma_mv` fit with an inner|outer term;
   - `fixed_btt` and `formula_text`.
-- [ ] Run each changed test file
+- [x] Run each changed test file
 
 **Acceptance Criteria:**
 
-- [ ] Each of these candidates is reached by a test of a caller
+- [x] Each of these candidates is reached by a test of a caller
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] Each changed test file passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] Each changed test file passes, named in the commit body
 
 **Notes:**
 
 - Depends on Task 3
+
+---
+- `fitted_levels` is not in the open list, so it gets no new test; `block_diagonal`, `distance_from_matrix`, `formula_text` (through `formulas`) and `fixed_btt` are reached by tests in `test_rma_mv.py` and `test_permutest_vif_plots.py`
 
 ---
 
