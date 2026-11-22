@@ -273,7 +273,7 @@ weight functions and parameter maps.
 
 ## Task 7: Property tests for formula parsing and model-call rewriting
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 5 (group C)
@@ -283,20 +283,20 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 7. These are the group C candidates in `formula.py`,
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 7. These are the group C candidates in `formula.py`,
       `models/call.py`, `models/mv_factor.py::split_top_level`, `models/rma_mv.py`, `models/rma_uni.py::abbreviate_names`,
       `models/mv_print.py`, `models/mv_hessian.py`, `plot/infl.py::abbreviate`, `methods/rcalc.py` and `methods/matreg.py::parse_formula`
-- [ ] Build the formulas from `rstrategies.r_identifiers()`
+- [x] Build the formulas from `rstrategies.r_identifiers()`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 7 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 7 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
