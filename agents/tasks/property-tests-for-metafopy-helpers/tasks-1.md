@@ -306,7 +306,7 @@ ledger says so.
 
 ## Task 8: Property tests for name matching and uniqueness
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** large
 **Spec Reference:** Implementation step 5 (group C)
@@ -315,27 +315,35 @@ ledger says so.
 
 **Subtasks:**
 
-- [ ] One property test per open candidate in `open-after-rejudge.md` with Task 8. These are the group C candidates in `methods/matreg.py`
+- [x] One property test per open candidate in `open-after-rejudge.md` with Task 8. These are the group C candidates in `methods/matreg.py`
       (other than `parse_formula`), `methods/predict.py`, `methods/common.py`, `methods/emm_adjust.py` (`match_method`, `parse_side`),
       `methods/emm_grid.py`, `methods/emm_nesting.py`, `methods/hettest.py`, `effects/datatools.py`, `effects/measures.py`,
       `effects/fivenum_estimators.py::sum_stat_index`, `metadata.py`, `interactive/forest.py`, `core/padjust.py`, `models/sel_opt.py` and
       `models/sel_spec.py::match_type`, and any group C candidate the record adds
-- [ ] Use the oracles the reasons name: `matreg.match_columns` and `predict.match_names` against each other, and a brute-force deletion check
+- [x] Use the oracles the reasons name: `matreg.match_columns` and `predict.match_names` against each other, and a brute-force deletion check
       for `is_subsequence`
 
 **Acceptance Criteria:**
 
-- [ ] Every Task 8 candidate in the record has a `given` test that calls it directly, and the tests pass
+- [x] Every Task 8 candidate in the record has a `given` test that calls it directly, and the tests pass
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on every test file the task writes or edits passes
-- [ ] `pytest` on every test file the task writes or edits passes, named in the commit body
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on every test file the task writes or edits passes
+- [x] `pytest` on every test file the task writes or edits passes, named in the commit body
 
 **Notes:**
 
 - Depends on Tasks 1 and 2
+- 2026-11-22: tests are written for every Task 8 candidate in `src/tests/test_name_matching_properties.py` and pass, except `metadata.make_unique`.
+  Its first-occurrence property fails inside the documented domain: `make_unique(['a', 'a', 'a.1'])` gives `('a', 'a.1', 'a.1.1')` where R's
+  `make.unique` gives `a a.2 a.1` (`?make.unique`). The test is a strict `xfail`, and the defect is filed in `TODO.md` ("`make_unique` renames a
+  label that occurs once..."). The task stays `in-progress` until the operator confirms the output change and it is fixed.
+- `measures.make_unique_dot1`: R's `.make.unique(c("a","a","a.1"))` renames a singleton `a.1` too (`a.1.1 a.2 a.1.2`), so that test checks
+  length and distinctness over colliding labels, and singletons unchanged only over labels without dots. Task 9's re-judge should note R's
+  output in the candidate's ledger `reason`.
+- `datatools.make_names` is tested on ASCII input only (R's `?make.names` admits locale letters).
 - `interactive/forest.py` needs the `interactive` extra (`uv sync --frozen --extra interactive`; installed 2026-11-21)
 
 ---
