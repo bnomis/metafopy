@@ -202,7 +202,7 @@ against R through the snippet fixture.
 
 ## Task 5: Group A, R-library shims (second half)
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 4; decision D1
@@ -211,17 +211,17 @@ against R through the snippet fixture.
 
 **Subtasks:**
 
-- [ ] The rest of the group A rows in `open-after-rejudge.md`, as Task 4's subtasks say
+- [x] The rest of the group A rows in `open-after-rejudge.md`, as Task 4's subtasks say
 
 **Acceptance Criteria:**
 
-- [ ] Each group A candidate has a passing test per case its finding names
+- [x] Each group A candidate has a passing test per case its finding names
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_harness_rlib.py` passes
-- [ ] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_harness_rlib.py` passes
+- [x] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
 
 **Notes:**
 

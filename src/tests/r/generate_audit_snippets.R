@@ -155,7 +155,26 @@ snippets <- list(
   formula_two_sides = "yi ~ ablat + year",
   formula_interaction = "yi ~ ablat * alloc",
   formula_function_call = "yi ~ log(ablat) + I(year^2)",
-  formula_no_intercept = "yi ~ 0 + ablat"
+  formula_no_intercept = "yi ~ 0 + ablat",
+  # -- second half of the R-library shims (Task 5): the cases the findings of the remaining rlib.py candidates name
+  seq_along_with = "seq(along.with = c(4, 5, 6))",
+  seq_by_descending = "seq(10, 1, by = -3)",
+  seq_length_out_only = "seq(length.out = 4)",
+  seq_length_out_with_to = "seq(to = 10, length.out = 4)",
+  tail_list = "tail(list(a = 1, b = 2, c = 3), 2)",
+  length_list = "length(list(a = 1, b = 2, c = 3))",
+  length_matrix = "length(matrix(0, 2, 3))",
+  isna_list = "is.na(list(1, NA))",
+  isna_matrix = "is.na(matrix(c(1, NA, 3, 4), 2))",
+  list_mixed = "list(1, b = 'x')",
+  matrix_both_dims = "matrix(1:6, nrow = 2, ncol = 3)",
+  matrix_neither_dim = "matrix(1:3)",
+  matrix_byrow_ncol = "matrix(1:6, ncol = 2, byrow = TRUE)",
+  rbind_data_frames = "rbind(data.frame(a = 1:2, b = c('x', 'y')), data.frame(a = 3L, b = 'z'))",
+  var_two_vectors = "var(1:5, c(2, 1, 4, 3, 6))",
+  paste_recycled = "paste(c('a', 'b', 'c', 'd'), c('x', 'y'), sep = '_')",
+  split_matrix = "split(matrix(1:6, 3), c(1, 2, 1, 2, 1, 2))",
+  lapply_data_frame = "lapply(data.frame(a = 1:3, b = 4:6), sum)"
 )
 
 fresh_env <- function() {

@@ -34,7 +34,14 @@ values recorded in `src/tests/reference/audit/snippets.json`:
 - `audit.rlib.r_cbind` with named arguments gives no column names (`cbind_named`);
 - `audit.rlib.r_class` gives `float` for a number where R gives `numeric`, and one name for a matrix where R gives `matrix` and `array`
   (`class_numeric`, `class_matrix`);
-- `audit.rlib.r_inherits` of a number against `numeric` is false (`inherits_number`).
+- `audit.rlib.r_inherits` of a number against `numeric` is false (`inherits_number`);
+- `audit.rlib.r_isna` of a data frame gives a frame with other column names (`isna_data_frame`);
+- `audit.rlib.r_length` of `NULL` is 1 where R gives 0 (`length_null`);
+- `audit.rlib.r_list` loses a positional argument that comes beside a named one (`list_mixed`);
+- `audit.rlib.r_matrix` drops `dimnames` (`matrix_dimnames`);
+- `audit.rlib.recycled` leaves two arrays of different length to numpy, which raises where R recycles (`recycled_operands`);
+- `audit.rlib.r_seq` with `length.out` and `to` counts up from 1 where R counts back from `to` (`seq_length_out_with_to`);
+- `audit.rlib.r_tail` of a dict is not indexed by position and fails (`tail_list`).
 
 Cause: each shim was written for the calls the audited scripts make, not for R's full behaviour.
 
