@@ -1188,7 +1188,7 @@ def test_anno_symbol_rejects_other_lengths(size: int) -> None:
     pi_row=hypothesis.strategies.booleans(),
 )
 def test_finish_annotext_blanks_missing_rows_and_swaps_symbols(raw: list[str], pi_row: bool) -> None:
-    """plot/forest.py::finish_annotext: a row with NA becomes empty, the prediction row loses NA and %, and no plain minus or space is left."""
+    """plot/forest.py::finish_annotext: a row with NA becomes empty, the prediction row loses NA (one pass, as R) and %, no minus or space is left."""
     annosym = [' [', ', ', ']', '\u2212', '\u2002']
     out = forest_module.finish_annotext(raw, annosym, False, pi_row)
     assert len(out) == len(raw)
@@ -1200,7 +1200,8 @@ def test_finish_annotext_blanks_missing_rows_and_swaps_symbols(raw: list[str], p
         assert '-' not in text
         assert ' ' not in text
     if pi_row:
-        assert 'NA' not in out[-1]
+        # R's gsub('NA', '', fixed = TRUE) is a single pass, so 'NNAA' leaves 'NA'; only the first removal is guaranteed
+        assert out[-1].count('NA') <= raw[-1].count('NN') + raw[-1].count('N%A')
         assert '%' not in out[-1]
 
 

@@ -63,7 +63,7 @@ R's `nlminb` minimum lies, instead of the start value L-BFGS-B stops at.
 
 ## Task 2: Full check and closing
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** `TODO.md`, "`weibull_shape_start` stops at its start value for large shapes"
@@ -102,7 +102,7 @@ R's `nlminb` minimum lies, instead of the start value L-BFGS-B stops at.
 
 ## Task 3: Fix the failing `finish_annotext` property test
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** found by the full run of Task 2 (`/Users/simonb/src/metafopy/ralpher-logs/weibull-shape-start/tasks-1/final-tests.log`)
@@ -114,14 +114,16 @@ metafopy's output needs the operator's approval first (`claude/rules/metafopy.md
 
 **Subtasks:**
 
-- [ ] Reproduce with `pytest src/tests/test_plots.py -k finish_annotext_blanks`, and run R's equivalent on `NNAA`
-- [ ] Fix the code or the test, as R decides
+- [x] Reproduce with `pytest src/tests/test_plots.py -k finish_annotext_blanks`, and run R's equivalent on `NNAA`
+- [x] Fix the code or the test, as R decides
 
 **Acceptance Criteria:**
 
-- [ ] The test passes and the Weibull branch's other tests are unchanged
+- [x] The test passes and the Weibull branch's other tests are unchanged
 
 **Notes:**
 
 - Not caused by Task 1: the branch changes only `src/metafopy/effects/fivenum_estimators.py` and its tests
 - Task 2 stays `in-progress` until this passes and `pytest src/tests` is rerun
+
+- Resolved 2026-11-22: R's `gsub("NA", "", fixed = TRUE)` is a single pass, so `NNAA` leaves `NA` in R too; metafopy matches R and the test property was too strong. Test fixed, no output change. Full run: `pytest src/tests` passed.
