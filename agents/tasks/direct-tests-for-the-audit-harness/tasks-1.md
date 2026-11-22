@@ -231,7 +231,7 @@ against R through the snippet fixture.
 
 ## Task 6: Group B, the transpiler
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** Implementation step 5; decisions D1, D3
@@ -241,25 +241,27 @@ R's value, `unparse` against R's `deparse()`, and a refused construct against `a
 
 **Subtasks:**
 
-- [ ] For each group B row in `open-after-rejudge.md`, add the snippets its ledger `reason` names (node types, `$<-`, `[<-` and `f<-`
+- [x] For each group B row in `open-after-rejudge.md`, add the snippets its ledger `reason` names (node types, `$<-`, `[<-` and `f<-`
       replacements, plain, nested and superassignment targets, operators, `if`, `for`, `function` with and without defaults, lazy and NSE
       calls, reserved names, `pairmat()` inside a model call), rerun the generator, and add tests to `src/tests/test_harness_transpile.py`
-- [ ] Test through the entry point `audit.transpile.translate_unit`; with D3 answered yes, a private helper is covered by the entry-point
+- [x] Test through the entry point `audit.transpile.translate_unit`; with D3 answered yes, a private helper is covered by the entry-point
       test that reaches it
 
 **Acceptance Criteria:**
 
-- [ ] Each group B candidate has a passing test per case its finding names
+- [x] Each group B candidate has a passing test per case its finding names
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_harness_transpile.py` passes
-- [ ] `pytest src/tests/test_harness_transpile.py src/tests/test_auditsnippets.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_harness_transpile.py` passes
+- [x] `pytest src/tests/test_harness_transpile.py src/tests/test_auditsnippets.py` passes
 
 **Notes:**
 
 - Depends on Task 3
+- `open-after-rejudge.md` lists no group B row: the re-judge found every `src/audit/transpile.py` candidate covered (by the Task 3 snippets and
+  `test_harness_transpile.py`), so no snippet or test was added.
 
 ---
 
