@@ -208,6 +208,10 @@ def r_seq(*args: Value, **kw: Value) -> Value:
         if a.size == 1:
             return numpy.arange(1, int(a.ravel()[0]) + 1)
         return numpy.arange(1, a.size + 1)
+    if not args and 'from' not in kw and 'to' in kw and length_out is not None:
+        # seq(to = t, by = b, length.out = n) counts back from t
+        step_back = float(by) if by is not None else 1.0
+        return float(kw['to']) - step_back * numpy.arange(int(length_out))[::-1]
     start = float(args[0]) if args else float(kw.get('from', 1))
     stop = float(args[1]) if len(args) > 1 else kw.get('to')
     if length_out is not None:
@@ -233,6 +237,8 @@ def as_array(x: Value) -> Value:
 
 
 def r_length(x: Value) -> Value:
+    if x is None:
+        return 0
     if isinstance(x, pandas.DataFrame):
         return x.shape[1]
     if isinstance(x, (dict, list)):
@@ -502,6 +508,9 @@ def r_cumsum(x: Value) -> Value:
 
 
 def r_as_numeric(x: Value) -> Value:
+    """``as.numeric(x)``; a string is a one-element vector. An unparsable string raises where R gives ``NA`` with a warning."""
+    if isinstance(x, str):
+        x = numpy.atleast_1d(x)
     if isinstance(x, pandas.Categorical) or (isinstance(x, pandas.Series) and isinstance(x.dtype, pandas.CategoricalDtype)):
         return numpy.asarray(pandas.Categorical(x).codes, dtype=float) + 1  # the integer codes of a factor, counted from 1
     a = as_array(x)
@@ -1302,7 +1311,19 @@ def r_not_equal(a: Value, b: Value) -> Value:
 
 
 def recycled(a: Value, b: Value) -> tuple[Value, Value]:
-    """R recycles the shorter operand; pandas does not broadcast a Series of length one, so a Series of another length is made an array."""
+    """The operands of an operator, recycled as R recycles them: 1-D arrays of different lengths are both repeated from the start to the longer
+    length, and a vector longer than one against a matrix is repeated down the columns to the matrix's shape. R's warning when the longer
+    length is not a multiple of the shorter is not raised. Pandas does not broadcast a Series of length one, so a Series of another length is
+    made an array."""
+    if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
+        na, nb = numpy.shape(a), numpy.shape(b)
+        if len(na) == 1 and len(nb) == 1 and na[0] > 1 and nb[0] > 1 and na[0] != nb[0]:
+            n = max(na[0], nb[0])
+            return numpy.resize(numpy.asarray(a), n), numpy.resize(numpy.asarray(b), n)
+        if len(na) == 2 and len(nb) == 1 and nb[0] > 1:
+            return a, numpy.resize(numpy.asarray(b), a.size).reshape(na, order='F')
+        if len(nb) == 2 and len(na) == 1 and na[0] > 1:
+            return numpy.resize(numpy.asarray(a), b.size).reshape(nb, order='F'), b
     if isinstance(a, pandas.Series) and not isinstance(b, (int, float)) and numpy.size(b) != len(a):
         a = a.to_numpy()
     if isinstance(b, pandas.Series) and not isinstance(a, (int, float)) and numpy.size(a) != len(b):

@@ -135,7 +135,7 @@ has a test.
 
 ## Task 4: Vectors and recycling
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`recycled`); Implementation step 4

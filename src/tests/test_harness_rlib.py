@@ -30,6 +30,7 @@ MATCHING = [
     'as_matrix_vector',
     'as_numeric_factor',
     'as_numeric_logical',
+    'as_numeric_text',
     'as_numeric_texts',
     'as_numeric_vector',
     'assign_index',
@@ -72,6 +73,7 @@ MATCHING = [
     'length_data_frame',
     'length_list',
     'length_matrix',
+    'length_null',
     'length_vector',
     'list_named',
     'list_unnamed',
@@ -98,6 +100,8 @@ MATCHING = [
     'rbind_matrix_and_vector',
     'rbind_named',
     'rbind_vectors',
+    'recycled_matrix_vector',
+    'recycled_operands',
     'rep_each',
     'rep_length_out',
     'rep_times_scalar',
@@ -108,7 +112,9 @@ MATCHING = [
     'seq_from_to',
     'seq_length_out',
     'seq_length_out_only',
+    'seq_length_out_with_to',
     'seq_one_argument',
+    'seq_to_by_length_out',
     'split_data_frame',
     'split_matrix',
     'split_vector',
@@ -129,14 +135,8 @@ def test_shim_agrees_with_r(snippet_id: str) -> None:
 
 
 DISAGREE = {
-    'as_numeric_text': 'r_as_numeric: a single string is a 0-d array and fails',
     'head_list': 'r_head: a dict is not indexed by position',
-    'length_null': 'r_length: NULL has length 1, R says 0',
     'list_mixed': 'r_list: a positional argument beside a named one is lost',
-    'recycled_matrix_vector': 'recycled: a vector against a matrix is not recycled down the columns',
-    'recycled_operands': 'recycled: two arrays of different length are not recycled, numpy raises',
-    'seq_length_out_with_to': 'r_seq: length.out with to counts up from 1, R counts back from to',
-    'seq_to_by_length_out': 'r_seq: to with by and length.out counts up from 1, R counts back from to',
     'tail_list': 'r_tail: a dict is not indexed by position',
 }
 
