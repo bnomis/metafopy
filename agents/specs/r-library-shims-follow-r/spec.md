@@ -1,6 +1,6 @@
 # R-library shims follow R
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** proposed
 **Date:** 2026-11-23
 
@@ -101,7 +101,7 @@ the tests that import `audit.rlib` directly: `src/tests/test_harness_rlib.py`, `
    `r_list` raises `UnsupportedError('list() mixing named and unnamed arguments')` and its docstring states the contract; the case leaves
    the tests as D2 says.
 6. **Close.** `DISAGREE` is empty: remove it and its test. Run every test file of the set above, then stop the list as `blocked` with this
-   note for the operator: "Run `bin/metafor-audit.sh --recall` from the main checkout (`source bin/activate.sh` first; the last run took 23
+   note for the operator: "Run `bin/metafor-audit.sh --recall` from the list's worktree, whose `src` holds the changed shims (`source bin/activate.sh` first; the last run took 23
    minutes, 05:09-05:32 UTC on 2026-11-23), then resume this task." The task list stops rather than leaving a note, because the note of
    the last harness change (Task 10 of `agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md`, 2026-11-22) was not acted on until
    `/todo-review` filed it as a separate item the next day. On resume: read the new `recall.md` and compare it with
@@ -149,3 +149,6 @@ Affects: `test_harness_rlib.py`, the generator and the fixture.
 
 Answered on 2026-11-23 in `agents/reviews/r-library-shims-follow-r-spec.md` (version 1.1 records them): the spec approved; D1 narrow, so
 `r_list` refuses a mixed call; D2 keep `list_mixed` as a refusal test in `REFUSED`.
+
+Version 1.2, 2026-11-23: the recall run is made from the list's worktree, not the main checkout, since `bin/activate.sh` puts its own
+checkout's `src` on `PYTHONPATH`, so a run from the main checkout would check the unchanged shims.
