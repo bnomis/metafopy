@@ -135,7 +135,7 @@ has a test.
 
 ## Task 4: Vectors and recycling
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`recycled`); Implementation step 4
@@ -145,24 +145,24 @@ error for a vector against a matrix.
 
 **Subtasks:**
 
-- [ ] `r_length(None)` is 0
-- [ ] `r_as_numeric` takes a str as a one-element vector (`numpy.atleast_1d`); its docstring says an unparsable string raises where R gives
+- [x] `r_length(None)` is 0
+- [x] `r_as_numeric` takes a str as a one-element vector (`numpy.atleast_1d`); its docstring says an unparsable string raises where R gives
       `NA` with a warning
-- [ ] `r_seq` with `to` and `length.out` and no `from` counts back from `to` by `by` (default 1)
-- [ ] `recycled` as the spec's API docstring says: 1-D arrays longer than one and of different lengths `numpy.resize` to the longer; a vector
+- [x] `r_seq` with `to` and `length.out` and no `from` counts back from `to` by `by` (default 1)
+- [x] `recycled` as the spec's API docstring says: 1-D arrays longer than one and of different lengths `numpy.resize` to the longer; a vector
       longer than one against a 2-D array is `numpy.resize(v, m.size).reshape(m.shape, order='F')`
-- [ ] Move `length_null`, `as_numeric_text`, `seq_length_out_with_to`, `seq_to_by_length_out`, `recycled_operands`,
+- [x] Move `length_null`, `as_numeric_text`, `seq_length_out_with_to`, `seq_to_by_length_out`, `recycled_operands`,
       `recycled_matrix_vector` to `MATCHING`; `test_recycled_turns_a_series_of_another_length_into_an_array` keeps passing
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
