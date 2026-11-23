@@ -55,6 +55,7 @@ MATCHING = [
     'equal_numbers',
     'head_data_frame',
     'head_default',
+    'head_list',
     'head_negative',
     'index_data_frame_rows',
     'index_logical',
@@ -121,6 +122,7 @@ MATCHING = [
     'stopifnot_true',
     'tail_data_frame',
     'tail_default',
+    'tail_list',
     'tail_negative',
     'var_matrix',
     'var_two_vectors',
@@ -134,18 +136,15 @@ def test_shim_agrees_with_r(snippet_id: str) -> None:
     same_as_r(snippet_id)
 
 
-DISAGREE = {
-    'head_list': 'r_head: a dict is not indexed by position',
-    'list_mixed': 'r_list: a positional argument beside a named one is lost',
-    'tail_list': 'r_tail: a dict is not indexed by position',
-}
+REFUSED = ['list_mixed']
 
 
-@pytest.mark.parametrize('snippet_id', sorted(DISAGREE))
-def test_shim_disagrees_with_r(snippet_id: str, request: pytest.FixtureRequest) -> None:
-    """rlib.py group A (T1): cases where the shim differs from R, named in DISAGREE."""
-    request.applymarker(pytest.mark.xfail(strict=True, reason='R-library shims disagree with R', raises=(AssertionError, IndexError, TypeError, ValueError)))
-    same_as_r(snippet_id)
+@pytest.mark.parametrize('snippet_id', REFUSED)
+def test_shim_refuses_what_r_does_in_an_order_it_cannot_keep(snippet_id: str) -> None:
+    """rlib.py r_list: a call mixing named and unnamed arguments raises UnsupportedError (the transpiler passes keywords after positionals)."""
+    snippet = auditsnippets.load_snippet(snippet_id)
+    with pytest.raises(audit.rlib.UnsupportedError):
+        auditsnippets.run_in_python(snippet)
 
 
 def test_named_array_wrap_keeps_names_and_drops_them_for_a_scalar() -> None:

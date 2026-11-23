@@ -176,10 +176,17 @@ def r_c_pairs(items: list[tuple[str, Value]]) -> Value:
 
 
 def r_list(*args: Value, **named: Value) -> Value:
-    if named and not args:
-        return dict(named)
+    """``list(...)``: a list for unnamed arguments, a dict for named ones.
+
+    The transpiler passes keywords after positionals, so R's order of a mixed call is lost.
+
+    Raises:
+        UnsupportedError: the call mixes named and unnamed arguments.
+    """
+    if named and args:
+        raise UnsupportedError('list() mixing named and unnamed arguments')
     if named:
-        return {**{str(i + 1): a for i, a in enumerate(args)}, **named}
+        return dict(named)
     return list(args)
 
 
@@ -614,6 +621,9 @@ def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) 
 
 def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if isinstance(x, dict):  # a named list: items by position
+        items = list(x.items())
+        return dict(items[:n])
     if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # head() of a list.rma
         return typing.cast(typing.Any, x)[:n]
     return x.head(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[:n]
@@ -621,6 +631,9 @@ def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
 
 def r_tail(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if isinstance(x, dict):  # a named list: items by position
+        items = list(x.items())
+        return dict(items[max(len(items) - n, 0) :] if n >= 0 else items[-n:])
     if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # tail() of a list.rma
         return typing.cast(typing.Any, x)[-n:]
     return x.tail(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[-n:]

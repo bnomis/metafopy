@@ -172,7 +172,7 @@ error for a vector against a matrix.
 
 ## Task 5: Lists
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5; decisions D1, D2
