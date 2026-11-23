@@ -207,7 +207,7 @@ error for a vector against a matrix.
 
 ## Task 6: The full check, then stop for the recall run
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6; Error handling
@@ -217,26 +217,26 @@ check on the branch's harness.
 
 **Subtasks:**
 
-- [ ] `DISAGREE` is empty: remove it and its test
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] `DISAGREE` is empty: remove it and its test
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/r-library-shims-follow-r/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/r-library-shims-follow-r/tasks-1/final-tests.log`
-- [ ] Commit, then stop this task as `blocked` with this note for the operator: "Run the recall check on this branch's harness, from this
+- [x] Commit, then stop this task as `blocked` with this note for the operator: "Run the recall check on this branch's harness, from this
       worktree's root: `export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH && METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib
       METAFOPY_AUDIT_WORK=/Users/simonb/src/metafopy/.audit bin/metafor-audit.sh --recall` (the last run took 23 minutes, 05:09-05:32 UTC on
       2026-11-23). Then set this task to done and restart the list." Do not run it yourself: the recall run is the operator's
 
 **Acceptance Criteria:**
 
-- [ ] `DISAGREE` is gone, the final test run passes, and the task stops for the recall run
+- [x] `DISAGREE` is gone, the final test run passes, and the task stops for the recall run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `MYPYPATH=src mypy src/audit src/tests/test_harness_rlib.py` passes
-- [ ] The final test run above passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `MYPYPATH=src mypy src/audit src/tests/test_harness_rlib.py` passes
+- [x] The final test run above passes
 
 **Notes:**
 
