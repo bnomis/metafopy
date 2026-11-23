@@ -56,6 +56,9 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/metafopy"]
 
+[tool.uv]
+exclude-newer = "14 days"
+
 [tool.ruff]
 line-length = 160
 target-version = "py314"
