@@ -4,19 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Recall check due after the `ast()` move
-
-<!-- doc-counts: accept-start found on 2026-11-23 - a dated record, not a claim about the present -->
-Found on 2026-11-23 by `/todo-review`: Task 3 of `agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md` moved R's `ast()` unchanged from
-`src/audit/r/runscripts.R` into `src/audit/r/common.R` (merged in `8a042d7`), and that list's Task 10 Notes say `bin/metafor-audit.sh
---recall` is due after the move and that the operator starts it. No run since the merge is recorded.
-<!-- doc-counts: accept-end -->
-
-Cause: the recall check runs only when the operator starts it; neither CI nor a hook runs it, since it needs the pinned R library.
-
-Fix direction: run `bin/metafor-audit.sh --recall` from the main checkout. If it reproduces every earlier audit's findings, move this item to
-`DONE.md` naming the run; if it misses one, fix the harness in `src/audit/data/` as `AGENTS.md` says, and file what it found with `/todo-add`.
-
 ## R-library shims disagree with R
 
 Found on 2026-11-22 by the direct tests of the audit harness (`src/tests/test_harness_rlib.py`, strict `xfail` cases in `DISAGREE`), against R

@@ -1788,3 +1788,18 @@ have no property-based tests" (decision D2 of `agents/reviews/property-tests-for
 Spec: `agents/specs/direct-tests-for-the-audit-harness/spec.md`; tasks: `agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md`.
 
 Done: 2026-11-22 - agents/specs/direct-tests-for-the-audit-harness/spec.md, agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md; group D and bin/logo.py dismissed in the ledger (D1, D4).
+
+## Recall check due after the `ast()` move
+
+<!-- doc-counts: accept-start found on 2026-11-23 - a dated record, not a claim about the present -->
+Found on 2026-11-23 by `/todo-review`: Task 3 of `agents/tasks/direct-tests-for-the-audit-harness/tasks-1.md` moved R's `ast()` unchanged from
+`src/audit/r/runscripts.R` into `src/audit/r/common.R` (merged in `8a042d7`), and that list's Task 10 Notes say `bin/metafor-audit.sh
+--recall` is due after the move and that the operator starts it. No run since the merge is recorded.
+<!-- doc-counts: accept-end -->
+
+Cause: the recall check runs only when the operator starts it; neither CI nor a hook runs it, since it needs the pinned R library.
+
+Fix direction: run `bin/metafor-audit.sh --recall` from the main checkout. If it reproduces every earlier audit's findings, move this item to
+`DONE.md` naming the run; if it misses one, fix the harness in `src/audit/data/` as `AGENTS.md` says, and file what it found with `/todo-add`.
+
+Done: 2026-11-23 - `bin/metafor-audit.sh --recall` at `f6d82a8` (run `.audit/runs/recall-20261123-061000/recall.md`, 05:09-05:32 UTC): 176 of 176 items of audits 4, 5 and 6 reproduced; `a6-glmm-um-rs` listed apart as oracle moved (recorded 2026-11-02).
