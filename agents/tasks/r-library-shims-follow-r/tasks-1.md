@@ -207,7 +207,7 @@ error for a vector against a matrix.
 
 ## Task 6: The full check, then stop for the recall run
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6; Error handling
@@ -241,6 +241,8 @@ check on the branch's harness.
 **Notes:**
 
 - Depends on Tasks 2-5
+- Recall run made by the operator session on 2026-11-23 from this worktree: `.audit/runs/recall-20261123-092117/recall.md`, 176 of 176 reproduced
+  (`a6-glmm-um-rs` apart as oracle moved), identical to the baseline `recall-20261123-061000`
 - It runs from this worktree, not the main checkout: `bin/metafor-audit.sh` puts its own checkout's `src` on `PYTHONPATH`
   (`bin/activate.sh`), so only a run from here checks the changed shims
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
