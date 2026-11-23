@@ -28,6 +28,7 @@ import metafopy
 import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
+import metafopy.methods.fitview
 import metafopy.transf
 
 Value = typing.Any
@@ -837,15 +838,42 @@ def r_unlist(x: Value, **kw: Value) -> Value:
 
 
 def r_class(x: Value) -> Value:
+    """``class(x)``: R's class vector, as an object array. A data frame is ``data.frame`` (``escalc``, ``data.frame`` with a measure), a fitted
+    model has its metafor classes (``metafopy.methods.fitview.r_class``), and a value without a class attribute its implicit class: ``NULL``,
+    ``logical``, ``numeric`` (also for an R integer, which the transpiler writes as a float), ``character``, ``list``, ``function``, and
+    ``matrix``, ``array`` for a two-dimensional array.
+
+    Raises:
+        UnsupportedError: any other object (a metafopy result without a metafor class in Python).
+    """
     if isinstance(x, pandas.DataFrame):
         return numpy.array(['escalc', 'data.frame'] if x.attrs.get('measure') else ['data.frame'], dtype=object)  # an escalc object has its measure
-    return numpy.array([type(x).__name__], dtype=object)
+    fit = metafopy.methods.fitview.r_class(x)
+    if fit:
+        return numpy.array(fit, dtype=object)
+    if x is None:
+        return numpy.array(['NULL'], dtype=object)
+    if isinstance(x, (dict, list, tuple)):
+        return numpy.array(['list'], dtype=object)
+    if callable(x) and not isinstance(x, (numpy.ndarray, pandas.Series)):
+        return numpy.array(['function'], dtype=object)
+    if isinstance(x, (str, bool, int, float, numpy.generic, numpy.ndarray, pandas.Series)):
+        a = numpy.asarray(x)
+        if a.dtype.kind == 'b':
+            kind = 'logical'
+        elif a.dtype.kind in 'iuf':
+            kind = 'numeric'
+        elif a.dtype.kind in 'US' or (a.dtype.kind == 'O' and all(isinstance(v, str) for v in a.ravel().tolist())):
+            kind = 'character'
+        else:
+            raise UnsupportedError(f'class() of an array of dtype {a.dtype}')
+        return numpy.array(['matrix', 'array'] if a.ndim == 2 else [kind], dtype=object)
+    raise UnsupportedError(f'class() of a {type(x).__name__}')
 
 
 def r_inherits(x: Value, what: Value) -> Value:
-    if isinstance(x, pandas.DataFrame):
-        return bool(set(r_class(x).tolist()) & set(numpy.atleast_1d(what).tolist()))
-    return type(x).__name__ in set(numpy.atleast_1d(what).tolist())
+    """``inherits(x, what)``: whether any of the class names in ``what`` is in ``class(x)`` (see ``r_class``)."""
+    return bool(set(r_class(x).tolist()) & set(numpy.atleast_1d(what).tolist()))
 
 
 def r_exp(x: Value) -> Value:

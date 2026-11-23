@@ -67,7 +67,7 @@ has a test.
 
 ## Task 2: Class shims
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`r_class`); Implementation step 2
@@ -76,21 +76,21 @@ has a test.
 
 **Subtasks:**
 
-- [ ] `r_class` as the spec's API docstring says, reading `metafopy.methods.fitview.r_class` for fits and raising `UnsupportedError` for any
+- [x] `r_class` as the spec's API docstring says, reading `metafopy.methods.fitview.r_class` for fits and raising `UnsupportedError` for any
       other object it has no R class for; the docstring says `numeric` also stands for an R integer
-- [ ] `r_inherits` becomes `bool(set(r_class(x)) & set(what))` for every input
-- [ ] Move `class_numeric`, `class_matrix`, `class_null`, `class_character`, `inherits_number`, `inherits_fit` to `MATCHING`;
+- [x] `r_inherits` becomes `bool(set(r_class(x)) & set(what))` for every input
+- [x] Move `class_numeric`, `class_matrix`, `class_null`, `class_character`, `inherits_number`, `inherits_fit` to `MATCHING`;
       `class_data_frame` and `inherits_data_frame` keep passing
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
