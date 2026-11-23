@@ -32,7 +32,7 @@ passing test. Imports by full module path, no leading underscores (`claude/rules
 
 ## Task 1: New snippets and the regenerated fixture
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 1; External dependencies
@@ -42,24 +42,25 @@ has a test.
 
 **Subtasks:**
 
-- [ ] Add to `src/tests/r/generate_audit_snippets.R`, beside the existing cases, the snippets of spec step 1: `head_list`,
+- [x] Add to `src/tests/r/generate_audit_snippets.R`, beside the existing cases, the snippets of spec step 1: `head_list`,
       `recycled_matrix_vector`, `seq_to_by_length_out`, `class_null`, `class_character`, `inherits_fit`, `cbind_named_and_unnamed`,
       `matrix_rownames_only`, with the R text the spec gives
-- [ ] Save the old fixture outside the repository, regenerate with the R command above, and compare old and new by snippet id: every
+- [x] Save the old fixture outside the repository, regenerate with the R command above, and compare old and new by snippet id: every
       existing record must be unchanged
-- [ ] Add each new id to `DISAGREE` with its reason; run `src/tests/test_harness_rlib.py`: each new id must `XFAIL`
+- [x] Add each new id to `DISAGREE` with its reason; run `src/tests/test_harness_rlib.py`: each new id must `XFAIL`
 
 **Acceptance Criteria:**
 
-- [ ] The fixture holds the new snippets, its existing records are unchanged, and each new case is a strict xfail
+- [x] The fixture holds the new snippets, its existing records are unchanged, and each new case is a strict xfail
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
 
 **Notes:**
 
+- `inherits_fit` uses `rma(c(...), c(...))` on literal vectors, not `data = escalc(...)`: the snippet runner passes an empty NSE set, so a column lookup raises `UnsupportedError` (not an xfail)
 - The fixture's `meta` must match `r-versions.json`; `auditsnippets.load_snippet` fails otherwise
 
 ---
