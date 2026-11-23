@@ -164,3 +164,33 @@ run_call <- function(spec, env) {
 print_text <- function(x) {
   paste(capture.output(print(x)), collapse = "\n")
 }
+
+# The parse tree of a language object as JSON-ready lists: what src/audit/transpile.py reads (shared by runscripts.R and
+# src/tests/r/generate_audit_snippets.R).
+ast <- function(e) {
+  if (is.null(e)) return(list(t = "null"))
+  if (is.name(e)) return(list(t = "sym", v = as.character(e)))
+  if (is.character(e)) return(list(t = "str", v = e))
+  if (is.logical(e)) return(if (is.na(e)) list(t = "na", kind = "lgl") else list(t = "lgl", v = e))
+  if (is.integer(e)) return(if (is.na(e)) list(t = "na", kind = "int") else list(t = "int", v = e))
+  if (is.numeric(e)) {
+    if (is.na(e)) return(list(t = "na", kind = "num"))
+    if (is.infinite(e)) return(list(t = "inf", v = if (e > 0) 1 else -1))
+    return(list(t = "num", v = e))
+  }
+  if (is.call(e)) {
+    parts <- as.list(e)
+    nm <- names(parts)
+    args <- lapply(seq_along(parts)[-1], function(i) {
+      empty <- identical(parts[[i]], quote(expr = ))
+      list(name = if (is.null(nm) || nm[i] == "") NULL else nm[i],
+           v = if (empty) list(t = "empty") else ast(parts[[i]]))
+    })
+    return(list(t = "call", f = ast(parts[[1]]), args = args))
+  }
+  if (is.pairlist(e)) return(list(t = "pairlist", args = lapply(seq_along(e), function(i) {
+    empty <- identical(e[[i]], quote(expr = ))
+    list(name = names(e)[i], v = if (empty) list(t = "empty") else ast(e[[i]]))
+  })))
+  list(t = "other", v = paste(deparse(e), collapse = " "))
+}

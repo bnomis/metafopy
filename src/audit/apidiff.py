@@ -17,6 +17,11 @@ import audit.valuetree
 import metafopy
 import metafopy.transf
 
+__all__ = [
+    'run',
+    'run_functions',
+]
+
 Json = dict[str, typing.Any]
 Finding = tuple[str, str, str, str]  # id, kind, path, detail
 

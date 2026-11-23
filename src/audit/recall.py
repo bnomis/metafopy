@@ -18,6 +18,16 @@ import typing
 import audit.config
 import audit.errors
 
+__all__ = [
+    'Corpus',
+    'Item',
+    'evaluate',
+    'hints',
+    'run_audit',
+    'steps_for',
+    'write',
+]
+
 Json = dict[str, typing.Any]
 
 # auditme: accept[non-alphabetical-literal] the order is the order the steps run in

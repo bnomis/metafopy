@@ -13,6 +13,11 @@ import audit.ledger
 import audit.steps
 import audit.universe
 
+__all__ = [
+    'rerender',
+    'write',
+]
+
 SECTIONS: list[tuple[str, tuple[str, ...]]] = [
     ('Missing functions and arguments', ('missing-function', 'missing-arg')),
     ('Different defaults', ('default-diff',)),

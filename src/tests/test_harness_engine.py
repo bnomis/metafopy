@@ -294,3 +294,20 @@ def test_r_takes_the_cluster_port_it_is_given(tmp_path: pathlib.Path) -> None:
     env = audit.rdriver.environment()
     proc = subprocess.run(audit.rdriver.rscript_command(script), env=env, capture_output=True, text=True, check=True)
     assert proc.stdout == env['R_PARALLEL_PORT']
+
+
+def test_r_stop_reason_words_each_way_r_stopped() -> None:
+    """``r_stop_reason`` gives the words the report reads: a stall names the doubled timeout, memory the limit, a death the unit."""
+    assert audit.engine.r_stop_reason('stalled', 10, 'case') == 'R did not return within 50s (timeout)'
+    assert audit.engine.r_stop_reason('memory', 10, 'case') == f'R passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB (killed)'
+    assert audit.engine.r_stop_reason('died', 10, 'unit') == 'R process died on this unit (killed)'
+
+
+def test_py_stop_is_the_finding_kind_and_detail_of_each_way_python_stopped(tmp_path: pathlib.Path) -> None:
+    """``py_stop`` gives ``timeout``, ``memory`` or ``process-died`` with its detail; a death names the exit status and the log."""
+    log = tmp_path / 'py.log'
+    assert audit.engine.py_stop('stalled', 10, None, log, 'case') == ('timeout', 'Python did not return within 50s')
+    kind, detail = audit.engine.py_stop('memory', 10, None, log, 'case')
+    assert kind == 'memory'
+    assert detail == f'Python passed the memory limit of {audit.config.MEMORY_LIMIT / 1024**3:g} GiB'
+    assert audit.engine.py_stop('died', 10, -9, log, 'script') == ('process-died', f'Python process died on this script (exit status -9); see {log}')

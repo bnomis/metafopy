@@ -9,6 +9,13 @@ import dataclasses
 import re
 import typing
 
+__all__ = [
+    'UntranslatableError',
+    'assignment_targets',
+    'symbols',
+    'translate_unit',
+]
+
 Node = dict[str, typing.Any]
 
 # parse-tree node types that name a variable

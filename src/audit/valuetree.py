@@ -15,6 +15,16 @@ import audit.config
 import metafopy
 import metafopy.methods.accessors
 
+__all__ = [
+    'Diff',
+    'Node',
+    'cell_equal',
+    'compare',
+    'lookup',
+    'py_name',
+    'to_node',
+]
+
 Node = dict[str, typing.Any]
 Labels = list[str] | tuple[list[str], list[str]] | None
 

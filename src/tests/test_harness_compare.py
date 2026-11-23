@@ -2,13 +2,19 @@
 
 import json
 import pathlib
+import re
 import subprocess
 
+import hypothesis
+import hypothesis.strategies
 import pytest
 
+import audit.cases
 import audit.cli
 import audit.config
+import audit.domains
 import audit.errors
+import audit.generate
 import audit.printdiff
 import audit.rdriver
 import audit.recall
@@ -316,8 +322,188 @@ def test_check_r_skips_the_arithmetic_comparison_for_a_source_without_fused(monk
     assert 'predates metafopy.core.dbinom.FUSED' in outcome.notes[0]
 
 
+def finding(step: str, case_id: str) -> audit.steps.Finding:
+    return audit.steps.Finding(step, case_id, 'missing-field', '$x', 'detail')
+
+
+def test_result_class_of_a_matrix_or_options_case_is_the_fit_class() -> None:
+    """report.py::result_class: the third id part, without its ``#n`` repeat suffix, names the fit; its class is looked up."""
+    classes = {'uni_reml': 'rma.uni'}
+    assert audit.report.result_class(finding('matrix', 'matrix/confint/uni_reml#2'), classes) == 'rma.uni'
+    assert audit.report.result_class(finding('options', 'options/rma/uni_reml'), classes) == 'rma.uni'
+
+
+def test_result_class_falls_back_to_the_function_in_the_id() -> None:
+    """report.py::result_class: a fit with no known class gives the function of the case, as does an id of two parts."""
+    assert audit.report.result_class(finding('matrix', 'matrix/confint/other'), {}) == 'confint'
+    assert audit.report.result_class(finding('matrix', 'matrix/confint'), {}) == 'confint'
+
+
+def test_result_class_of_a_construct_case_is_the_fixture_class() -> None:
+    """report.py::result_class: a construct case names the fixture in its second id part."""
+    assert audit.report.result_class(finding('construct', 'construct/es_bcg'), {'es_bcg': 'escalc'}) == 'escalc'
+    assert audit.report.result_class(finding('construct', 'construct/other'), {}) == 'other'
+
+
+def test_result_class_of_a_script_finding_names_the_examples() -> None:
+    """report.py::result_class: a scripts finding is about the results of the metafor examples and tests, whatever its id."""
+    assert audit.report.result_class(finding('scripts', 'scripts/a/b'), {'b': 'x'}) == 'results of the metafor examples and tests'
+
+
+def test_result_class_of_another_step_is_the_function() -> None:
+    """report.py::result_class: any other step gives the function of the case."""
+    assert audit.report.result_class(finding('print', 'print/confint/fit'), {}) == 'confint'
+
+
+def test_generate_cases_generates_once_and_records_the_coverage(monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path) -> None:
+    """steps.py::generate_cases: the first call generates and stores what is uncovered; the second returns the stored result untouched."""
+    calls: list[int] = []
+    generated = audit.generate.Generated(cases=[], uncovered=['f/arg'], unaccounted=['g'])
+
+    def fake_generate(*args: object) -> audit.generate.Generated:
+        calls.append(1)
+        return generated
+
+    monkeypatch.setattr(audit.generate, 'generate', fake_generate)
+    monkeypatch.setattr(audit.cases, 'load_fixtures', list)
+    monkeypatch.setattr(audit.domains.Domains, 'load', classmethod(lambda cls: object()))
+    monkeypatch.setattr(audit.domains.Recipes, 'load', classmethod(lambda cls: object()))
+    ctx = audit.steps.Context(work=tmp_path, jobs=1, timeout=1.0, quick=False, only=None)
+    ctx.universe = audit.universe.Universe({'fixtures': {}, 'functions': {}, 'methods': []})
+    assert audit.steps.generate_cases(ctx) is generated
+    assert ctx.coverage == {'uncovered_arguments': ['f/arg'], 'unaccounted': ['g']}
+    assert audit.steps.generate_cases(ctx) is generated
+    assert calls == [1]
+
+
 @pytest.mark.parametrize('value', ['abc', '999', '1,x'])
 def test_recall_value_that_names_no_audit_is_a_usage_error(value: str) -> None:
     with pytest.raises(SystemExit) as raised:
         audit.cli.parse_args(['--recall', value])
     assert raised.value.code == 2
+
+
+PRINTED_DIGITS = hypothesis.strategies.integers(min_value=0, max_value=6)
+PRINTED_NUMBERS = hypothesis.strategies.builds(
+    lambda x, n, exponent: f'{x:.{n}f}{exponent}',
+    hypothesis.strategies.floats(min_value=-1e6, max_value=1e6),
+    PRINTED_DIGITS,
+    hypothesis.strategies.sampled_from(['', 'e5', 'E-3', 'e+10']),
+)
+# a printed number, or a token with numbers inside it (``QM(df = 2) = 15.6105,`` is ``15.6105,`` after the split)
+NUMERIC_TOKENS = hypothesis.strategies.one_of(
+    PRINTED_NUMBERS,
+    hypothesis.strategies.builds(
+        lambda prefix, number, suffix: prefix + number + suffix,
+        hypothesis.strategies.sampled_from(['', '(', 'tau^2=']),
+        PRINTED_NUMBERS,
+        hypothesis.strategies.sampled_from(['', ',', ')', '%']),
+    ),
+)
+WORDS = hypothesis.strategies.text(alphabet='abcXYZ', min_size=1, max_size=6)
+PRINTED_LINE_TOKENS = hypothesis.strategies.lists(hypothesis.strategies.one_of(WORDS, NUMERIC_TOKENS), min_size=1, max_size=6)
+PRINTED_TEXT_LINES = hypothesis.strategies.lists(
+    hypothesis.strategies.text(alphabet='abc 0.1234-', min_size=1, max_size=15).filter(lambda line: line.strip() != ''),
+    max_size=5,
+)
+BLANKS = hypothesis.strategies.sampled_from(['', ' ', '\t', '   '])
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(x=hypothesis.strategies.floats(min_value=-1e300, max_value=1e300), n=hypothesis.strategies.integers(min_value=0, max_value=15))
+def test_decimals_counts_the_printed_places_and_ignores_an_exponent(x: float, n: int) -> None:
+    """``decimals`` (T2): ``decimals(f'{x:.{n}f}') == n``, and an exponent suffix does not change it."""
+    printed = f'{x:.{n}f}'
+    assert audit.printdiff.decimals(printed) == n
+    assert audit.printdiff.decimals(printed + 'e-5') == n
+    assert audit.printdiff.decimals(printed + 'E+7') == n
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(a=PRINTED_NUMBERS, b=PRINTED_NUMBERS)
+def test_close_numbers_is_reflexive_and_symmetric(a: str, b: str) -> None:
+    """``close_numbers`` (T2): a printed number is close to itself, and ``close_numbers(a, b) == close_numbers(b, a)``."""
+    assert audit.printdiff.close_numbers(a, a)
+    assert audit.printdiff.close_numbers(a, b) == audit.printdiff.close_numbers(b, a)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(k=hypothesis.strategies.integers(min_value=-(10**9), max_value=10**9), n=PRINTED_DIGITS)
+def test_close_numbers_accepts_a_difference_of_one_in_the_last_place(k: int, n: int) -> None:
+    """``close_numbers`` (T2): the printed ``k / 10**n`` and ``(k + 1) / 10**n`` are close, in either order."""
+    a, b = f'{k / 10**n:.{n}f}', f'{(k + 1) / 10**n:.{n}f}'
+    assert audit.printdiff.close_numbers(a, b)
+    assert audit.printdiff.close_numbers(b, a)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(a=NUMERIC_TOKENS, b=NUMERIC_TOKENS)
+def test_same_token_is_reflexive_and_symmetric(a: str, b: str) -> None:
+    """``same_token`` (T2): reflexive and symmetric over numeric tokens and tokens with embedded numbers."""
+    assert audit.printdiff.same_token(a, a)
+    assert audit.printdiff.same_token(a, b) == audit.printdiff.same_token(b, a)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(a=PRINTED_LINE_TOKENS, b=PRINTED_LINE_TOKENS, space=hypothesis.strategies.sampled_from([' ', '  ', '\t', ' \t ']))
+def test_same_line_is_reflexive_symmetric_and_ignores_the_spacing(a: list[str], b: list[str], space: str) -> None:
+    """``same_line`` (T2): reflexive, symmetric, and re-spacing the whitespace between tokens does not change it."""
+    line_a, line_b = ' '.join(a), ' '.join(b)
+    assert audit.printdiff.same_line(line_a, line_a)
+    assert audit.printdiff.same_line(line_a, line_b) == audit.printdiff.same_line(line_b, line_a)
+    assert audit.printdiff.same_line(space.join(a), line_a)
+    assert audit.printdiff.same_line(space.join(a), line_b) == audit.printdiff.same_line(line_a, line_b)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    lines=PRINTED_TEXT_LINES,
+    others=PRINTED_TEXT_LINES,
+    blanks=hypothesis.strategies.lists(BLANKS, max_size=4),
+    at=hypothesis.strategies.integers(min_value=0, max_value=5),
+)
+def test_first_difference_is_none_for_equal_texts_and_ignores_blank_lines(lines: list[str], others: list[str], blanks: list[str], at: int) -> None:
+    """``first_difference`` (T2): ``None`` for a text against itself; blank lines put into either text do not change the result."""
+    text, other = '\n'.join(lines), '\n'.join(others)
+    assert audit.printdiff.first_difference(text, text) is None
+    padded = list(lines)
+    position = min(at, len(padded))
+    padded[position:position] = blanks
+    padded_text = '\n'.join(padded)
+    assert audit.printdiff.first_difference(padded_text, other) == audit.printdiff.first_difference(text, other)
+    assert audit.printdiff.first_difference(other, padded_text) == audit.printdiff.first_difference(other, text)
+
+
+NAME_PARTS = hypothesis.strategies.text(alphabet='abc 12()[]', max_size=8)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(parts=hypothesis.strategies.lists(NAME_PARTS, min_size=1, max_size=4))
+def test_normal_path_is_idempotent_and_leaves_no_index(parts: list[str]) -> None:
+    """``normal_path`` (T2): ``normal_path(normal_path(p)) == normal_path(p)`` and the result has no ``[digits]`` index."""
+    once = audit.report.normal_path('$'.join(parts))
+    assert audit.report.normal_path(once) == once
+    assert re.search(r'\[\d+\]', once) is None
+
+
+CASE_IDS = hypothesis.strategies.text(alphabet='abc.-_01', max_size=12)
+PLAIN_PATTERNS = hypothesis.strategies.text(alphabet='abc.-_01', max_size=4)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(case_id=CASE_IDS, pattern=PLAIN_PATTERNS)
+def test_selected_matches_a_pattern_without_wildcards_as_a_substring(case_id: str, pattern: str) -> None:
+    """``selected`` (T2): a pattern without ``*`` or ``?`` matches exactly when it is a substring of the case id."""
+    assert audit.steps.selected(case_id, [pattern]) == (pattern in case_id)
+
+
+@hypothesis.settings(max_examples=100, deadline=None)
+@hypothesis.given(
+    case_id=CASE_IDS,
+    only=hypothesis.strategies.lists(hypothesis.strategies.text(alphabet='abc.-_01*?', max_size=4), max_size=3),
+    extra=hypothesis.strategies.text(alphabet='abc.-_01*?', max_size=4),
+)
+def test_selected_never_loses_a_match_when_a_pattern_is_added(case_id: str, only: list[str], extra: str) -> None:
+    """``selected`` (T2): adding a pattern to ``only`` never turns a selected case into an unselected one."""
+    if audit.steps.selected(case_id, only):
+        assert audit.steps.selected(case_id, [*only, extra])

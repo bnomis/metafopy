@@ -1,7 +1,7 @@
 # Direct tests for the audit harness
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-22
 
 Every function under `src/audit` and `bin` that the auditme T1 question (a branching function has no test) or T2 question (a pure function
@@ -56,6 +56,7 @@ No harness API changes. `src/tests/auditsnippets.py` exposes:
 
 ```python
 import dataclasses
+import pathlib
 import typing
 
 import audit.valuetree
@@ -70,9 +71,10 @@ class Snippet:
     units: list[dict[str, typing.Any]]
     value: audit.valuetree.Node
     deparsed: str | None
+    error: str | None = None  # R's message when the snippet raises; value is then a null node
 
 
-def load_snippet(snippet_id: str) -> Snippet:
+def load_snippet(snippet_id: str, path: pathlib.Path = SNIPPETS_PATH) -> Snippet:
     """The recorded snippet; fails naming both versions when the fixture's metafor or R differs from src/audit/data/r-versions.json."""
 
 

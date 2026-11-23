@@ -8,6 +8,11 @@ import typing
 
 import audit.config
 
+__all__ = [
+    'Universe',
+    'snapshot_path',
+]
+
 Json = dict[str, typing.Any]
 
 

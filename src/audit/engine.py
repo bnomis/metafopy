@@ -13,6 +13,19 @@ import audit.cases
 import audit.config
 import audit.rdriver
 
+__all__ = [
+    'Json',
+    'PyLauncher',
+    'Stop',
+    'py_stop',
+    'r_stop_reason',
+    'read_outcomes',
+    'resident_bytes',
+    'run_cases',
+    'run_shard',
+    'watch',
+]
+
 Json = dict[str, typing.Any]
 Stop = typing.Literal['died', 'memory', 'stalled']
 

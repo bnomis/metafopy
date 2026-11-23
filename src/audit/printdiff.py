@@ -4,6 +4,10 @@ import re
 
 import audit.config
 
+__all__ = [
+    'first_difference',
+]
+
 DECIMAL = re.compile(r'[-+]?(?:\d+\.\d*|\.\d+)(?:[eE][-+]?\d+)?')
 NUMBER = re.compile(r'^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$')
 

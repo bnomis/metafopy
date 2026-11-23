@@ -1,0 +1,241 @@
+"""Direct tests of the R-library shims in audit.rlib (group A of the audit-harness spec), checked against the R values recorded in
+reference/audit/snippets.json.
+
+A strict xfail names a case where the shim disagrees with R (the item "R-library shims disagree with R" in TODO.md); the passing tests of the
+same candidates cover the branches that agree.
+"""
+
+import contextlib
+import io
+
+import auditsnippets
+import matplotlib.pyplot
+import numpy
+import pandas
+import pytest
+
+import audit.errors
+import audit.rlib
+
+
+def same_as_r(snippet_id: str) -> None:
+    snippet = auditsnippets.load_snippet(snippet_id)
+    auditsnippets.assert_same_as_r(snippet, auditsnippets.run_in_python(snippet))
+
+
+MATCHING = [
+    'as_dataframe_list',
+    'as_matrix_data_frame',
+    'as_matrix_vector',
+    'as_numeric_factor',
+    'as_numeric_logical',
+    'as_numeric_texts',
+    'as_numeric_vector',
+    'assign_index',
+    'attr_missing',
+    'cbind_matrix_and_vector',
+    'cbind_vectors',
+    'class_data_frame',
+    'cor_matrix',
+    'cor_vectors',
+    'dataframe_columns',
+    'dataframe_recycled',
+    'diag_of_matrix',
+    'diag_of_vector',
+    'diag_size',
+    'equal_number_and_text',
+    'equal_numbers',
+    'head_data_frame',
+    'head_default',
+    'head_negative',
+    'index_data_frame_rows',
+    'index_logical',
+    'index_negative',
+    'index_two_brackets',
+    'inherits_data_frame',
+    'isna_list',
+    'isna_matrix',
+    'isna_vector',
+    'lapply_data_frame',
+    'lapply_named_list',
+    'lapply_vector',
+    'length_data_frame',
+    'length_list',
+    'length_matrix',
+    'length_vector',
+    'list_named',
+    'list_unnamed',
+    'matrix_both_dims',
+    'matrix_by_column',
+    'matrix_by_row',
+    'matrix_byrow_ncol',
+    'matrix_ncol_only',
+    'matrix_neither_dim',
+    'matrix_recycled',
+    'names_assigned',
+    'names_assigned_data_frame',
+    'names_data_frame',
+    'names_list',
+    'names_unnamed',
+    'paste_collapse',
+    'paste_default',
+    'paste_numbers',
+    'paste_recycled',
+    'paste_sep',
+    'rbind_data_frames',
+    'rbind_matrix_and_vector',
+    'rbind_named',
+    'rbind_vectors',
+    'rep_each',
+    'rep_length_out',
+    'rep_times_scalar',
+    'rep_times_vector',
+    'seq_along_with',
+    'seq_by',
+    'seq_by_descending',
+    'seq_from_to',
+    'seq_length_out',
+    'seq_length_out_only',
+    'seq_one_argument',
+    'split_data_frame',
+    'split_matrix',
+    'split_vector',
+    'stopifnot_true',
+    'tail_data_frame',
+    'tail_default',
+    'tail_negative',
+    'var_matrix',
+    'var_two_vectors',
+    'var_vector',
+]
+
+
+@pytest.mark.parametrize('snippet_id', MATCHING)
+def test_shim_agrees_with_r(snippet_id: str) -> None:
+    """rlib.py group A (T1): the snippet's value in Python equals R's recorded value, through the shim the snippet reaches."""
+    same_as_r(snippet_id)
+
+
+DISAGREE = {
+    'as_dataframe_matrix': 'r_as_dataframe: a matrix gets no V1, V2 column names',
+    'as_numeric_text': 'r_as_numeric: a single string is a 0-d array and fails',
+    'cbind_named': 'r_cbind: named arguments give no column names',
+    'class_matrix': 'r_class: a matrix is one class name, R says "matrix" and "array"',
+    'class_numeric': 'r_class: a number is "float", R says "numeric"',
+    'inherits_number': 'r_inherits: a number does not inherit "numeric"',
+    'isna_data_frame': 'r_isna: a data frame gives a different frame, with other column names',
+    'length_null': 'r_length: NULL has length 1, R says 0',
+    'list_mixed': 'r_list: a positional argument beside a named one is lost',
+    'matrix_dimnames': 'r_matrix: dimnames are dropped',
+    'recycled_operands': 'recycled: two arrays of different length are not recycled, numpy raises',
+    'seq_length_out_with_to': 'r_seq: length.out with to counts up from 1, R counts back from to',
+    'tail_list': 'r_tail: a dict is not indexed by position',
+}
+
+
+@pytest.mark.parametrize('snippet_id', sorted(DISAGREE))
+def test_shim_disagrees_with_r(snippet_id: str, request: pytest.FixtureRequest) -> None:
+    """rlib.py group A (T1): cases where the shim differs from R, named in DISAGREE."""
+    request.applymarker(pytest.mark.xfail(strict=True, reason='R-library shims disagree with R', raises=(AssertionError, IndexError, TypeError, ValueError)))
+    same_as_r(snippet_id)
+
+
+def test_named_array_wrap_keeps_names_and_drops_them_for_a_scalar() -> None:
+    """rlib.py Named.__array_wrap__: a numpy operation keeps the names of a matrix result; a scalar result is plain."""
+    named = audit.rlib.Named(numpy.arange(4.0).reshape(2, 2), ['row_a', 'row_b'], ['col_a', 'col_b'])
+    doubled = named * 2
+    assert isinstance(doubled, audit.rlib.Named)
+    assert doubled.rownames == ('row_a', 'row_b')
+    assert doubled.colnames == ('col_a', 'col_b')
+    total = numpy.sum(named)
+    assert not isinstance(total, audit.rlib.Named)
+    assert total == 6.0
+
+
+def test_format_cell_whole_float_decimal_float_and_text() -> None:
+    """rlib.py format_cell: a whole float prints without a decimal point, a float with decimals as R does, other cells as str."""
+    assert audit.rlib.format_cell(2.0) == '2'
+    assert audit.rlib.format_cell(numpy.float64(1.5)) == '1.5'
+    assert audit.rlib.format_cell('a') == 'a'
+    assert audit.rlib.format_cell(3) == '3'
+
+
+def test_capture_output_returns_the_printed_lines() -> None:
+    """rlib.py r_capture_output: the lines the thunk prints, as an object vector (hand-built: R prints numbers in its own format)."""
+    assert audit.rlib.r_capture_output(lambda: print('a\nb')).tolist() == ['a', 'b']
+    assert audit.rlib.r_capture_output(lambda: None).tolist() == []
+    with contextlib.redirect_stdout(io.StringIO()) as sink:
+        audit.rlib.r_capture_output(lambda: print('x'))
+    assert sink.getvalue() == ''
+
+
+def test_index2_missing_name_raises() -> None:
+    """rlib.py r_index2: [[ with a name the dict lacks raises."""
+    with pytest.raises(KeyError):
+        audit.rlib.r_index2({'a': 1}, 'z')
+
+
+def test_index_series_and_dict() -> None:
+    """rlib.py r_index: [ on a Series by position and on a dict by name (hand-built: no R snippet makes either)."""
+    series = pandas.Series([5.0, 6.0, 7.0])
+    assert numpy.asarray(audit.rlib.r_index(series, numpy.array([2]))).tolist() == [6.0]
+    assert audit.rlib.r_index({'a': 1, 'b': 2}, 'b') == {'b': 2}
+
+
+def test_stopifnot_raises_on_a_false_condition_and_returns_none_on_true() -> None:
+    """rlib.py r_stopifnot: a true condition passes, a false one raises HarnessError (R raises too; the snippet has no value to compare)."""
+    assert audit.rlib.r_stopifnot(True, numpy.array([True, True])) is None
+    with pytest.raises(audit.errors.HarnessError):
+        audit.rlib.r_stopifnot(numpy.array([True, False]))
+
+
+def test_truth_of_length_zero_raises_unsupported() -> None:
+    """rlib.py truth: an if condition of length zero raises UnsupportedError (R: "argument is of length zero"); other conditions use the first element."""
+    with pytest.raises(audit.rlib.UnsupportedError):
+        audit.rlib.truth(numpy.zeros(0, dtype=bool))
+    assert audit.rlib.truth(numpy.array([True, False])) is True
+    assert audit.rlib.truth(0) is False
+
+
+def test_recycled_turns_a_series_of_another_length_into_an_array() -> None:
+    """rlib.py recycled: a Series against an operand of another length becomes an array, so numpy recycles; of equal length it stays a Series."""
+    series = pandas.Series([1.0, 2.0, 3.0, 4.0])
+    a, b = audit.rlib.recycled(series, numpy.array([10.0, 20.0]))
+    assert isinstance(a, numpy.ndarray)
+    assert b.tolist() == [10.0, 20.0]
+    c, d = audit.rlib.recycled(numpy.array([10.0, 20.0]), series)
+    assert isinstance(d, numpy.ndarray)
+    assert c.tolist() == [10.0, 20.0]
+    kept, _ = audit.rlib.recycled(series, numpy.arange(4.0))
+    assert isinstance(kept, pandas.Series)
+    scalar, _ = audit.rlib.recycled(series, 2.0)
+    assert isinstance(scalar, pandas.Series)
+
+
+class Fit:
+    coef_names = ('intrcpt', 'ablat')
+
+
+def test_names_of_series_dict_fit_and_a_value_without_names() -> None:
+    """rlib.py r_names: names of a Series are its index, of a dict its keys, of a fit its coef_names; a bare value has none (hand-built)."""
+    assert audit.rlib.r_names(pandas.Series([1, 2], index=['p', 'q'])).tolist() == ['p', 'q']
+    assert audit.rlib.r_names({'a': 1, 'b': 2}).tolist() == ['a', 'b']
+    assert audit.rlib.r_names(Fit()).tolist() == ['intrcpt', 'ablat']
+    assert audit.rlib.r_names(3.0) is None
+
+
+def test_par_old_values_and_no_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """rlib.py r_par: par(name = value) returns the old values and records the new; par() with nothing returns None; par("usr") is the axes' limits."""
+    state: dict[str, object] = {}
+    monkeypatch.setattr(audit.rlib, 'PAR_STATE', state)
+    assert audit.rlib.r_par() is None
+    assert audit.rlib.r_par(mar=3) == {'mar': None}
+    assert audit.rlib.r_par({'mar': 4}) == {'mar': 3}
+    assert state == {'mar': 4}
+    matplotlib.pyplot.figure()
+    matplotlib.pyplot.plot([0, 1], [2, 3])
+    usr = audit.rlib.r_par('usr')
+    matplotlib.pyplot.close('all')
+    assert usr.shape == (4,)
+    assert usr[0] < 0 < 1 < usr[1]
+    assert usr[2] < 2 < 3 < usr[3]
