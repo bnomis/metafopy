@@ -252,7 +252,7 @@ check on the branch's harness.
 
 ## Task 7: Compare the recall run and close
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6; Error handling
@@ -262,24 +262,24 @@ check on the branch's harness.
 
 **Subtasks:**
 
-- [ ] Find the newest `/Users/simonb/src/metafopy/.audit/runs/recall-*/recall.md` written after Task 6's commit. If there is none, stop as
+- [x] Find the newest `/Users/simonb/src/metafopy/.audit/runs/recall-*/recall.md` written after Task 6's commit. If there is none, stop as
       `blocked`: "the recall run of Task 6 has not been made"
-- [ ] Compare it with `.audit/runs/recall-20261123-061000/recall.md` (176 of 176 reproduced, `a6-glmm-um-rs` apart as oracle moved). If they
+- [x] Compare it with `.audit/runs/recall-20261123-061000/recall.md` (176 of 176 reproduced, `a6-glmm-um-rs` apart as oracle moved). If they
       differ, stop as `blocked`, naming each item that changed and the scripts unit whose findings changed (diff `audit*/findings.json` of the
       two runs); do not edit `known.toml` or `recall.toml` to fit
-- [ ] Move the `TODO.md` item "R-library shims disagree with R" to the end of `DONE.md`: append its heading and body unchanged, then the line
+- [x] Move the `TODO.md` item "R-library shims disagree with R" to the end of `DONE.md`: append its heading and body unchanged, then the line
       `Done: <date> - agents/specs/r-library-shims-follow-r/spec.md, agents/tasks/r-library-shims-follow-r/tasks-1.md; recall <run dir>:
       <its totals>; list_mixed refused (D1).`, and remove it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
 
 **Acceptance Criteria:**
 
-- [ ] The new recall run matches the 2026-11-23 one, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
+- [x] The new recall run matches the 2026-11-23 one, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-library-shims-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-library-shims-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

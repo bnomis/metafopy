@@ -1,7 +1,7 @@
 # R-library shims follow R
 
 **Version:** 1.2
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-23
 
 The R-library shims of the audit harness (`src/audit/rlib.py`), through which the scripts step runs metafor's own examples and tests
