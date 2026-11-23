@@ -26,6 +26,7 @@ import metafopy.datasets
 import metafopy.transf
 
 REF = refutil.load_phase2('bias')
+AUDIT3 = refutil.load_phase12('audit3')
 
 
 # auditme: accept[paired-sibling-helpers] each test module keeps its own fixture loader
@@ -126,6 +127,20 @@ def test_regtest(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame,
     same_text(str(out), ref['print'])
 
 
+# print(regtest(rma(yi, vi, data = dat)), digits = 2) in R 4.6 with metafor 5.2-1 (dat: escalc("RR") of dat.bcg), run on 2026-11-23
+REG_DIGITS_2 = (
+    '\nRegression Test for Funnel Plot Asymmetry\n\nModel:     mixed-effects meta-regression model\nPredictor: standard error\n\n'
+    'Test for Funnel Plot Asymmetry: z = -0.80, p = 0.42\nLimit Estimate (as sei -> 0):   b = -0.51 (CI: -1.12, 0.10)\n'
+)
+
+
+def test_regtest_summary(models: dict[str, typing.Any], dat: pandas.DataFrame, hack: pandas.DataFrame) -> None:
+    """Direct test of src/metafopy/bias/regtest.py::RegtestResult.summary: R's print() with the stored digits and with digits = 2."""
+    out = REG_CASES['reg_sei'](models, dat, hack)
+    same_text(out.summary(), REF['reg_sei']['print'])
+    same_text(out.summary(digits=2), REG_DIGITS_2)
+
+
 def test_regtest_errors(models: dict[str, typing.Any], dat: pandas.DataFrame) -> None:
     with pytest.raises(ValueError, match='sample size'):
         metafopy.bias.regtest(models['res'], predictor='ninv')
@@ -207,6 +222,16 @@ def test_trimfill(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame
     if out.k0 > 0:
         assert list(out.slab) == refutil.as_list(ref['slab'])
     same_text(str(out), ref['print'])
+
+
+def test_trimfill_summary(models: dict[str, typing.Any], dat: pandas.DataFrame) -> None:
+    """Direct test of src/metafopy/bias/trimfill.py::TrimfillResult.summary: R's summary() (with the fit statistics, showfit=True) and print()
+    (showfit=False) of trimfill(rma(yi, vi, data = dat)), from tests/r/generate_audit3.R and tests/r/generate_bias.R."""
+    out = TF_CASES['tf_re_L0'](models, dat)
+    shown = out.summary(showfit=True)
+    assert 'logLik' in shown
+    assert refutil.same_print(shown, AUDIT3['summary']['trimfill']), shown
+    same_text(out.summary(showfit=False), REF['tf_re_L0']['print'])
 
 
 def test_trimfill_needs_intercept_only_model(models: dict[str, typing.Any]) -> None:
@@ -293,6 +318,19 @@ def test_fsn(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame, hac
     same_text(str(out), ref['print'])
 
 
+# print(fsn(yi, vi, data = dat), digits = 2) in R 4.6 with metafor 5.2-1 (dat: escalc("RR") of dat.bcg), run on 2026-11-23
+FSN_DIGITS_2 = (
+    '\nFail-safe N Calculation Using the Rosenthal Approach\n\nObserved Significance Level: <.01\nTarget Significance Level:   0.05\n\nFail-safe N: 598\n'
+)
+
+
+def test_fsn_summary(models: dict[str, typing.Any], dat: pandas.DataFrame, hack: pandas.DataFrame) -> None:
+    """Direct test of src/metafopy/bias/fsn.py::FsnResult.summary: R's print() with the stored digits and with digits = 2."""
+    out = FSN_CASES['fsn_rosenthal'](models, dat, hack)
+    same_text(out.summary(), REF['fsn_rosenthal']['print'])
+    same_text(out.summary(digits=2), FSN_DIGITS_2)
+
+
 def test_fsn_regression_integer_search() -> None:
     data = metafopy.datasets.load('egger2001').drop(index=[7, 15])
     esc = metafopy.escalc(measure='RR', ai='ai', n1i='n1i', ci='ci', n2i='n2i', data=data, add=0.5, to='all')
@@ -347,6 +385,17 @@ def test_hc(key: str, models: dict[str, typing.Any]) -> None:
     for name in ('beta', 'se', 'ci.lb', 'ci.ub', 'beta.rma', 'se.rma', 'ci.lb.rma', 'ci.ub.rma', 'tau2', 'tau2.rma'):
         refutil.close(getattr(out, name.replace('.', '_')), ref[name], f'{key}: {name}', rtol=1e-6)
     same_text(str(out), ref['print'])
+
+
+# print(hc(rma(yi, vi, data = dat)), digits = 2) in R 4.6 with metafor 5.2-1 (dat: escalc("RR") of dat.bcg), run on 2026-11-23
+HC_DIGITS_2 = '\n    method tau2 estimate   se ci.lb ci.ub \nrma   REML 0.31    -0.71 0.18 -1.07 -0.36 \nhc      DL 0.31    -0.43 0.28 -1.16  0.29 \n'
+
+
+def test_hc_summary(models: dict[str, typing.Any]) -> None:
+    """Direct test of src/metafopy/bias/hc.py::HcResult.summary: R's print() with the stored digits and with digits = 2."""
+    out = HC_CASES['hc_re'](models)
+    same_text(out.summary(), REF['hc_re']['print'])
+    same_text(out.summary(digits=2), HC_DIGITS_2)
 
 
 def test_hc_needs_intercept_only_model(models: dict[str, typing.Any]) -> None:
@@ -407,6 +456,12 @@ def test_tes(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame, hac
     else:
         refutil.close(out.theta_lim, ref['theta.lim'], f'{key}: theta.lim', rtol=1e-5)
     same_text(str(out), ref['print'])
+
+
+@pytest.mark.parametrize('key', ['tes_re', 'tes_theta_vec', 'tes_two_lim'])
+def test_tes_summary(key: str, models: dict[str, typing.Any], dat: pandas.DataFrame, hack: pandas.DataFrame) -> None:
+    """Direct test of src/metafopy/bias/tes.py::TesResult.summary: R's print() of the result."""
+    same_text(TES_CASES[key](models, dat, hack).summary(), REF[key]['print'])
 
 
 def test_tes_errors(dat: pandas.DataFrame) -> None:

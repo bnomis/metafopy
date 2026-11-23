@@ -16,6 +16,7 @@ import refutil
 import metafopy
 import metafopy.core.labelled
 import metafopy.errors
+import metafopy.models.mv_result
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase4' / 'rma_mv.json').read_text(encoding='utf-8'))
 RTOL = 1e-5
@@ -470,10 +471,62 @@ def test_dist_matrix_must_be_symmetric() -> None:
         konst(random='~ year | district', struct='SPEXP', dist=dist)
 
 
-def test_formulas_are_the_inner_and_outer_of_each_term() -> None:
-    assert CASES['ber_un']().formulas == ('~ outcome | trial', None)
-    assert CASES['kon_spexp']().formulas == ('~ year | district', None)
-    assert CASES['kon_fe']().formulas == (None, None)
+# sapply(res$formulas, function(f) if (is.null(f)) NA else deparse(f)) of each fit in R 4.6 with metafor 5.2-1, run on 2026-11-23 (the fits of
+# tests/r/generate_rma_mv.R, the simulated data read back from reference/phase4/rma_mv.json); R's deparse writes no space after the tilde
+R_FORMULAS: dict[str, tuple[str | None, str | None]] = {
+    'ber_un': ('~outcome | trial', None),
+    'kon_fe': (None, None),
+    'kon_nested': (None, None),
+    'kon_spexp': ('~year | district', None),
+    'sim_s_and_g': ('~outcome | study', None),
+    'sim_two_inner_outer': ('~outcome | study', '~outcome | group'),
+}
+
+
+@pytest.mark.parametrize('name', sorted(R_FORMULAS))
+def test_formulas_are_the_inner_and_outer_of_each_term(name: str) -> None:
+    """Candidate ``src/metafopy/models/mv_result.py::formula_text``, through ``RMAMVResult.formulas``: R's ``res$formulas``, with no random term
+    (``kon_fe``), ``~ 1 | id`` terms only, one ``~ inner | outer`` term and two."""
+    res = CASES[name]()
+    assert isinstance(res, metafopy.models.mv_result.RMAMVResult)
+    assert tuple(None if f is None else f.replace('~ ', '~', 1) for f in res.formulas) == R_FORMULAS[name]
+
+
+def test_known_correlation_matrices_are_none_without_any() -> None:
+    """Candidate ``src/metafopy/models/mv_result.py::RMAMVResult.R`` with no ``R`` given: R's ``res$R`` is ``NULL`` (metafor 5.2-1, run on
+    2026-11-23, with and without random terms)."""
+    assert CASES['kon_nested']().R is None
+    assert CASES['kon_fe']().R is None
+
+
+def test_known_correlation_matrices_name_every_term() -> None:
+    """Candidate ``src/metafopy/models/mv_result.py::RMAMVResult.R`` with a mapping given: R's ``names(res$R)`` is ``c("species", "study")`` and
+    ``res$R$study`` is ``NULL`` for ``rma.mv(yi, V, random = list(~ 1 | species, ~ 1 | study), R = list(species = Rsp))`` (metafor 5.2-1, run on
+    2026-11-23)."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = CASES['sim_R_known']()
+    known = res.R
+    assert list(known) == ['species', 'study']
+    assert known['study'] is None
+    assert known['species'] is not None
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason='RMAMVResult.R returns the matrix as given; R metafor stores it cut to the levels in the data, in sorted order, and scaled by Rscale',
+)
+def test_known_correlation_matrix_is_cut_to_the_levels_with_data() -> None:
+    """Candidate ``src/metafopy/models/mv_result.py::RMAMVResult.R``: in R, ``res$R$species`` of the fit above is the 6 x 6 matrix of the levels
+    ``sp1 sp3 sp4 sp6 sp7 sp8`` that have data, ``all.equal(res$R$species, Rsp[lev, lev])`` (metafor 5.2-1, run on 2026-11-23); ``R`` gave 8 levels."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = CASES['sim_R_known']()
+    levels = sorted(str(v) for v in sim()['species'].unique())
+    assert levels == ['sp1', 'sp3', 'sp4', 'sp6', 'sp7', 'sp8']
+    got = pandas.DataFrame(res.R['species'])
+    assert list(got.index) == levels
+    numpy.testing.assert_allclose(got.to_numpy(dtype=float), species_matrix().loc[levels, levels].to_numpy(dtype=float))
 
 
 @pytest.mark.parametrize('name', ['ber_un', 'ber_hcs'])

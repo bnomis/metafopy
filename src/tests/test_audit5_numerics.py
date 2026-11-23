@@ -152,13 +152,15 @@ def test_mv_unknown_hesspack() -> None:
 # -- numerical Hessians -----------------------------------------------------------------------------------
 
 
-def analytic() -> tuple[collections.abc.Callable[[numpy.ndarray], float], numpy.ndarray, numpy.ndarray]:
+def analytic(x0: float = 0.3) -> tuple[collections.abc.Callable[[numpy.ndarray], float], numpy.ndarray, numpy.ndarray]:
+    """``exp(x0) sin(x1) + x0 x1^2 + x2^3`` at ``(x0, 0.7, 1.1)`` and its Hessian there, worked out by hand."""
+
     def f(x: numpy.ndarray) -> float:
         return float(numpy.exp(x[0]) * numpy.sin(x[1]) + x[0] * x[1] ** 2 + x[2] ** 3)
 
-    x = numpy.array([0.3, 0.7, 1.1])
-    e, s, c = math.exp(0.3), math.sin(0.7), math.cos(0.7)
-    h = numpy.array([[e * s, e * c + 1.4, 0.0], [e * c + 1.4, -e * s + 0.6, 0.0], [0.0, 0.0, 6.6]])
+    x = numpy.array([x0, 0.7, 1.1])
+    e, s, c = math.exp(x0), math.sin(0.7), math.cos(0.7)
+    h = numpy.array([[e * s, e * c + 1.4, 0.0], [e * c + 1.4, -e * s + 2 * x0, 0.0], [0.0, 0.0, 6.6]])
     return f, x, h
 
 
@@ -168,6 +170,26 @@ def analytic() -> tuple[collections.abc.Callable[[numpy.ndarray], float], numpy.
 def test_hessian_packages_recover_an_analytic_hessian(hesspack: str, ctrl: dict[str, typing.Any], tol: float) -> None:
     f, x, expected = analytic()
     assert numpy.max(numpy.abs(metafopy.core.numderiv.hessian_by_package(f, x, hesspack, ctrl) - expected)) < tol
+
+
+@pytest.mark.parametrize(
+    ('x0', 'kwargs', 'tol'), [(0.3, {}, 1e-8), (0.0, {}, 1e-8), (0.3, {'accuracy': 2, 'stepsize': 1e-3}, 1e-5), (0.3, {'accuracy': 6}, 1e-8)]
+)
+def test_hessian_calculus_recovers_an_analytic_hessian(x0: float, kwargs: dict[str, typing.Any], tol: float) -> None:
+    """Candidate ``src/metafopy/core/numderiv.py::hessian_calculus``: the hand-worked Hessian, with the default relative steps (``x0 = 0`` takes
+    the absolute step R's ``calculus`` uses at zero), a fixed ``stepsize`` and the stencils of ``accuracy`` 2, 4 and 6."""
+    f, x, expected = analytic(x0)
+    got = metafopy.core.numderiv.hessian_calculus(f, x, **kwargs)
+    assert got.shape == expected.shape
+    numpy.testing.assert_array_equal(got, got.T)
+    assert numpy.max(numpy.abs(got - expected)) < tol
+
+
+def test_hessian_calculus_of_one_parameter() -> None:
+    """Candidate ``src/metafopy/core/numderiv.py::hessian_calculus`` without mixed derivatives: ``d^2/dx^2 x^3 = 6x`` at 1.5."""
+    got = metafopy.core.numderiv.hessian_calculus(lambda x: float(x[0] ** 3), numpy.array([1.5]))
+    assert got.shape == (1, 1)
+    assert got[0, 0] == pytest.approx(9.0, abs=1e-7)
 
 
 def test_hessian_pracma_is_the_central_difference_formula() -> None:

@@ -5,7 +5,10 @@ import math
 import hypothesis
 import hypothesis.strategies
 import numpy
+import pandas
+import refutil
 import rstrategies
+import scipy.sparse
 
 import metafopy.core.labelled
 
@@ -26,6 +29,40 @@ def test_str_with_names() -> None:
 def test_str_of_a_vector_is_numpys() -> None:
     out = metafopy.core.labelled.LabelledMatrix(VALUES)[0]
     assert str(out) == str(numpy.asarray(out))
+
+
+# The expected texts below are R 4.6's output (metafor 5.2-1, Matrix), run on 2026-11-23 with LC_ALL=C.UTF-8; R pads lines with spaces that
+# refutil.r_print strips from both sides.
+def test_rframe_text_prints_as_r_data_frame() -> None:
+    """Candidate ``src/metafopy/core/labelled.py::RFrame.text``, a frame without digits: R's
+    ``print(data.frame(a = c(1, 2.5, -0.125), b = c(3L, 4L, 10L), row.names = c("x", "y", "z")))``."""
+    frame = metafopy.core.labelled.RFrame({'a': [1.0, 2.5, -0.125], 'b': [3, 4, 10]}, index=['x', 'y', 'z'])
+    assert refutil.r_print(frame.text()) == '       a  b\nx  1.000  3\ny  2.500  4\nz -0.125 10'
+
+
+def test_rframe_text_rounds_to_the_digits_of_the_result() -> None:
+    """Candidate ``src/metafopy/core/labelled.py::RFrame.text``, a frame with ``attrs['digits']``: R's
+    ``print(data.frame(est = round(c(0.123456, -1.98765), 2), n = c(12L, 7L), row.names = c("s1", "s2")))``."""
+    frame = metafopy.core.labelled.RFrame({'est': [0.123456, -1.98765], 'n': [12, 7]}, index=['s1', 's2'])
+    frame.attrs['digits'] = 2
+    assert refutil.r_print(frame.text()) == '     est  n\ns1  0.12 12\ns2 -1.99  7'
+
+
+def test_rframe_text_of_a_vcovmat_prints_zeros_as_dots() -> None:
+    """Candidate ``src/metafopy/core/labelled.py::RFrame.text``, a frame with ``attrs['vcovmat']``: metafor's ``print.vcovmat`` of
+    ``structure(matrix(c(0.40191, 0, 0, 0.25), 2, dimnames = list(c("1", "2"), c("1", "2"))), class = c("vcovmat", "matrix"))``."""
+    names = [str(i) for i in range(1, 3)]
+    frame = metafopy.core.labelled.RFrame(pandas.DataFrame([[0.40191, 0.0], [0.0, 0.25]], index=names, columns=names))
+    frame.attrs['vcovmat'] = True
+    assert refutil.r_print(frame.text()).strip('\n') == '       1      2\n1 0.4019      .\n2      . 0.2500'
+
+
+def test_sparse_vcovmat_text_prints_as_r_dgcmatrix() -> None:
+    """Candidate ``src/metafopy/core/labelled.py::SparseVCovMat.text``: R's
+    ``print(Matrix::sparseMatrix(i = c(1, 2, 1, 2, 3), j = c(1, 1, 2, 2, 3), x = c(0.5, 0.1, 0.1, 0.25, 1)))``."""
+    matrix = metafopy.core.labelled.SparseVCovMat(scipy.sparse.csr_array([[0.5, 0.1, 0.0], [0.1, 0.25, 0.0], [0.0, 0.0, 1.0]]))
+    expected = '3 x 3 sparse Matrix of class "dgCMatrix"\n\n[1,] 0.5 0.10 .\n[2,] 0.1 0.25 .\n[3,] .   .    1'
+    assert refutil.r_print(matrix.text()) == expected
 
 
 magnitudes = hypothesis.strategies.builds(
