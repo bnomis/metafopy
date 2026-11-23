@@ -100,7 +100,7 @@ has a test.
 
 ## Task 3: Names kept as R keeps them
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 3
@@ -109,23 +109,23 @@ has a test.
 
 **Subtasks:**
 
-- [ ] `r_as_dataframe` of a 2-D array: columns from a `Named` matrix's `colnames`, else `V1`, `V2`, ...; rows from its `rownames`
-- [ ] `r_cbind` returns a `Named` matrix when any argument is named, `''` for an unnamed column; its docstring says R's order of a named
+- [x] `r_as_dataframe` of a 2-D array: columns from a `Named` matrix's `colnames`, else `V1`, `V2`, ...; rows from its `rownames`
+- [x] `r_cbind` returns a `Named` matrix when any argument is named, `''` for an unnamed column; its docstring says R's order of a named
       argument before an unnamed one is lost, since the transpiler passes keywords after positionals
-- [ ] `r_isna` of a data frame is `r_as_matrix(x.isna())`
-- [ ] `r_matrix` takes `dimnames` (a list of two, either `None`) into a `Named`
-- [ ] Move `as_dataframe_matrix`, `cbind_named`, `cbind_named_and_unnamed`, `isna_data_frame`, `matrix_dimnames`, `matrix_rownames_only` to
+- [x] `r_isna` of a data frame is `r_as_matrix(x.isna())`
+- [x] `r_matrix` takes `dimnames` (a list of two, either `None`) into a `Named`
+- [x] Move `as_dataframe_matrix`, `cbind_named`, `cbind_named_and_unnamed`, `isna_data_frame`, `matrix_dimnames`, `matrix_rownames_only` to
       `MATCHING`
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 

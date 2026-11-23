@@ -290,7 +290,7 @@ def r_ifelse(test: Value, yes: Value, no: Value) -> Value:
 
 def r_isna(x: Value) -> Value:
     if isinstance(x, pandas.DataFrame):
-        return x.isna().to_numpy()
+        return r_as_matrix(x.isna())
     return pandas.isna(numpy.asarray(x, dtype=object) if isinstance(x, list) else x)
 
 
@@ -339,7 +339,12 @@ def r_matrix(data: Value = 0, nrow: Value = None, ncol: Value = None, byrow: Val
         ncol = math.ceil(a.size / int(nrow))
     nrow, ncol = int(nrow), int(ncol)
     a = numpy.resize(a, nrow * ncol)
-    return a.reshape((nrow, ncol)) if byrow else a.reshape((ncol, nrow)).T
+    result = a.reshape((nrow, ncol)) if byrow else a.reshape((ncol, nrow)).T
+    dimnames = kw.get('dimnames')
+    if dimnames is None:
+        return result
+    rows, cols = list(dimnames)
+    return Named(result, None if rows is None else list(numpy.ravel(rows)), None if cols is None else list(numpy.ravel(cols)))
 
 
 def r_diag(x: Value, **kw: Value) -> Value:
@@ -352,6 +357,10 @@ def r_diag(x: Value, **kw: Value) -> Value:
 
 
 def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) -> Value:
+    """``cbind()``: a call with a named argument gives a matrix whose unnamed columns have the name ``''``.
+
+    R keeps a named argument in its place among the unnamed ones; the transpiler passes keywords after positionals, so the named columns come last.
+    """
     entries: list[tuple[str | None, Value]] = []
     frame = any(isinstance(x, pandas.DataFrame) for x in list(xs) + list(named.values()))
     deparsed = deparse_names is not None
@@ -372,6 +381,8 @@ def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) 
         # a column R names by a symbol keeps the name; the others have the empty name R gives them (V1, V2, ... when no symbol named any)
         labels = ['' if name is None and deparsed else f'V{n + 1}' if name is None else name for n, (name, _) in enumerate(entries)]
         return pandas.DataFrame(dict(enumerate(arrays))).set_axis(labels, axis=1)
+    if named:
+        return Named(numpy.column_stack(arrays), None, ['' if name is None else name for name, _ in entries])
     return numpy.column_stack(arrays)
 
 
@@ -552,6 +563,11 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
     summary = getattr(x, 'summary', None)
     if callable(summary) and type(x).__name__ == 'EmmGrid':  # as.data.frame(emmeans(...)) is the summary of the grid
         return as_frame_of_summary(summary())
+    if isinstance(x, numpy.ndarray) and x.ndim == 2:
+        colnames = getattr(x, 'colnames', None)
+        rownames = getattr(x, 'rownames', None)
+        columns = list(colnames) if colnames is not None else [f'V{n + 1}' for n in range(x.shape[1])]
+        return pandas.DataFrame(numpy.asarray(x), columns=columns, index=None if rownames is None else list(rownames))
     return pandas.DataFrame(x)
 
 

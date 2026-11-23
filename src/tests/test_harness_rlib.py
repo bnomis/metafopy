@@ -25,6 +25,7 @@ def same_as_r(snippet_id: str) -> None:
 
 MATCHING = [
     'as_dataframe_list',
+    'as_dataframe_matrix',
     'as_matrix_data_frame',
     'as_matrix_vector',
     'as_numeric_factor',
@@ -34,6 +35,8 @@ MATCHING = [
     'assign_index',
     'attr_missing',
     'cbind_matrix_and_vector',
+    'cbind_named',
+    'cbind_named_and_unnamed',
     'cbind_vectors',
     'class_character',
     'class_data_frame',
@@ -59,6 +62,7 @@ MATCHING = [
     'inherits_data_frame',
     'inherits_fit',
     'inherits_number',
+    'isna_data_frame',
     'isna_list',
     'isna_matrix',
     'isna_vector',
@@ -75,9 +79,11 @@ MATCHING = [
     'matrix_by_column',
     'matrix_by_row',
     'matrix_byrow_ncol',
+    'matrix_dimnames',
     'matrix_ncol_only',
     'matrix_neither_dim',
     'matrix_recycled',
+    'matrix_rownames_only',
     'names_assigned',
     'names_assigned_data_frame',
     'names_data_frame',
@@ -123,16 +129,10 @@ def test_shim_agrees_with_r(snippet_id: str) -> None:
 
 
 DISAGREE = {
-    'as_dataframe_matrix': 'r_as_dataframe: a matrix gets no V1, V2 column names',
     'as_numeric_text': 'r_as_numeric: a single string is a 0-d array and fails',
-    'cbind_named': 'r_cbind: named arguments give no column names',
-    'cbind_named_and_unnamed': 'r_cbind: a named beside an unnamed argument gives no column names',
     'head_list': 'r_head: a dict is not indexed by position',
-    'isna_data_frame': 'r_isna: a data frame gives a different frame, with other column names',
     'length_null': 'r_length: NULL has length 1, R says 0',
     'list_mixed': 'r_list: a positional argument beside a named one is lost',
-    'matrix_dimnames': 'r_matrix: dimnames are dropped',
-    'matrix_rownames_only': 'r_matrix: row names alone are dropped',
     'recycled_matrix_vector': 'recycled: a vector against a matrix is not recycled down the columns',
     'recycled_operands': 'recycled: two arrays of different length are not recycled, numpy raises',
     'seq_length_out_with_to': 'r_seq: length.out with to counts up from 1, R counts back from to',
