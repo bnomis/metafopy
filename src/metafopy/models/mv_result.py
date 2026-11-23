@@ -170,6 +170,7 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
     s_levels_f: tuple[tuple[str, ...], ...] = ()
     slab_f: tuple[str, ...] = ()
     X_f: FloatArray | None = None
+    R_used: tuple[pandas.DataFrame | None, ...] = ()
     digits: int = 4
     yi_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty(0), repr=False)
     vi_f: FloatArray = dataclasses.field(default_factory=lambda: numpy.empty(0), repr=False)
@@ -333,10 +334,12 @@ class RMAMVResult(metafopy.models.fit_methods.RobustFields, metafopy.models.fit_
     @property
     def R(self) -> typing.Any:
         """The known correlation matrices given as ``R`` (``None`` without any), metafor's ``R``: a mapping with an entry for every ``~ 1 | factor`` term,
-        ``None`` for the terms without a matrix."""
+        ``None`` for the terms without a matrix. Each matrix is the one the fit used, as ``rma.mv`` stores it: cut to the term's levels with data,
+        in their sorted order, and rescaled as ``Rscale`` says (https://github.com/wviechtb/metafor/blob/master/R/rma.mv.R)."""
         known = self.spec.get('R')
         if isinstance(known, collections.abc.Mapping) and self.s_names:
-            return {name: known.get(name) for name in self.s_names}
+            used = dict(zip(self.s_names, self.R_used, strict=False))
+            return {name: used.get(name) if known.get(name) is not None else None for name in self.s_names}
         return known
 
     @property

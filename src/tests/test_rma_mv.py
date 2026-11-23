@@ -512,10 +512,6 @@ def test_known_correlation_matrices_name_every_term() -> None:
     assert known['species'] is not None
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason='RMAMVResult.R returns the matrix as given; R metafor stores it cut to the levels in the data, in sorted order, and scaled by Rscale',
-)
 def test_known_correlation_matrix_is_cut_to_the_levels_with_data() -> None:
     """Candidate ``src/metafopy/models/mv_result.py::RMAMVResult.R``: in R, ``res$R$species`` of the fit above is the 6 x 6 matrix of the levels
     ``sp1 sp3 sp4 sp6 sp7 sp8`` that have data, ``all.equal(res$R$species, Rsp[lev, lev])`` (metafor 5.2-1, run on 2026-11-23); ``R`` gave 8 levels."""

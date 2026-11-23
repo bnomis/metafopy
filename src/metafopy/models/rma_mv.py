@@ -897,6 +897,7 @@ def rma_mv(
     sigma2_v = sinfo.sigma2.copy()
     Z_S: list[Mat] = []
     D_S: list[Mat] = []
+    r_used: list[pandas.DataFrame | None] = []
     if with_s:
         single = numpy.isnan(sigma2_v) & (numpy.array(s_nlevels) == 1)
         if single.any() and con.check_k_gtr_1:
@@ -913,9 +914,11 @@ def rma_mv(
                     if rscale != 'none'
                     else frame.loc[list(s_levels[j]), list(s_levels[j])]
                 )
+                r_used.append(scaled)
                 r_arr = scipy.sparse.csc_array(scaled.to_numpy()) if sparse else scaled.to_numpy()
                 D_S.append(typing.cast(Mat, z @ r_arr @ z.T))
             else:
+                r_used.append(None)
                 D_S.append(typing.cast(Mat, z @ z.T))
         D_S = [scipy.sparse.csc_array(d) if sparse else numpy.asarray(d) for d in D_S]
 
@@ -1346,6 +1349,7 @@ def rma_mv(
         s_factors=tuple(sinfo.factors),
         Z_S=tuple(Z_S),
         D_S=tuple(D_S),
+        R_used=tuple(r_used),
         problem=problem,
         hessian=hessian,
         vvc=vvc,

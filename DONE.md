@@ -1856,3 +1856,22 @@ with R, so their expected text can be reused); no metafopy output changes. Then 
 and check `phaseb.py report . --question T1` lists none of them.
 
 Done: 2026-11-23 - branch test/direct-tests-ten-metafopy: a direct test for each of the ten in src/tests/test_bias.py, test_labelled_print.py, test_audit5_numerics.py and test_rma_mv.py, checked against R reference text, R runs of 2026-11-23 or an analytic Hessian. The ledger was not re-judged: the T1 brief moved to version 7 on 2026-11-23, so `phaseb.py plan` re-plans every candidate; the next audit refreshes these verdicts (operator choice, 2026-11-23). The test of `RMAMVResult.R` found the defect filed as "`RMAMVResult.R` returns a known correlation matrix as given, not cut and scaled as R stores it".
+
+## `RMAMVResult.R` returns a known correlation matrix as given, not cut and scaled as R stores it
+
+<!-- doc-counts: accept-start found on 2026-11-23 - a dated record, not a claim about the present -->
+Found on 2026-11-23 by the direct test of `RMAMVResult.R`
+(`src/tests/test_rma_mv.py::test_known_correlation_matrix_is_cut_to_the_levels_with_data`, strict `xfail`): for a fit with
+`R={'species': <8 x 8 matrix>}` on data with six species, R metafor 5.2-1 gives `res$R$species` as the 6 x 6 matrix of the levels with
+data, sorted (`sp1 sp3 sp4 sp6 sp7 sp8`) and scaled by `Rscale` (`all.equal(res$R$species, Rsp[lev, lev])`); metafopy returns all eight
+levels as given.
+<!-- doc-counts: accept-end -->
+
+Cause: `rma.mv` replaces each given matrix by `R[[j]][s.levels[[j]], s.levels[[j]]]` and then applies `Rscale`
+(`.audit/source/metafor/R/rma.mv.R:1484-1510`) before storing it; `RMAMVResult.R` in `src/metafopy/models/mv_result.py:334` returns
+`self.spec['R']` unchanged. Whether the fit itself uses the cut and scaled matrix (so only the stored attribute differs) is not checked.
+
+Fix direction: return the matrix the fit used, cut to the levels with data and scaled as `Rscale` says; this changes an output, so it needs
+the operator's confirmation first. Then remove the strict `xfail` marker of that test.
+
+Done: 2026-11-23 - branch fix/rma-mv-stored-r: rma_mv keeps the matrices the fit already used (cut to the levels with data and scaled by `Rscale`, `src/metafopy/models/rma_mv.py` near line 911) as `RMAMVResult.R_used`, and `RMAMVResult.R` returns them; the fit was unchanged, since it already used them. `test_known_correlation_matrix_is_cut_to_the_levels_with_data` no longer xfail (operator approved the output change 2026-11-23).
