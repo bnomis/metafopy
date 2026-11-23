@@ -172,7 +172,7 @@ error for a vector against a matrix.
 
 ## Task 5: Lists
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5; decisions D1, D2
@@ -182,22 +182,22 @@ error for a vector against a matrix.
 
 **Subtasks:**
 
-- [ ] `r_tail` and `r_head` of a dict take items by position, as R does for a named list; a negative `n` as R (all but the last or first `|n|`)
-- [ ] `r_list` raises `UnsupportedError('list() mixing named and unnamed arguments')` for a call with both, and its docstring states the
+- [x] `r_tail` and `r_head` of a dict take items by position, as R does for a named list; a negative `n` as R (all but the last or first `|n|`)
+- [x] `r_list` raises `UnsupportedError('list() mixing named and unnamed arguments')` for a call with both, and its docstring states the
       contract
-- [ ] Add `REFUSED = ['list_mixed']` and a test that runs each snippet in it and expects `audit.rlib.UnsupportedError`; remove `list_mixed`
+- [x] Add `REFUSED = ['list_mixed']` and a test that runs each snippet in it and expects `audit.rlib.UnsupportedError`; remove `list_mixed`
       from `DISAGREE`. Keep its R record in the fixture
-- [ ] Move `tail_list`, `head_list` to `MATCHING`
+- [x] Move `tail_list`, `head_list` to `MATCHING`
 
 **Acceptance Criteria:**
 
-- [ ] `tail_list` and `head_list` pass, `list_mixed` passes as a refusal, and the harness test set passes
+- [x] `tail_list` and `head_list` pass, `list_mixed` passes as a refusal, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py src/tests/test_harness_rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py src/tests/test_harness_rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
