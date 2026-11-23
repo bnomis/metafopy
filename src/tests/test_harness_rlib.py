@@ -25,17 +25,25 @@ def same_as_r(snippet_id: str) -> None:
 
 MATCHING = [
     'as_dataframe_list',
+    'as_dataframe_matrix',
     'as_matrix_data_frame',
     'as_matrix_vector',
     'as_numeric_factor',
     'as_numeric_logical',
+    'as_numeric_text',
     'as_numeric_texts',
     'as_numeric_vector',
     'assign_index',
     'attr_missing',
     'cbind_matrix_and_vector',
+    'cbind_named',
+    'cbind_named_and_unnamed',
     'cbind_vectors',
+    'class_character',
     'class_data_frame',
+    'class_matrix',
+    'class_null',
+    'class_numeric',
     'cor_matrix',
     'cor_vectors',
     'dataframe_columns',
@@ -47,12 +55,16 @@ MATCHING = [
     'equal_numbers',
     'head_data_frame',
     'head_default',
+    'head_list',
     'head_negative',
     'index_data_frame_rows',
     'index_logical',
     'index_negative',
     'index_two_brackets',
     'inherits_data_frame',
+    'inherits_fit',
+    'inherits_number',
+    'isna_data_frame',
     'isna_list',
     'isna_matrix',
     'isna_vector',
@@ -62,6 +74,7 @@ MATCHING = [
     'length_data_frame',
     'length_list',
     'length_matrix',
+    'length_null',
     'length_vector',
     'list_named',
     'list_unnamed',
@@ -69,9 +82,11 @@ MATCHING = [
     'matrix_by_column',
     'matrix_by_row',
     'matrix_byrow_ncol',
+    'matrix_dimnames',
     'matrix_ncol_only',
     'matrix_neither_dim',
     'matrix_recycled',
+    'matrix_rownames_only',
     'names_assigned',
     'names_assigned_data_frame',
     'names_data_frame',
@@ -86,6 +101,8 @@ MATCHING = [
     'rbind_matrix_and_vector',
     'rbind_named',
     'rbind_vectors',
+    'recycled_matrix_vector',
+    'recycled_operands',
     'rep_each',
     'rep_length_out',
     'rep_times_scalar',
@@ -96,13 +113,16 @@ MATCHING = [
     'seq_from_to',
     'seq_length_out',
     'seq_length_out_only',
+    'seq_length_out_with_to',
     'seq_one_argument',
+    'seq_to_by_length_out',
     'split_data_frame',
     'split_matrix',
     'split_vector',
     'stopifnot_true',
     'tail_data_frame',
     'tail_default',
+    'tail_list',
     'tail_negative',
     'var_matrix',
     'var_two_vectors',
@@ -116,28 +136,15 @@ def test_shim_agrees_with_r(snippet_id: str) -> None:
     same_as_r(snippet_id)
 
 
-DISAGREE = {
-    'as_dataframe_matrix': 'r_as_dataframe: a matrix gets no V1, V2 column names',
-    'as_numeric_text': 'r_as_numeric: a single string is a 0-d array and fails',
-    'cbind_named': 'r_cbind: named arguments give no column names',
-    'class_matrix': 'r_class: a matrix is one class name, R says "matrix" and "array"',
-    'class_numeric': 'r_class: a number is "float", R says "numeric"',
-    'inherits_number': 'r_inherits: a number does not inherit "numeric"',
-    'isna_data_frame': 'r_isna: a data frame gives a different frame, with other column names',
-    'length_null': 'r_length: NULL has length 1, R says 0',
-    'list_mixed': 'r_list: a positional argument beside a named one is lost',
-    'matrix_dimnames': 'r_matrix: dimnames are dropped',
-    'recycled_operands': 'recycled: two arrays of different length are not recycled, numpy raises',
-    'seq_length_out_with_to': 'r_seq: length.out with to counts up from 1, R counts back from to',
-    'tail_list': 'r_tail: a dict is not indexed by position',
-}
+REFUSED = ['list_mixed']
 
 
-@pytest.mark.parametrize('snippet_id', sorted(DISAGREE))
-def test_shim_disagrees_with_r(snippet_id: str, request: pytest.FixtureRequest) -> None:
-    """rlib.py group A (T1): cases where the shim differs from R, named in DISAGREE."""
-    request.applymarker(pytest.mark.xfail(strict=True, reason='R-library shims disagree with R', raises=(AssertionError, IndexError, TypeError, ValueError)))
-    same_as_r(snippet_id)
+@pytest.mark.parametrize('snippet_id', REFUSED)
+def test_shim_refuses_what_r_does_in_an_order_it_cannot_keep(snippet_id: str) -> None:
+    """rlib.py r_list: a call mixing named and unnamed arguments raises UnsupportedError (the transpiler passes keywords after positionals)."""
+    snippet = auditsnippets.load_snippet(snippet_id)
+    with pytest.raises(audit.rlib.UnsupportedError):
+        auditsnippets.run_in_python(snippet)
 
 
 def test_named_array_wrap_keeps_names_and_drops_them_for_a_scalar() -> None:

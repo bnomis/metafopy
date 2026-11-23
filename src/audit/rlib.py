@@ -28,6 +28,7 @@ import metafopy
 import metafopy.core.rng
 import metafopy.datasets
 import metafopy.errors
+import metafopy.methods.fitview
 import metafopy.transf
 
 Value = typing.Any
@@ -175,10 +176,17 @@ def r_c_pairs(items: list[tuple[str, Value]]) -> Value:
 
 
 def r_list(*args: Value, **named: Value) -> Value:
-    if named and not args:
-        return dict(named)
+    """``list(...)``: a list for unnamed arguments, a dict for named ones.
+
+    The transpiler passes keywords after positionals, so R's order of a mixed call is lost.
+
+    Raises:
+        UnsupportedError: the call mixes named and unnamed arguments.
+    """
+    if named and args:
+        raise UnsupportedError('list() mixing named and unnamed arguments')
     if named:
-        return {**{str(i + 1): a for i, a in enumerate(args)}, **named}
+        return dict(named)
     return list(args)
 
 
@@ -207,6 +215,10 @@ def r_seq(*args: Value, **kw: Value) -> Value:
         if a.size == 1:
             return numpy.arange(1, int(a.ravel()[0]) + 1)
         return numpy.arange(1, a.size + 1)
+    if not args and 'from' not in kw and 'to' in kw and length_out is not None:
+        # seq(to = t, by = b, length.out = n) counts back from t
+        step_back = float(by) if by is not None else 1.0
+        return float(kw['to']) - step_back * numpy.arange(int(length_out))[::-1]
     start = float(args[0]) if args else float(kw.get('from', 1))
     stop = float(args[1]) if len(args) > 1 else kw.get('to')
     if length_out is not None:
@@ -232,6 +244,8 @@ def as_array(x: Value) -> Value:
 
 
 def r_length(x: Value) -> Value:
+    if x is None:
+        return 0
     if isinstance(x, pandas.DataFrame):
         return x.shape[1]
     if isinstance(x, (dict, list)):
@@ -289,7 +303,7 @@ def r_ifelse(test: Value, yes: Value, no: Value) -> Value:
 
 def r_isna(x: Value) -> Value:
     if isinstance(x, pandas.DataFrame):
-        return x.isna().to_numpy()
+        return r_as_matrix(x.isna())
     return pandas.isna(numpy.asarray(x, dtype=object) if isinstance(x, list) else x)
 
 
@@ -338,7 +352,12 @@ def r_matrix(data: Value = 0, nrow: Value = None, ncol: Value = None, byrow: Val
         ncol = math.ceil(a.size / int(nrow))
     nrow, ncol = int(nrow), int(ncol)
     a = numpy.resize(a, nrow * ncol)
-    return a.reshape((nrow, ncol)) if byrow else a.reshape((ncol, nrow)).T
+    result = a.reshape((nrow, ncol)) if byrow else a.reshape((ncol, nrow)).T
+    dimnames = kw.get('dimnames')
+    if dimnames is None:
+        return result
+    rows, cols = list(dimnames)
+    return Named(result, None if rows is None else list(numpy.ravel(rows)), None if cols is None else list(numpy.ravel(cols)))
 
 
 def r_diag(x: Value, **kw: Value) -> Value:
@@ -351,6 +370,10 @@ def r_diag(x: Value, **kw: Value) -> Value:
 
 
 def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) -> Value:
+    """``cbind()``: a call with a named argument gives a matrix whose unnamed columns have the name ``''``.
+
+    R keeps a named argument in its place among the unnamed ones; the transpiler passes keywords after positionals, so the named columns come last.
+    """
     entries: list[tuple[str | None, Value]] = []
     frame = any(isinstance(x, pandas.DataFrame) for x in list(xs) + list(named.values()))
     deparsed = deparse_names is not None
@@ -371,6 +394,8 @@ def r_cbind(*xs: Value, deparse_names: list[str] | None = None, **named: Value) 
         # a column R names by a symbol keeps the name; the others have the empty name R gives them (V1, V2, ... when no symbol named any)
         labels = ['' if name is None and deparsed else f'V{n + 1}' if name is None else name for n, (name, _) in enumerate(entries)]
         return pandas.DataFrame(dict(enumerate(arrays))).set_axis(labels, axis=1)
+    if named:
+        return Named(numpy.column_stack(arrays), None, ['' if name is None else name for name, _ in entries])
     return numpy.column_stack(arrays)
 
 
@@ -490,6 +515,9 @@ def r_cumsum(x: Value) -> Value:
 
 
 def r_as_numeric(x: Value) -> Value:
+    """``as.numeric(x)``; a string is a one-element vector. An unparsable string raises where R gives ``NA`` with a warning."""
+    if isinstance(x, str):
+        x = numpy.atleast_1d(x)
     if isinstance(x, pandas.Categorical) or (isinstance(x, pandas.Series) and isinstance(x.dtype, pandas.CategoricalDtype)):
         return numpy.asarray(pandas.Categorical(x).codes, dtype=float) + 1  # the integer codes of a factor, counted from 1
     a = as_array(x)
@@ -551,6 +579,11 @@ def r_as_dataframe(x: Value, **kw: Value) -> Value:
     summary = getattr(x, 'summary', None)
     if callable(summary) and type(x).__name__ == 'EmmGrid':  # as.data.frame(emmeans(...)) is the summary of the grid
         return as_frame_of_summary(summary())
+    if isinstance(x, numpy.ndarray) and x.ndim == 2:
+        colnames = getattr(x, 'colnames', None)
+        rownames = getattr(x, 'rownames', None)
+        columns = list(colnames) if colnames is not None else [f'V{n + 1}' for n in range(x.shape[1])]
+        return pandas.DataFrame(numpy.asarray(x), columns=columns, index=None if rownames is None else list(rownames))
     return pandas.DataFrame(x)
 
 
@@ -588,6 +621,9 @@ def r_factor(x: Value, levels: Value = None, labels: Value = None, **kw: Value) 
 
 def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if isinstance(x, dict):  # a named list: items by position
+        items = list(x.items())
+        return dict(items[:n])
     if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # head() of a list.rma
         return typing.cast(typing.Any, x)[:n]
     return x.head(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[:n]
@@ -595,6 +631,9 @@ def r_head(x: Value, n: Value = 6, **kw: Value) -> Value:
 
 def r_tail(x: Value, n: Value = 6, **kw: Value) -> Value:
     n = int(n)
+    if isinstance(x, dict):  # a named list: items by position
+        items = list(x.items())
+        return dict(items[max(len(items) - n, 0) :] if n >= 0 else items[-n:])
     if dataclasses.is_dataclass(x) and hasattr(x, '__getitem__'):  # tail() of a list.rma
         return typing.cast(typing.Any, x)[-n:]
     return x.tail(n) if isinstance(x, pandas.DataFrame) else numpy.asarray(x)[-n:]
@@ -837,15 +876,42 @@ def r_unlist(x: Value, **kw: Value) -> Value:
 
 
 def r_class(x: Value) -> Value:
+    """``class(x)``: R's class vector, as an object array. A data frame is ``data.frame`` (``escalc``, ``data.frame`` with a measure), a fitted
+    model has its metafor classes (``metafopy.methods.fitview.r_class``), and a value without a class attribute its implicit class: ``NULL``,
+    ``logical``, ``numeric`` (also for an R integer, which the transpiler writes as a float), ``character``, ``list``, ``function``, and
+    ``matrix``, ``array`` for a two-dimensional array.
+
+    Raises:
+        UnsupportedError: any other object (a metafopy result without a metafor class in Python).
+    """
     if isinstance(x, pandas.DataFrame):
         return numpy.array(['escalc', 'data.frame'] if x.attrs.get('measure') else ['data.frame'], dtype=object)  # an escalc object has its measure
-    return numpy.array([type(x).__name__], dtype=object)
+    fit = metafopy.methods.fitview.r_class(x)
+    if fit:
+        return numpy.array(fit, dtype=object)
+    if x is None:
+        return numpy.array(['NULL'], dtype=object)
+    if isinstance(x, (dict, list, tuple)):
+        return numpy.array(['list'], dtype=object)
+    if callable(x) and not isinstance(x, (numpy.ndarray, pandas.Series)):
+        return numpy.array(['function'], dtype=object)
+    if isinstance(x, (str, bool, int, float, numpy.generic, numpy.ndarray, pandas.Series)):
+        a = numpy.asarray(x)
+        if a.dtype.kind == 'b':
+            kind = 'logical'
+        elif a.dtype.kind in 'iuf':
+            kind = 'numeric'
+        elif a.dtype.kind in 'US' or (a.dtype.kind == 'O' and all(isinstance(v, str) for v in a.ravel().tolist())):
+            kind = 'character'
+        else:
+            raise UnsupportedError(f'class() of an array of dtype {a.dtype}')
+        return numpy.array(['matrix', 'array'] if a.ndim == 2 else [kind], dtype=object)
+    raise UnsupportedError(f'class() of a {type(x).__name__}')
 
 
 def r_inherits(x: Value, what: Value) -> Value:
-    if isinstance(x, pandas.DataFrame):
-        return bool(set(r_class(x).tolist()) & set(numpy.atleast_1d(what).tolist()))
-    return type(x).__name__ in set(numpy.atleast_1d(what).tolist())
+    """``inherits(x, what)``: whether any of the class names in ``what`` is in ``class(x)`` (see ``r_class``)."""
+    return bool(set(r_class(x).tolist()) & set(numpy.atleast_1d(what).tolist()))
 
 
 def r_exp(x: Value) -> Value:
@@ -1258,7 +1324,19 @@ def r_not_equal(a: Value, b: Value) -> Value:
 
 
 def recycled(a: Value, b: Value) -> tuple[Value, Value]:
-    """R recycles the shorter operand; pandas does not broadcast a Series of length one, so a Series of another length is made an array."""
+    """The operands of an operator, recycled as R recycles them: 1-D arrays of different lengths are both repeated from the start to the longer
+    length, and a vector longer than one against a matrix is repeated down the columns to the matrix's shape. R's warning when the longer
+    length is not a multiple of the shorter is not raised. Pandas does not broadcast a Series of length one, so a Series of another length is
+    made an array."""
+    if isinstance(a, numpy.ndarray) and isinstance(b, numpy.ndarray):
+        na, nb = numpy.shape(a), numpy.shape(b)
+        if len(na) == 1 and len(nb) == 1 and na[0] > 1 and nb[0] > 1 and na[0] != nb[0]:
+            n = max(na[0], nb[0])
+            return numpy.resize(numpy.asarray(a), n), numpy.resize(numpy.asarray(b), n)
+        if len(na) == 2 and len(nb) == 1 and nb[0] > 1:
+            return a, numpy.resize(numpy.asarray(b), a.size).reshape(na, order='F')
+        if len(nb) == 2 and len(na) == 1 and na[0] > 1:
+            return numpy.resize(numpy.asarray(a), b.size).reshape(nb, order='F'), b
     if isinstance(a, pandas.Series) and not isinstance(b, (int, float)) and numpy.size(b) != len(a):
         a = a.to_numpy()
     if isinstance(b, pandas.Series) and not isinstance(a, (int, float)) and numpy.size(a) != len(b):

@@ -176,7 +176,16 @@ snippets <- list(
   var_two_vectors = "var(1:5, c(2, 1, 4, 3, 6))",
   paste_recycled = "paste(c('a', 'b', 'c', 'd'), c('x', 'y'), sep = '_')",
   split_matrix = "split(matrix(1:6, 3), c(1, 2, 1, 2, 1, 2))",
-  lapply_data_frame = "lapply(data.frame(a = 1:3, b = 4:6), sum)"
+  lapply_data_frame = "lapply(data.frame(a = 1:3, b = 4:6), sum)",
+  # -- R-library shims follow R (Task 1): cases beyond the first findings
+  head_list = "head(list(a = 1, b = 2, c = 3), 2)",
+  recycled_matrix_vector = "matrix(1:4, 2) * c(10, 20)",
+  seq_to_by_length_out = "seq(to = 10, by = 2, length.out = 3)",
+  class_null = "class(NULL)",
+  class_character = "class('a')",
+  inherits_fit = "res <- rma(c(0.1, 0.3, 0.2, 0.5), c(0.04, 0.05, 0.03, 0.06)); inherits(res, 'rma')",
+  cbind_named_and_unnamed = "cbind(1:2, b = 3:4)",
+  matrix_rownames_only = "matrix(1:4, 2, dimnames = list(c('r1', 'r2'), NULL))"
 )
 
 fresh_env <- function() {

@@ -32,7 +32,7 @@ passing test. Imports by full module path, no leading underscores (`claude/rules
 
 ## Task 1: New snippets and the regenerated fixture
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 1; External dependencies
@@ -42,31 +42,32 @@ has a test.
 
 **Subtasks:**
 
-- [ ] Add to `src/tests/r/generate_audit_snippets.R`, beside the existing cases, the snippets of spec step 1: `head_list`,
+- [x] Add to `src/tests/r/generate_audit_snippets.R`, beside the existing cases, the snippets of spec step 1: `head_list`,
       `recycled_matrix_vector`, `seq_to_by_length_out`, `class_null`, `class_character`, `inherits_fit`, `cbind_named_and_unnamed`,
       `matrix_rownames_only`, with the R text the spec gives
-- [ ] Save the old fixture outside the repository, regenerate with the R command above, and compare old and new by snippet id: every
+- [x] Save the old fixture outside the repository, regenerate with the R command above, and compare old and new by snippet id: every
       existing record must be unchanged
-- [ ] Add each new id to `DISAGREE` with its reason; run `src/tests/test_harness_rlib.py`: each new id must `XFAIL`
+- [x] Add each new id to `DISAGREE` with its reason; run `src/tests/test_harness_rlib.py`: each new id must `XFAIL`
 
 **Acceptance Criteria:**
 
-- [ ] The fixture holds the new snippets, its existing records are unchanged, and each new case is a strict xfail
+- [x] The fixture holds the new snippets, its existing records are unchanged, and each new case is a strict xfail
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_harness_rlib.py src/tests/test_auditsnippets.py` passes
 
 **Notes:**
 
+- `inherits_fit` uses `rma(c(...), c(...))` on literal vectors, not `data = escalc(...)`: the snippet runner passes an empty NSE set, so a column lookup raises `UnsupportedError` (not an xfail)
 - The fixture's `meta` must match `r-versions.json`; `auditsnippets.load_snippet` fails otherwise
 
 ---
 
 ## Task 2: Class shims
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`r_class`); Implementation step 2
@@ -75,21 +76,21 @@ has a test.
 
 **Subtasks:**
 
-- [ ] `r_class` as the spec's API docstring says, reading `metafopy.methods.fitview.r_class` for fits and raising `UnsupportedError` for any
+- [x] `r_class` as the spec's API docstring says, reading `metafopy.methods.fitview.r_class` for fits and raising `UnsupportedError` for any
       other object it has no R class for; the docstring says `numeric` also stands for an R integer
-- [ ] `r_inherits` becomes `bool(set(r_class(x)) & set(what))` for every input
-- [ ] Move `class_numeric`, `class_matrix`, `class_null`, `class_character`, `inherits_number`, `inherits_fit` to `MATCHING`;
+- [x] `r_inherits` becomes `bool(set(r_class(x)) & set(what))` for every input
+- [x] Move `class_numeric`, `class_matrix`, `class_null`, `class_character`, `inherits_number`, `inherits_fit` to `MATCHING`;
       `class_data_frame` and `inherits_data_frame` keep passing
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
@@ -99,7 +100,7 @@ has a test.
 
 ## Task 3: Names kept as R keeps them
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation step 3
@@ -108,23 +109,23 @@ has a test.
 
 **Subtasks:**
 
-- [ ] `r_as_dataframe` of a 2-D array: columns from a `Named` matrix's `colnames`, else `V1`, `V2`, ...; rows from its `rownames`
-- [ ] `r_cbind` returns a `Named` matrix when any argument is named, `''` for an unnamed column; its docstring says R's order of a named
+- [x] `r_as_dataframe` of a 2-D array: columns from a `Named` matrix's `colnames`, else `V1`, `V2`, ...; rows from its `rownames`
+- [x] `r_cbind` returns a `Named` matrix when any argument is named, `''` for an unnamed column; its docstring says R's order of a named
       argument before an unnamed one is lost, since the transpiler passes keywords after positionals
-- [ ] `r_isna` of a data frame is `r_as_matrix(x.isna())`
-- [ ] `r_matrix` takes `dimnames` (a list of two, either `None`) into a `Named`
-- [ ] Move `as_dataframe_matrix`, `cbind_named`, `cbind_named_and_unnamed`, `isna_data_frame`, `matrix_dimnames`, `matrix_rownames_only` to
+- [x] `r_isna` of a data frame is `r_as_matrix(x.isna())`
+- [x] `r_matrix` takes `dimnames` (a list of two, either `None`) into a `Named`
+- [x] Move `as_dataframe_matrix`, `cbind_named`, `cbind_named_and_unnamed`, `isna_data_frame`, `matrix_dimnames`, `matrix_rownames_only` to
       `MATCHING`
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
@@ -134,7 +135,7 @@ has a test.
 
 ## Task 4: Vectors and recycling
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`recycled`); Implementation step 4
@@ -144,24 +145,24 @@ error for a vector against a matrix.
 
 **Subtasks:**
 
-- [ ] `r_length(None)` is 0
-- [ ] `r_as_numeric` takes a str as a one-element vector (`numpy.atleast_1d`); its docstring says an unparsable string raises where R gives
+- [x] `r_length(None)` is 0
+- [x] `r_as_numeric` takes a str as a one-element vector (`numpy.atleast_1d`); its docstring says an unparsable string raises where R gives
       `NA` with a warning
-- [ ] `r_seq` with `to` and `length.out` and no `from` counts back from `to` by `by` (default 1)
-- [ ] `recycled` as the spec's API docstring says: 1-D arrays longer than one and of different lengths `numpy.resize` to the longer; a vector
+- [x] `r_seq` with `to` and `length.out` and no `from` counts back from `to` by `by` (default 1)
+- [x] `recycled` as the spec's API docstring says: 1-D arrays longer than one and of different lengths `numpy.resize` to the longer; a vector
       longer than one against a 2-D array is `numpy.resize(v, m.size).reshape(m.shape, order='F')`
-- [ ] Move `length_null`, `as_numeric_text`, `seq_length_out_with_to`, `seq_to_by_length_out`, `recycled_operands`,
+- [x] Move `length_null`, `as_numeric_text`, `seq_length_out_with_to`, `seq_to_by_length_out`, `recycled_operands`,
       `recycled_matrix_vector` to `MATCHING`; `test_recycled_turns_a_series_of_another_length_into_an_array` keeps passing
 
 **Acceptance Criteria:**
 
-- [ ] Each of those snippets passes, and the harness test set passes
+- [x] Each of those snippets passes, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
@@ -171,7 +172,7 @@ error for a vector against a matrix.
 
 ## Task 5: Lists
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 5; decisions D1, D2
@@ -181,22 +182,22 @@ error for a vector against a matrix.
 
 **Subtasks:**
 
-- [ ] `r_tail` and `r_head` of a dict take items by position, as R does for a named list; a negative `n` as R (all but the last or first `|n|`)
-- [ ] `r_list` raises `UnsupportedError('list() mixing named and unnamed arguments')` for a call with both, and its docstring states the
+- [x] `r_tail` and `r_head` of a dict take items by position, as R does for a named list; a negative `n` as R (all but the last or first `|n|`)
+- [x] `r_list` raises `UnsupportedError('list() mixing named and unnamed arguments')` for a call with both, and its docstring states the
       contract
-- [ ] Add `REFUSED = ['list_mixed']` and a test that runs each snippet in it and expects `audit.rlib.UnsupportedError`; remove `list_mixed`
+- [x] Add `REFUSED = ['list_mixed']` and a test that runs each snippet in it and expects `audit.rlib.UnsupportedError`; remove `list_mixed`
       from `DISAGREE`. Keep its R record in the fixture
-- [ ] Move `tail_list`, `head_list` to `MATCHING`
+- [x] Move `tail_list`, `head_list` to `MATCHING`
 
 **Acceptance Criteria:**
 
-- [ ] `tail_list` and `head_list` pass, `list_mixed` passes as a refusal, and the harness test set passes
+- [x] `tail_list` and `head_list` pass, `list_mixed` passes as a refusal, and the harness test set passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `MYPYPATH=src mypy src/audit/rlib.py src/tests/test_harness_rlib.py` passes
-- [ ] `pytest` on the harness test set passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `MYPYPATH=src mypy src/audit/rlib.py src/tests/test_harness_rlib.py` passes
+- [x] `pytest` on the harness test set passes
 
 **Notes:**
 
@@ -206,7 +207,7 @@ error for a vector against a matrix.
 
 ## Task 6: The full check, then stop for the recall run
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6; Error handling
@@ -216,30 +217,32 @@ check on the branch's harness.
 
 **Subtasks:**
 
-- [ ] `DISAGREE` is empty: remove it and its test
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] `DISAGREE` is empty: remove it and its test
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/r-library-shims-follow-r/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/r-library-shims-follow-r/tasks-1/final-tests.log`
-- [ ] Commit, then stop this task as `blocked` with this note for the operator: "Run the recall check on this branch's harness, from this
+- [x] Commit, then stop this task as `blocked` with this note for the operator: "Run the recall check on this branch's harness, from this
       worktree's root: `export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH && METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib
       METAFOPY_AUDIT_WORK=/Users/simonb/src/metafopy/.audit bin/metafor-audit.sh --recall` (the last run took 23 minutes, 05:09-05:32 UTC on
       2026-11-23). Then set this task to done and restart the list." Do not run it yourself: the recall run is the operator's
 
 **Acceptance Criteria:**
 
-- [ ] `DISAGREE` is gone, the final test run passes, and the task stops for the recall run
+- [x] `DISAGREE` is gone, the final test run passes, and the task stops for the recall run
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `MYPYPATH=src mypy src/audit src/tests/test_harness_rlib.py` passes
-- [ ] The final test run above passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `MYPYPATH=src mypy src/audit src/tests/test_harness_rlib.py` passes
+- [x] The final test run above passes
 
 **Notes:**
 
 - Depends on Tasks 2-5
+- Recall run made by the operator session on 2026-11-23 from this worktree: `.audit/runs/recall-20261123-092117/recall.md`, 176 of 176 reproduced
+  (`a6-glmm-um-rs` apart as oracle moved), identical to the baseline `recall-20261123-061000`
 - It runs from this worktree, not the main checkout: `bin/metafor-audit.sh` puts its own checkout's `src` on `PYTHONPATH`
   (`bin/activate.sh`), so only a run from here checks the changed shims
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
@@ -249,7 +252,7 @@ check on the branch's harness.
 
 ## Task 7: Compare the recall run and close
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Implementation step 6; Error handling
@@ -259,24 +262,24 @@ check on the branch's harness.
 
 **Subtasks:**
 
-- [ ] Find the newest `/Users/simonb/src/metafopy/.audit/runs/recall-*/recall.md` written after Task 6's commit. If there is none, stop as
+- [x] Find the newest `/Users/simonb/src/metafopy/.audit/runs/recall-*/recall.md` written after Task 6's commit. If there is none, stop as
       `blocked`: "the recall run of Task 6 has not been made"
-- [ ] Compare it with `.audit/runs/recall-20261123-061000/recall.md` (176 of 176 reproduced, `a6-glmm-um-rs` apart as oracle moved). If they
+- [x] Compare it with `.audit/runs/recall-20261123-061000/recall.md` (176 of 176 reproduced, `a6-glmm-um-rs` apart as oracle moved). If they
       differ, stop as `blocked`, naming each item that changed and the scripts unit whose findings changed (diff `audit*/findings.json` of the
       two runs); do not edit `known.toml` or `recall.toml` to fit
-- [ ] Move the `TODO.md` item "R-library shims disagree with R" to the end of `DONE.md`: append its heading and body unchanged, then the line
+- [x] Move the `TODO.md` item "R-library shims disagree with R" to the end of `DONE.md`: append its heading and body unchanged, then the line
       `Done: <date> - agents/specs/r-library-shims-follow-r/spec.md, agents/tasks/r-library-shims-follow-r/tasks-1.md; recall <run dir>:
       <its totals>; list_mixed refused (D1).`, and remove it from `TODO.md`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
 
 **Acceptance Criteria:**
 
-- [ ] The new recall run matches the 2026-11-23 one, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
+- [x] The new recall run matches the 2026-11-23 one, the spec says `implemented`, and the item is in `DONE.md` with its body unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-library-shims-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/r-library-shims-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
