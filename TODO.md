@@ -27,3 +27,5 @@ Cause: each shim was written for the calls the audited scripts make, not for R's
 
 Fix direction: change the harness shim to R's behaviour (or document the narrower contract in its docstring and drop the case), then run
 `bin/metafor-audit.sh --recall`, since a harness change can change what an audit reports. Remove the matching `DISAGREE` entry in the same change.
+
+Spec: `agents/specs/r-library-shims-follow-r/spec.md`; tasks: none yet.
