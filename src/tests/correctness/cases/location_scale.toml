@@ -892,6 +892,8 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
 then = { function = "permutest", args = { exact = true, skip_alpha = true } }
 check = "test_derived.ls_permutest_exact"
+status = "mismatch"
+reason = "pval (location) of lat: metafopy 308/1287, one over the reference's upper bound 307/1287, because on permutation 433 metafopy and R metafor 5.2-1 stop at the same lower local maximum (ll -12.332, z -2.5047) and the reference fit reaches a higher one (ll -11.968, z 1.902). Recorded on 2026-11-24; filed in TODO.md as 'Location-scale fits can stop at a lower local maximum than the test reference' (operator choice, 2026-11-24)"
 covers = ["ls.permutest.location.exact"]
 
 [[case]]

@@ -2841,6 +2841,8 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 LS_START_FACTORS = (1.0, 0.1, 10.0, 0.01, 100.0)  # the multiples of the moment-based intercept that ``ls_starts`` returns
 LS_SCORE_TOLERANCE = 1e-6  # the largest absolute score at which ``ls_reference_fit`` accepts a log-link fit as stationary
 LS_NEWTON_STEPS = 50  # the most Newton steps spent polishing one start: quadratic convergence needs few, and a start heading for tau2 = 0 never ends
+LS_DEGENERATE = 1e-8  # a log-link end point whose information has min/max eigenvalue ratio at or below this has no finite maximum
+LS_LOGLIK_NOISE = 1e-9  # the fall in a log-link restricted log-likelihood that rounding alone can cause, which ``ls_newton_polish`` accepts
 LS_AGREEMENT = 1e-9  # two log-link starts whose log-likelihoods differ by no more than this end the search over starts
 IDENTITY_ACTIVE = 1e-8  # ``z_i' alpha`` at most this far above zero makes the identity link's constraint of row i active in ``ls_face_basis``
 IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
@@ -2999,13 +3001,16 @@ def ls_face_basis(Z: FloatArray, alpha: FloatArray, link: str) -> FloatArray:
     return vt[rank:].T
 
 
-def ls_newton_polish(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str, maxiter: int) -> FloatArray:
+def ls_newton_polish(
+    yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str, maxiter: int, noise: float = 0.0
+) -> FloatArray:
     """Newton steps on the analytic ``ls_score`` with the analytic ``ls_information``, projected on the face of the active constraints for the identity
     link (``ls_face_basis``), each accepted only when the log-likelihood does not fall and, for the identity link, ``Z alpha >= 0`` holds.
 
     Stops when the largest absolute projected score is below ``1e-10``, when the projected information is not positive definite, or when a step cannot be
     halved into one that does not lower the log-likelihood. An identity-link optimum on the boundary has a score that does not vanish across the
     constraint; along the face it does, and this finds that point to rounding error where Nelder-Mead stops about ``1e-6`` short.
+    ``noise`` is the fall in the log-likelihood that a step may cause, for a log-likelihood whose rounding error is above the step's gain.
     """
     current = alpha
     value = ls_loglik(yi, vi, X, Z, current, link, method)
@@ -3024,13 +3029,37 @@ def ls_newton_polish(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
             trial = current + step
             feasible = link != 'identity' or float(numpy.min(Z @ trial)) >= -IDENTITY_SLACK
             trial_value = ls_loglik(yi, vi, X, Z, trial, link, method) if feasible else -math.inf
-            if trial_value >= value:
+            if trial_value >= value - noise:
                 current, value = trial, trial_value
                 break
             step = step / 2
         else:
             break
     return current
+
+
+def ls_is_maximum(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> bool:
+    """``ls_information`` at ``alpha`` has min/max eigenvalue ratio above ``LS_DEGENERATE`` (an interior maximum, not an underflowed ``tau2``)."""
+    info = ls_information(yi, vi, X, Z, alpha, link, method)
+    if not bool(numpy.all(numpy.isfinite(info))):
+        return False
+    eigenvalues = numpy.linalg.eigvalsh(info)
+    return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > LS_DEGENERATE)
+
+
+def ls_standardise(Z: FloatArray) -> FloatArray:
+    """``T`` with ``Z = Zs T``, where ``Zs`` has each non-constant column of ``Z`` centred and scaled (``ddof=1``). Centring needs a constant column
+    to absorb the mean, so without one the columns are only scaled. Constant columns are unchanged."""
+    q = Z.shape[1]
+    T = numpy.eye(q)
+    spread = numpy.std(Z, axis=0, ddof=1) if Z.shape[0] > 1 else numpy.zeros(q)
+    constant = [j for j in range(q) if spread[j] == 0.0]
+    for j in range(q):
+        if spread[j] > 0.0:
+            T[j, j] = spread[j]
+            if constant:
+                T[constant[0], j] = float(numpy.mean(Z[:, j]))
+    return T
 
 
 def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
@@ -3044,7 +3073,13 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
     vanish on the boundary ``Z alpha = 0``, every feasible finite end point is kept. The kept point of highest log-likelihood is polished by
     Nelder-Mead. Returns ``alpha``, ``beta`` (equation 6), ``vb`` (equation 10), ``tau2``, ``ll`` and ``va`` (the inverse of the analytic observed
     information). Raises ``RuntimeError`` with each start's message when no start is kept.
+
+    For the log link the search runs on ``Zs`` (``ls_standardise``) and maps ``alpha`` and ``va`` back, so that the platform's rounding does not decide
+    whether the information of a column such as an uncentred year is singular. A start is kept only when ``ls_is_maximum`` holds at its end point, and
+    the final Nelder-Mead polish is skipped: the Newton steps already reach rounding.
     """
+    T = ls_standardise(Z) if link == 'log' else numpy.eye(Z.shape[1])
+    Z = Z @ numpy.linalg.inv(T)
 
     def negative(alpha: FloatArray) -> float:
         if link == 'identity' and float(numpy.min(Z @ alpha)) < -IDENTITY_SLACK:
@@ -3079,12 +3114,15 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         if not math.isfinite(negative(point)):
             messages.append(str(res.message))
             continue
-        point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS))
+        point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS), LS_LOGLIK_NOISE if link == 'log' else 0.0)
         value = negative(point)
         if link == 'log':
             score = float(numpy.max(numpy.abs(ls_score(yi, vi, X, Z, point, link, method))))
             if score > LS_SCORE_TOLERANCE:
                 messages.append(f'{res.message} (score {score:.3g})')
+                continue
+            if not ls_is_maximum(yi, vi, X, Z, point, link, method):
+                messages.append(f'{res.message} (no finite maximum)')
                 continue
         kept.append((value, point))
         if link == 'log' and len(kept) >= 2 and abs(sorted(v for v, _ in kept)[1] - min(v for v, _ in kept)) <= LS_AGREEMENT:
@@ -3092,23 +3130,26 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
     if not kept:
         raise RuntimeError(f'ls_reference_fit: no start converged ({link} link, {method}): {"; ".join(messages)}')
     best_value, best_point = min(kept, key=lambda item: item[0])
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
-        polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
-    alpha = polish.x if polish.fun <= best_value else best_point
+    alpha = best_point
+    if link != 'log':
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
+        alpha = polish.x if polish.fun <= best_value else best_point
     if link == 'identity':
         alpha = ls_newton_polish(yi, vi, X, Z, alpha, link, method, min(maxiter, LS_NEWTON_STEPS))
     parts = ls_components(yi, vi, X, Z, alpha, link)
     if parts is None:
         raise RuntimeError(f'ls_reference_fit: the best point leaves M not positive ({link} link, {method})')
     _, _, A_inv, beta, _ = parts
+    T_inv = numpy.linalg.inv(T)
     return {
-        'alpha': alpha,
+        'alpha': T_inv @ alpha,
         'beta': beta,
         'vb': A_inv,
         'tau2': ls_tau2(Z, alpha, link),
         'll': ls_loglik(yi, vi, X, Z, alpha, link, method),
-        'va': numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)),
+        'va': T_inv @ numpy.linalg.inv(ls_information(yi, vi, X, Z, alpha, link, method)) @ T_inv.T,
     }
 
 

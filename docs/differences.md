@@ -1401,62 +1401,6 @@ R's `leave1out` methods for `rma.uni`, `rma.mh` and `rma.peto` fits name the lef
 with "argument must be coercible to non-negative integer". The values are the same; metafopy names each row as under `"na.omit"`
 (`-1`, `-2`, ... for `dat.bcg`) and prints the table (checked 2026-11-06, R 4.6.2, metafor 5.2-1).
 
-### A location-scale fit with an interaction whose column R drops
-
-Some of the interaction columns of `~ ablat * alloc` are redundant once studies with missing values are left out. R drops the
-redundant predictor with a warning and then stops with "No missing values allowed in 'alpha.init'.". metafopy fits the model
-without the redundant column and warns "Error when trying to invert the Hessian.".
-
-*Why:* R's refusal comes from its starting values for the scale part, computed after it has already dropped the column (the
-`alpha.init` it builds carries an NA from the dropped column), not from a model that cannot be fitted. metafopy does not
-reproduce a failure of R's optimiser setup (checked 2026-11-18, R 4.6.2, metafor 5.2-1).
-
-<div class="compare" markdown>
-<div markdown>
-
-**R, metafor 5.2-1**
-
-```r
-library(metafor)
-dat <- dat.bcg
-dat[3, "tpos"] <- NA; dat[7, "cpos"] <- NA; dat[5, "ablat"] <- NA
-dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat)
-rma(yi, vi, data = dat, mods = ~ ablat * alloc, scale = ~ ablat)
-```
-
-```text
-Warning message:
-3 studies with NAs omitted from model fitting.
-Warning message:
-Redundant predictors dropped from the model.
-Error in rma(yi, vi, data = dat, mods = ~ablat * alloc, scale = ~ablat) :
-  No missing values allowed in 'alpha.init'.
-```
-
-</div>
-<div markdown>
-
-**Python, metafopy**
-
-```python
-import numpy
-from metafopy import datasets, escalc, rma
-
-dat = datasets.load('dat.bcg').copy()
-for row, column in [(2, 'tpos'), (6, 'cpos'), (4, 'ablat')]:
-    dat.loc[dat.index[row], column] = numpy.nan
-dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat)
-res = rma(yi='yi', vi='vi', data=dat, mods='~ ablat * alloc', scale='~ ablat')
-print(numpy.round(res.beta.ravel(), 3))
-```
-
-```text
-[ 0.282 -0.024  0.213 -0.134 -0.013]
-```
-
-</div>
-</div>
-
 ### A location-scale fit whose start lies on an alpha_max bound
 
 With `alpha_min` and `alpha_max` set, R clips the starting values of the scale coefficients onto the box and then maps them

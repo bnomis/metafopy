@@ -1085,3 +1085,29 @@ def test_omnibus_property_without_ddf_den_is_the_chi_square_tail(stat: float, m:
 def test_omnibus_property_p_value_is_nan_without_denominator_degrees_of_freedom(stat: float, m: int, ddf_den: float) -> None:
     """Candidate ``src/metafopy/methods/ls_anova.py::omnibus``: p is NaN when ``ddf_den <= 0``."""
     assert math.isnan(metafopy.methods.ls_anova.omnibus(stat, m, ddf_den)[2])
+
+
+def leverage_one_data() -> pandas.DataFrame:
+    """``dat.bcg`` with three studies' counts or moderator missing, as in the location-scale interaction example of ``docs/differences.md``."""
+    dat = metafopy.datasets.load('dat.bcg').copy()
+    for row, column in [(2, 'tpos'), (6, 'cpos'), (4, 'ablat')]:
+        dat.loc[dat.index[row], column] = numpy.nan
+    return metafopy.escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=dat)
+
+
+@pytest.mark.parametrize('draw', range(10))
+def test_study_of_leverage_one_is_refused_on_every_platform(draw: int) -> None:
+    """A study with ``1 - h_ii < LEVERAGE_ONE`` has a zero residual in the scale start, so R's error is raised, unperturbed and at rounding noise.
+
+    Draw 0 is the unperturbed input, which fitted on the development Mac before the check; draws 1 to 9 perturb ``yi`` by ``1e-15`` noise as the CI
+    runners' arithmetic does.
+    """
+    dat = leverage_one_data()
+    if draw > 0:
+        rng = numpy.random.default_rng(1)
+        noise = numpy.array([rng.standard_normal(dat.shape[0]) for _ in range(draw)])[-1]
+        dat['yi'] = dat['yi'] * (1 + 1e-15 * noise)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        with pytest.raises(metafopy.errors.InputError, match="No missing values allowed in 'alpha_init'"):
+            metafopy.rma(yi='yi', vi='vi', data=dat, mods='~ ablat * alloc', scale='~ ablat')

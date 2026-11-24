@@ -41,6 +41,14 @@ def bcg_ablat() -> Data:
     return yi, vi, X, X
 
 
+def bcg2() -> Data:
+    """The design of the cases ``ls.vif.REML.bcg2``: absolute latitude and the uncentred year in both the location and the scale model."""
+    yi, vi, _, _ = bcg()
+    f = metafopy.datasets.load('dat.bcg')
+    X = numpy.column_stack([numpy.ones(len(yi)), f['ablat'].to_numpy(dtype=float), f['year'].to_numpy(dtype=float)])
+    return yi, vi, X, X.copy()
+
+
 def bangert() -> Data:
     f = metafopy.datasets.load('dat.bangertdrowns2004').dropna(subset=['length']).reset_index(drop=True)
     yi, vi = f['yi'].to_numpy(dtype=float), f['vi'].to_numpy(dtype=float)
@@ -375,3 +383,27 @@ def test_joint_fit_refuses_the_identity_link() -> None:
     yi, vi, X, Z = bangert()
     with pytest.raises(ValueError, match='log link'):
         correctness.formulas.ls_joint_fit(yi, vi, X, Z, 'identity', numpy.full(2, numpy.nan))
+
+
+@pytest.mark.parametrize('tolerance', [5e-7, 1e-9])
+@pytest.mark.parametrize('method', METHODS)
+def test_reference_fit_of_uncentred_columns_does_not_depend_on_the_score_tolerance(monkeypatch: pytest.MonkeyPatch, method: str, tolerance: float) -> None:
+    """In the raw ``Z`` the Newton polish meets a singular information on some platforms; in standardised coordinates it does not."""
+    yi, vi, X, Z = bcg2()
+    reference = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    monkeypatch.setattr(correctness.formulas, 'LS_SCORE_TOLERANCE', tolerance)
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', method)
+    assert fit['ll'] == pytest.approx(reference['ll'], abs=1e-9)
+    T = correctness.formulas.ls_standardise(Z)
+    assert correctness.formulas.ls_is_maximum(yi, vi, X, Z @ numpy.linalg.inv(T), T @ fit['alpha'], 'log', method)
+
+
+def test_is_maximum_rejects_an_underflowed_tau2() -> None:
+    """The REML start that reaches ``year`` slope -1.00986 has ``tau2 = 0`` and a zero score; it is not a maximum (in the standardised coordinates)."""
+    yi, vi, X, Z = bcg2()
+    T = correctness.formulas.ls_standardise(Z)
+    Zs = Z @ numpy.linalg.inv(T)
+    degenerate = T @ numpy.array([0.89967, -0.01675, -1.00986])
+    assert not correctness.formulas.ls_is_maximum(yi, vi, X, Zs, degenerate, 'log', 'REML')
+    fit = correctness.formulas.ls_reference_fit(yi, vi, X, Z, 'log', 'REML')
+    assert correctness.formulas.ls_is_maximum(yi, vi, X, Zs, T @ fit['alpha'], 'log', 'REML')

@@ -46,3 +46,26 @@ the `ls.vif` cases, and the whole of `test_derived.py`, pass locally with `--mpl
   exactly 1/1287, one permutation on the other side of a near-tie.
 
 Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: `agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md`.
+
+Note 2026-11-24: the task list is done and the branch passes the full local run on macOS arm64 (log in the main checkout's `ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`). This item moves to `DONE.md` once the CI run of the merge commit is green on every runner; check with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`.
+
+## Location-scale fits can stop at a lower local maximum than the test reference
+
+<!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
+Found on 2026-11-24 while measuring `ls.permutest.location.exact.ML.z.bcglat` on macOS arm64 at `282a6b9`
+(`agents/specs/location-scale-fits-stable-across-platforms/measurements.md`). On 8 of the 1210 regular permutations (indices 68, 264, 433, 651,
+805, 979, 1110, 1278 in `distinct_label_orders` order) metafopy's `z` differs from the test reference's by more than 1e-4. On permutation 68
+metafopy and R both stop at log-likelihood `-12.58248229` (alpha `[-0.778, -0.951]`); the test's reference fit reaches the higher
+`-12.57323737` (alpha `[-3.042, 2.526]`). Permutations 264 and 433 likewise.
+<!-- doc-counts: accept-end -->
+
+Cause: unconfirmed. The likelihood has at least two local maxima on these permutations; metafopy and R share the lower one, the reference
+fit, which starts elsewhere, reaches the higher.
+
+Fix direction: decide which maximum metafopy should report (the higher one is the better fit, but R's is the lower), compare R's behaviour on
+the eight permutations, and if metafopy should search more starts, write a spec first. Filed apart from
+`agents/specs/location-scale-fits-stable-across-platforms/spec.md`, whose decision D3 checks the exact permutation cases against widened
+bounds only.
+
+Note 2026-11-24: permutation 433 alone puts metafopy one over the reference bound of `ls.permutest.location.exact.ML.z.bcglat`, now a
+strict-xfail mismatch naming this item; remove its `status = "mismatch"` once this item is fixed.

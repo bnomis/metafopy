@@ -29,7 +29,7 @@ library change here cannot change its result.
 
 ## Task 1: File the local-maximum finding
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Decisions, D3 (the finding filed separately)
@@ -39,24 +39,24 @@ maximum than the test's reference is recorded before the list changes the code t
 
 **Subtasks:**
 
-- [ ] Read the finding in `measurements.md` (permutation 68: metafopy and R log-likelihood `-12.58248229`, the reference `-12.57323737`; 8
+- [x] Read the finding in `measurements.md` (permutation 68: metafopy and R log-likelihood `-12.58248229`, the reference `-12.57323737`; 8
       regular permutations in all)
-- [ ] File it in `TODO.md` with the `/todo-add` shape: dated finding, cause marked unconfirmed, fix direction (decide which maximum metafopy
+- [x] File it in `TODO.md` with the `/todo-add` shape: dated finding, cause marked unconfirmed, fix direction (decide which maximum metafopy
       reports; compare with R), placed by the file's order
 
 **Acceptance Criteria:**
 
-- [ ] `TODO.md` has the item, dated 2026-11-24, naming the case, the permutations and the values
+- [x] `TODO.md` has the item, dated 2026-11-24, naming the case, the permutations and the values
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 ---
 
 ## Task 2: Case 1, a study of leverage 1
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`LEVERAGE_ONE`, `marginal_residuals`); Implementation, Case 1; decision D1
@@ -66,23 +66,23 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write the test in `src/tests/test_rma_ls.py` as the spec gives it (unperturbed and nine perturbed inputs, `numpy.random.default_rng(1)`),
+- [x] Write the test in `src/tests/test_rma_ls.py` as the spec gives it (unperturbed and nine perturbed inputs, `numpy.random.default_rng(1)`),
       run it on the unchanged code: the unperturbed case must fit (so the test fails), as on the Mac
-- [ ] Add `LEVERAGE_ONE = 1e-10` and the leverage check to `marginal_residuals` in `src/metafopy/models/rma_ls_fit.py`, as the API docstring says
-- [ ] Remove the `docs/differences.md` section "A location-scale fit with an interaction whose column R drops" (with its compare block) and the
+- [x] Add `LEVERAGE_ONE = 1e-10` and the leverage check to `marginal_residuals` in `src/metafopy/models/rma_ls_fit.py`, as the API docstring says
+- [x] Remove the `docs/differences.md` section "A location-scale fit with an interaction whose column R drops" (with its compare block) and the
       `src/audit/data/known.toml` entry `construct/ls_na/mods={"$formula":"~ ablat * alloc"}`; grep `docs/` for any link to the section and fix it
-- [ ] Run `bin/metafor-audit.sh --only 'construct/ls_na*'` (with `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`
+- [x] Run `bin/metafor-audit.sh --only 'construct/ls_na*'` (with `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`
       `METAFOPY_AUDIT_WORK=/Users/simonb/src/metafopy/.audit`): it must report that both sides refuse; record the run directory in the commit body
 
 **Acceptance Criteria:**
 
-- [ ] The new test passes; it failed on the unchanged code; `test_docs_examples.py` passes on `differences.md`
+- [x] The new test passes; it failed on the unchanged code; `test_docs_examples.py` passes on `differences.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py` passes
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py` passes
+- [x] `pytest src/tests/test_rma_ls.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
@@ -92,7 +92,7 @@ error on every platform.
 
 ## Task 3: Case 2, the test's reference fit in standardised coordinates
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`LS_DEGENERATE`, `ls_is_maximum`); Implementation, Case 2
@@ -101,29 +101,29 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write the reproduction in `src/tests/correctness/test_formulas_ls.py` (`LS_SCORE_TOLERANCE` monkeypatched to `5e-7` and to `1e-9` on the
+- [x] Write the reproduction in `src/tests/correctness/test_formulas_ls.py` (`LS_SCORE_TOLERANCE` monkeypatched to `5e-7` and to `1e-9` on the
       `bcg2` data, ML and REML; `ls_is_maximum` false at the degenerate REML point the spec names, true at the optimum); run it on the unchanged
       code: it must raise `LinAlgError` there
-- [ ] Add `LS_DEGENERATE` and `ls_is_maximum` to `src/tests/correctness/formulas.py`, and change `ls_reference_fit` for the log link as the spec
+- [x] Add `LS_DEGENERATE` and `ls_is_maximum` to `src/tests/correctness/formulas.py`, and change `ls_reference_fit` for the log link as the spec
       says: centre and scale the non-constant columns of `Z` (`ddof=1`), fit on `Zs`, map `alpha` and `va` back, keep a start only when
       `ls_is_maximum` holds, skip the final Nelder-Mead; the identity link unchanged
-- [ ] Run every non-slow `ls.` case of `src/tests/correctness/test_derived.py`: all pass
+- [x] Run every non-slow `ls.` case of `src/tests/correctness/test_derived.py`: all pass
 
 **Acceptance Criteria:**
 
-- [ ] The reproduction passes and failed on the unchanged code; `ls.vif.reestimate.ML.bcg2` passes
+- [x] The reproduction passes and failed on the unchanged code; `ls.vif.reestimate.ML.bcg2` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_formulas_ls.py` passes
-- [ ] `pytest src/tests/correctness/test_formulas_ls.py` and `pytest src/tests/correctness/test_derived.py -k "ls." -m "not slow"` pass
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_formulas_ls.py` passes
+- [x] `pytest src/tests/correctness/test_formulas_ls.py` and `pytest src/tests/correctness/test_derived.py -k "ls." -m "not slow"` pass
 
 ---
 
 ## Task 4: Case 3, the log-link Newton polish
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`LSProblem.log_score`, `log_information`, `polish_log` and its constants); Implementation, Case 3; decision D2
@@ -132,27 +132,27 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/test_rma_ls_opt.py` with the spec's reproduction (five draws of `yi * (1 + 1e-15 N(0, 1))` on `ls.vif.REML.bcg2`'s model:
+- [x] Write `src/tests/test_rma_ls_opt.py` with the spec's reproduction (five draws of `yi * (1 + 1e-15 N(0, 1))` on `ls.vif.REML.bcg2`'s model:
       the location vif within `1e-8` relative of the unperturbed fit's and of the reference's) and the degenerate-fit test; run it on the
       unchanged code: the draws must spread (the test fails)
-- [ ] Add `log_score` and `log_information` to `LSProblem` in `src/metafopy/models/rma_ls_fit.py`; test both against finite differences of the
+- [x] Add `log_score` and `log_information` to `LSProblem` in `src/metafopy/models/rma_ls_fit.py`; test both against finite differences of the
       log-likelihood in `test_rma_ls_opt.py`
-- [ ] Add `polish_log` and its constants to `src/metafopy/models/rma_ls_opt.py`, and call it in `fit_rma_ls` after `rma_ls_opt.minimise` as the
+- [x] Add `polish_log` and its constants to `src/metafopy/models/rma_ls_opt.py`, and call it in `fit_rma_ls` after `rma_ls_opt.minimise` as the
       spec says (log link, default optimiser, not with `optbeta=True`, through `mapfun` where bounds are set; not logged by `verbose`, not
       counted in `maxiter`)
-- [ ] Update the `rma_ls_opt` module docstring and the location-scale optimiser line of `docs/differences-notes.md`
-- [ ] Run `src/tests/test_rma_ls.py` and every other R parity test of location-scale fits at their committed tolerances; record the largest change
+- [x] Update the `rma_ls_opt` module docstring and the location-scale optimiser line of `docs/differences-notes.md`
+- [x] Run `src/tests/test_rma_ls.py` and every other R parity test of location-scale fits at their committed tolerances; record the largest change
       per fixture, and the exact p of `ls.permutest.location.exact.ML.z.bcglat` before and after (794/1287 before), in `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] The reproduction passes and failed on the unchanged code; `ls.vif.REML.bcg2` passes; no fixture is regenerated
+- [x] The reproduction passes and failed on the unchanged code; `ls.vif.REML.bcg2` passes; no fixture is regenerated
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_opt.py src/tests/test_rma_ls_opt.py` passes
-- [ ] `pytest src/tests/test_rma_ls_opt.py src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_opt.py src/tests/test_rma_ls_opt.py` passes
+- [x] `pytest src/tests/test_rma_ls_opt.py src/tests/test_rma_ls.py` passes
 
 **Notes:**
 
@@ -162,7 +162,7 @@ error on every platform.
 
 ## Task 5: Case 4, the exact permutation bounds
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation, Case 4; decision D3
@@ -171,30 +171,33 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Re-measure the classification of `ls.permutest.location.exact.ML.z.bcglat` with Tasks 3 and 4 in: the number of permutations without a
+- [x] Re-measure the classification of `ls.permutest.location.exact.ML.z.bcglat` with Tasks 3 and 4 in: the number of permutations without a
       reference fit and the bounds (expected 77, 774 to 851 of 1287). A different count stops the task as `blocked`, recorded in
       `measurements.md` with the reason
-- [ ] Run both exact permutation cases (`ls.permutest.location.exact.ML.z.bcglat`, `ls.permutest.scale.exact.ML.z.bcglat`): both pass, the
+- [x] Run both exact permutation cases (`ls.permutest.location.exact.ML.z.bcglat`, `ls.permutest.scale.exact.ML.z.bcglat`): both pass, the
       scale case with its verdict unchanged; add the counts to `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] Both exact permutation cases pass, and the counts are recorded
+- [x] Both exact permutation cases pass, and the counts are recorded
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_derived.py -k "permutest and exact"` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_derived.py -k "permutest and exact"` passes
 
 **Notes:**
 
 - Depends on Tasks 3 and 4
+- Closed on 2026-11-24 by the operator session: the count is 68, not 77, and the location case is one permutation over its bound because of
+  permutation 433, one of the lower-local-maximum permutations filed in Task 1 (metafopy = R, the reference higher). By the operator's choice
+  (2026-11-24) the location case is recorded as a mismatch (strict xfail) naming that item; the scale case passes. See `measurements.md`
 
 ---
 
 ## Task 6: The full local check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation, Closing
@@ -204,27 +207,27 @@ follows is recorded on the `TODO.md` item.
 
 **Subtasks:**
 
-- [ ] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included) and `src/tests/test_docs_examples.py`
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included) and `src/tests/test_docs_examples.py`
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Add a dated note at the end of the `TODO.md` item "CI fails three numerical tests that pass on a local macOS run": the list is done and
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Add a dated note at the end of the `TODO.md` item "CI fails three numerical tests that pass on a local macOS run": the list is done and
       the item moves to `DONE.md` once the CI run of the merge commit is green on every runner (spec, Closing steps 3 and 4); the operator
       session checks it with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`
 
 **Acceptance Criteria:**
 
-- [ ] The final test run passes, the spec says `implemented`, and the `TODO.md` item carries the note
+- [x] The final test run passes, the spec says `implemented`, and the `TODO.md` item carries the note
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy src/metafopy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy src/metafopy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

@@ -1,7 +1,7 @@
 # Location-scale fits stable across platforms
 
 **Version:** 1.2
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-24
 **Review:** `agents/reviews/location-scale-fits-stable-across-platforms-spec.md` (page https://claude.ai/artifact/CmGGzkSKzMSKFE7pnXqeVY); answered 2026-11-24: approved, D1 a, D2 a, D3 a.
 

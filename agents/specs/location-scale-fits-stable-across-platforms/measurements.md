@@ -91,3 +91,50 @@ started from metafopy's end point, bring every one of the six REML fits to locat
   see the spec's Motivation.
 
 <!-- doc-counts: accept-end -->
+
+## Task 4: the log-link Newton polish (`polish_log`), development Mac (arm64), 2026-11-24
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+
+Largest relative change of each log-link fit of `src/tests/test_rma_ls.py` (`FITS`) between the unpolished BFGS stop and the polished fit, over `alpha`,
+`beta` and `se_alpha`; every fixture still passes at its committed tolerance and none is regenerated.
+
+| Fit | `alpha` | `beta` | `se_alpha` |
+|---|---|---|---|
+| `bd_poly` | 1.3e-07 (largest `alpha`) | 4.3e-10 | 3.4e-08 |
+| `mc_factors` | 1.5e-08 | 1.2e-07 (largest `beta`) | 2.1e-08 |
+| `mo_quality` | 4.1e-08 | 2.9e-09 | 2.5e-07 (largest `se_alpha`) |
+| `bcg_ablat`, `bcg_ablat_t` | 2.3e-08 | 1.7e-11 | 3.6e-08 |
+| `bd_3_ml` | 1.0e-08 | 2.0e-09 | 1.7e-08 |
+| every other fit with a free scale | at most 3e-09 | at most 6e-10 | at most 4e-09 |
+| `bcg_int_scale`, the three `optbeta` fits | 0 (not polished) | 0 | 0 |
+
+The exact p of `ls.permutest.location.exact.ML.z.bcglat` after the polish: `[0.61693862, 0.23931624]` (794 and 308 of 1287), as before (794/1287).
+
+<!-- doc-counts: accept-end -->
+
+## Task 5: the exact permutation bounds with Tasks 3 and 4 in, development Mac (arm64), 2026-11-24
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+
+`pytest src/tests/correctness/test_derived.py -k "permutest and exact"`: the scale case `ls.permutest.scale.exact.ML.z.bcglat` passes; the location
+case `ls.permutest.location.exact.ML.z.bcglat` fails.
+
+- Permutations without a reference fit: 68 of 1287, not the 77 expected. The task stops as blocked on the difference (spec, Error handling).
+- Reference bounds on the location p-values: `[0.60761461, 0.18570319]` to `[0.66045066, 0.23853924]`. metafopy gives `[0.61693862, 0.23931624]`: the
+  first coefficient lies inside, the second is `7.7e-4` above the upper bound (308 of 1287 against at most 307).
+- Reason, not yet traced: Task 3's reference keeps a start only where `ls_is_maximum` holds, which keeps 9 of the 77 permutations that had no fit
+  in the earlier classification, so those now count as regular and their `z` may differ from metafopy's (the ridge fits of the earlier
+  classification). Which of the 9 add a hit to the reference or move metafopy's is to be found before any change.
+
+<!-- doc-counts: accept-end -->
+
+## Case 4 after Tasks 3 and 4 (2026-11-24)
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+Measured on 2026-11-24 on macOS arm64 at `50de347`: 68 of 1287 permutations of `ls.permutest.location.exact.ML.z.bcglat` have no reference fit,
+not the 77 expected; Task 3's `ls_is_maximum` guard keeps 9 of the 77 as regular. The bounds of the `lat` coefficient become 239 to 307 of
+1287; metafopy gives 308. Comparing every regular permutation's verdict, only permutation 433 differs: metafopy and R metafor 5.2-1 give
+`z = -2.504695` (R ll `-12.33207`), the reference `z = 1.902` at the higher ll `-11.968`. The case is recorded as a mismatch (strict xfail) on
+2026-11-24 by the operator's choice; `ls.permutest.scale.exact.ML.z.bcglat` passes.
+<!-- doc-counts: accept-end -->

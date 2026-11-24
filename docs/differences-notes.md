@@ -64,7 +64,7 @@ What the result objects are and how they print.
 
 Where metafopy and R stop at different points of the same likelihood.
 
-- Optimisers: metafor's `optim` BFGS and Nelder-Mead are ported for `rma_glmm` (`CM.EL`) and `selmodel` only; `rma_mv` and location-scale fits use SciPy's BFGS, Nelder-Mead and others, as do the other optimisers, and agree to optimiser tolerance (about 1e-4 relative).
+- Optimisers: metafor's `optim` BFGS and Nelder-Mead are ported for `rma_glmm` (`CM.EL`) and `selmodel` only; `rma_mv` and location-scale fits use SciPy's BFGS, Nelder-Mead and others, as do the other optimisers, and agree to optimiser tolerance (about 1e-4 relative). The default optimiser of a location-scale fit with `link='log'` (and without `optbeta`) is finished by Newton steps on the analytic score and observed information (`polish_log`), capped at 1e-3 in the transformed coefficients so that ridge and boundary fits stay where BFGS stopped: BFGS and Nelder-Mead stop at the rounding of the objective, which on a flat restricted likelihood moves the location `vif` by 2e-6 relative between platforms, and the polish ends at the optimum to 1e-10 of the score on every platform. Outputs move by at most 1.3e-7 relative against the unpolished stop in the fixtures of `test_rma_ls.py` (measured 2026-11-24).
 
 - `verbose`: progress messages go to stderr and traces to stdout as R prints them. The iteration traces of `rma_mv` and `rma_glmm` come from SciPy's optimisers, not nlminb, glm or glmer, so only their progress messages and tables match R.
 

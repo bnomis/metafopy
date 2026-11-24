@@ -6,6 +6,8 @@ Nelder-Mead) when it has an identity link, which needs ``tau^2_i >= 0``. ``const
 step by step on top of the exact Nelder-Mead of :mod:`metafopy.core.optim`; ``nlminb`` is replaced by SciPy's BFGS
 followed by a Nelder-Mead polish, which reaches the same optimum to well within the parity tolerance.
 ``constrOptim`` stops about 1e-5 short of the identity-link maximum, so :func:`polish_identity` finishes it on the analytic score (metafor does not).
+With the log link BFGS and Nelder-Mead stop at the rounding of the objective, so :func:`polish_log` finishes the default optimiser's fit with capped Newton
+steps on the analytic score and information (the precedent is :func:`metafopy.models.mv_opt.polish_score`).
 
 Source of ``constrOptim``: R ``src/library/stats/R/constrOptim.R`` (GPL-2 | GPL-3).
 See https://stat.ethz.ch/R-manual/R-devel/library/stats/html/constrOptim.html and https://stat.ethz.ch/R-manual/R-devel/library/stats/html/nlminb.html.
@@ -29,6 +31,7 @@ __all__ = ['OptResult']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Objective = collections.abc.Callable[[FloatArray], float]
+type Gradient = collections.abc.Callable[[FloatArray], FloatArray]
 
 HUGE = 1e100
 ACTIVE_TOL = 1e-8  # rows of Z alpha this close to zero (relative to the largest) start in the active set
@@ -36,6 +39,9 @@ GRAD_TOL = 1e-10  # relative size of the projected score, and of a negative mult
 SNAP = 1e-13  # the slack, relative to the largest row of Z alpha, to which an active row is brought
 CUT_MARGIN = 1e-9  # a step cut at a row stops this fraction short of it, so that rounding cannot take the row below zero
 POLISH_IDENTITY_ITERATIONS = 100  # Fisher-scoring steps of polish_identity: it converges in a handful when it converges at all
+POLISH_LOG_SCORE = 1e-10  # polish_log stops when the largest absolute score entry is at most this
+POLISH_LOG_MAX_STEP = 1e-3  # a larger step entry (standardised Z) means a ridge or a boundary, where polish_log stops
+POLISH_LOG_STEPS = 8
 POLISH_ITERATIONS = 2000  # the simplex polish is capped: it converges within a few hundred iterations when it improves at all, and spins on a ridge
 
 
@@ -247,4 +253,46 @@ def polish_identity(
         alpha, ll = cand, new_ll
         if blocking is not None and t == t_max:
             active.add(blocking)
+    return alpha
+
+
+def polish_log(start: FloatArray, loglik: Objective, score: Gradient, information: Gradient, free: numpy.typing.NDArray[numpy.bool_]) -> FloatArray:
+    """Newton steps on the free log-link scale coefficients from ``start`` (the BFGS and Nelder-Mead end point) until the largest score entry is at
+    most ``POLISH_LOG_SCORE``. A step is taken only while the information is positive definite, no entry exceeds ``POLISH_LOG_MAX_STEP``, the
+    log-likelihood does not fall by more than ``metafopy.core.stationarity.REL_TOL * (1 + |ll|)`` and the largest score entry falls; otherwise the
+    point reached so far is returned. At most ``POLISH_LOG_STEPS`` steps.
+
+    The BFGS stop leaves the score at the rounding of the objective, which on a flat likelihood moves the coefficients by more than the tests that
+    compare fits allow. The objective test is loose on purpose: near the optimum the log-likelihood changes by less than its own rounding, so the fall
+    of the score is what accepts a step (Nocedal and Wright, 2006, ch. 3), as for ``rma_mv`` (:func:`metafopy.models.mv_opt.polish_score`).
+    """
+    alpha = start.copy()
+    ll = loglik(alpha)
+    if not math.isfinite(ll) or not free.any():
+        return start
+    with numpy.errstate(all='ignore'):
+        grad = score(alpha)[free]
+        for _ in range(POLISH_LOG_STEPS):
+            if not numpy.all(numpy.isfinite(grad)):
+                break
+            gnorm = float(numpy.max(numpy.abs(grad)))
+            if gnorm <= POLISH_LOG_SCORE:
+                break
+            info = information(alpha)[numpy.ix_(free, free)]
+            try:
+                factor = numpy.linalg.cholesky(info)
+                step = numpy.linalg.solve(factor.T, numpy.linalg.solve(factor, grad))
+            except numpy.linalg.LinAlgError:
+                break
+            if not numpy.all(numpy.isfinite(step)) or float(numpy.max(numpy.abs(step))) > POLISH_LOG_MAX_STEP:
+                break
+            trial = alpha.copy()
+            trial[free] += step
+            trial_ll = loglik(trial)
+            if not math.isfinite(trial_ll) or trial_ll < ll - metafopy.core.stationarity.REL_TOL * (1 + abs(ll)):
+                break
+            trial_grad = score(trial)[free]
+            if not numpy.all(numpy.isfinite(trial_grad)) or float(numpy.max(numpy.abs(trial_grad))) >= gnorm:
+                break
+            alpha, ll, grad = trial, trial_ll, trial_grad
     return alpha
