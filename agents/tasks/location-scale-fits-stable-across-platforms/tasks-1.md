@@ -92,7 +92,7 @@ error on every platform.
 
 ## Task 3: Case 2, the test's reference fit in standardised coordinates
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`LS_DEGENERATE`, `ls_is_maximum`); Implementation, Case 2
@@ -101,23 +101,23 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write the reproduction in `src/tests/correctness/test_formulas_ls.py` (`LS_SCORE_TOLERANCE` monkeypatched to `5e-7` and to `1e-9` on the
+- [x] Write the reproduction in `src/tests/correctness/test_formulas_ls.py` (`LS_SCORE_TOLERANCE` monkeypatched to `5e-7` and to `1e-9` on the
       `bcg2` data, ML and REML; `ls_is_maximum` false at the degenerate REML point the spec names, true at the optimum); run it on the unchanged
       code: it must raise `LinAlgError` there
-- [ ] Add `LS_DEGENERATE` and `ls_is_maximum` to `src/tests/correctness/formulas.py`, and change `ls_reference_fit` for the log link as the spec
+- [x] Add `LS_DEGENERATE` and `ls_is_maximum` to `src/tests/correctness/formulas.py`, and change `ls_reference_fit` for the log link as the spec
       says: centre and scale the non-constant columns of `Z` (`ddof=1`), fit on `Zs`, map `alpha` and `va` back, keep a start only when
       `ls_is_maximum` holds, skip the final Nelder-Mead; the identity link unchanged
-- [ ] Run every non-slow `ls.` case of `src/tests/correctness/test_derived.py`: all pass
+- [x] Run every non-slow `ls.` case of `src/tests/correctness/test_derived.py`: all pass
 
 **Acceptance Criteria:**
 
-- [ ] The reproduction passes and failed on the unchanged code; `ls.vif.reestimate.ML.bcg2` passes
+- [x] The reproduction passes and failed on the unchanged code; `ls.vif.reestimate.ML.bcg2` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_formulas_ls.py` passes
-- [ ] `pytest src/tests/correctness/test_formulas_ls.py` and `pytest src/tests/correctness/test_derived.py -k "ls." -m "not slow"` pass
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_formulas_ls.py` passes
+- [x] `pytest src/tests/correctness/test_formulas_ls.py` and `pytest src/tests/correctness/test_derived.py -k "ls." -m "not slow"` pass
 
 ---
 
