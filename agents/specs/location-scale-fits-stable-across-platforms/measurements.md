@@ -112,3 +112,19 @@ Largest relative change of each log-link fit of `src/tests/test_rma_ls.py` (`FIT
 The exact p of `ls.permutest.location.exact.ML.z.bcglat` after the polish: `[0.61693862, 0.23931624]` (794 and 308 of 1287), as before (794/1287).
 
 <!-- doc-counts: accept-end -->
+
+## Task 5: the exact permutation bounds with Tasks 3 and 4 in, development Mac (arm64), 2026-11-24
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+
+`pytest src/tests/correctness/test_derived.py -k "permutest and exact"`: the scale case `ls.permutest.scale.exact.ML.z.bcglat` passes; the location
+case `ls.permutest.location.exact.ML.z.bcglat` fails.
+
+- Permutations without a reference fit: 68 of 1287, not the 77 expected. The task stops as blocked on the difference (spec, Error handling).
+- Reference bounds on the location p-values: `[0.60761461, 0.18570319]` to `[0.66045066, 0.23853924]`. metafopy gives `[0.61693862, 0.23931624]`: the
+  first coefficient lies inside, the second is `7.7e-4` above the upper bound (308 of 1287 against at most 307).
+- Reason, not yet traced: Task 3's reference keeps a start only where `ls_is_maximum` holds, which keeps 9 of the 77 permutations that had no fit
+  in the earlier classification, so those now count as regular and their `z` may differ from metafopy's (the ridge fits of the earlier
+  classification). Which of the 9 add a hit to the reference or move metafopy's is to be found before any change.
+
+<!-- doc-counts: accept-end -->

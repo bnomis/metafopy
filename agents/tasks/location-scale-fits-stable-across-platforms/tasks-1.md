@@ -162,7 +162,7 @@ error on every platform.
 
 ## Task 5: Case 4, the exact permutation bounds
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation, Case 4; decision D3
