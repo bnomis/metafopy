@@ -31,3 +31,18 @@ computed `alpha` start is NaN there. A NaN or ill-conditioned start is the suspe
 Fix direction: reproduce first - run `uv run pytest --mpl --cov` over the whole suite locally, then bisect by module; then fix the cause in
 `src/metafopy/`, or record a platform difference in `docs/differences.md` and `src/audit/data/known.toml` if it is one. Until then the
 `test` jobs of CI stay red, which hides any new failure.
+
+Note 2026-11-24: causes found from CI run 45335133105 (commit `00f7fda`); test order and coverage are not them (`test_coverage.py` then
+the `ls.vif` cases, and the whole of `test_derived.py`, pass locally with `--mpl --cov`, and the local `.venv` matches `uv sync --locked
+--all-extras`). Four cases, all ill-conditioned location-scale fits on `dat.bcg`:
+- `differences.md` line 1442: with the three NA studies dropped (k = 10, five location columns) one study has leverage 1, so its HE residual
+  in `start_alpha` (`src/metafopy/models/rma_ls_fit.py:312-321`) is zero in exact arithmetic; locally it is `2.3e-14` and the fit goes on,
+  on CI the start is NaN and metafopy raises R's own error. The documented difference is a local round-off artefact.
+- `ls.vif.reestimate.ML.bcg2`: the singular matrix is in the test's reference fit (`ls_reference_fit`,
+  `src/tests/correctness/formulas.py:3111`, `numpy.linalg.inv` of the information), with `year` uncentred in both parts.
+- `ls.vif.REML.bcg2`: metafopy's location vif is `4.723135` (ubuntu) and `4.723162` (windows) against the reference `4.723144` on every
+  runner, so metafopy's optimiser end point moves with the platform.
+- `ls.permutest.location.exact.ML.z.bcglat` (windows only): p `0.61694` against a reference upper bound `0.61616`, a difference of
+  exactly 1/1287, one permutation on the other side of a near-tie.
+
+Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: none yet.
