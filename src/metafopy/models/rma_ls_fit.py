@@ -239,13 +239,46 @@ class LSProblem:
 
         ``P = W - W X (X' W X)^-1 X' W``. ``d`` and ``M`` are ``diag(W)`` and ``W`` under ML and ``diag(P)`` and ``P`` under REML.
         """
-        w = 1.0 / (self.vi + self.Z @ alpha)
-        XtW = self.X.T * w
-        P = numpy.diag(w) - XtW.T @ metafopy.core.linalg.invcalc(self.X, w) @ XtW
+        return self.tau2_parts(self.Z @ alpha)
+
+    def tau2_parts(self, tau2: FloatArray) -> tuple[FloatArray, FloatArray, FloatArray]:
+        """:meth:`score_parts` at the heterogeneities ``tau2``."""
+        P = self.projection(tau2)
         e = P @ self.yi
         if self.reml:
             return numpy.diag(P).copy(), P, e
+        w = 1.0 / (self.vi + tau2)
         return w, numpy.diag(w), e
+
+    def log_score(self, alpha: FloatArray) -> FloatArray:
+        """Score ``-1/2 Z' ((d - e^2) tau2)`` of the scale coefficients under the log link, ``tau2 = exp(Z alpha)``: the gradient of :meth:`loglik`."""
+        tau2 = numpy.exp(self.Z @ alpha)
+        d, _, e = self.tau2_parts(tau2)
+        return numpy.asarray(-0.5 * self.Z.T @ ((d - e**2) * tau2), dtype=numpy.float64)
+
+    def log_information(self, alpha: FloatArray) -> FloatArray:
+        """Observed information (minus the Hessian of :meth:`loglik`) of the scale coefficients under the log link.
+
+        With ``D_j = diag(tau2_i z_ij)`` and ``T`` the ``M`` of :meth:`score_parts`, the entry ``(j, l)`` is
+        ``-1/2 tr(T D_l T D_j) + 1/2 tr(T D_jl) + y'P D_l P D_j P y - 1/2 y'P D_jl P y`` with ``D_jl = diag(tau2_i z_ij z_il)``, from differentiating
+        :meth:`log_score` once more with ``dW = -W dM W`` and ``dP = -P dM P`` (Harville, 1977, <https://doi.org/10.1080/01621459.1977.10480998>).
+        """
+        tau2 = numpy.exp(self.Z @ alpha)
+        d, T, e = self.tau2_parts(tau2)
+        P = self.projection(tau2)
+        D = self.Z * tau2[:, None]
+        De = D * e[:, None]
+        cross = D.T @ (T * T) @ D
+        second = (self.Z * (d * tau2)[:, None]).T @ self.Z
+        quad = De.T @ P @ De
+        data = (self.Z * (e**2 * tau2)[:, None]).T @ self.Z
+        return numpy.asarray(-0.5 * cross + 0.5 * second + quad - 0.5 * data, dtype=numpy.float64)
+
+    def projection(self, tau2: FloatArray) -> FloatArray:
+        """``P = W - W X (X' W X)^-1 X' W`` at the heterogeneities ``tau2``."""
+        w = 1.0 / (self.vi + tau2)
+        XtW = self.X.T * w
+        return numpy.asarray(numpy.diag(w) - XtW.T @ metafopy.core.linalg.invcalc(self.X, w) @ XtW, dtype=numpy.float64)
 
     def ls_score(self, alpha: FloatArray) -> FloatArray:
         """Score ``-1/2 Z' (d - e^2)`` of the scale coefficients with the identity link, the gradient of :meth:`loglik`.
@@ -260,6 +293,46 @@ class LSProblem:
         """Expected information ``1/2 Z' (M o M) Z`` of the scale coefficients with the identity link (``o`` the elementwise product)."""
         _, M, _ = self.score_parts(alpha)
         return numpy.asarray(0.5 * self.Z.T @ (M * M) @ self.Z, dtype=numpy.float64)
+
+
+def polish_log_fit(problem: LSProblem, theta: FloatArray, alpha_arg: FloatArray, beta_arg: FloatArray) -> FloatArray:
+    """Finish a log-link fit on the analytic score (:func:`metafopy.models.rma_ls_opt.polish_log`), in the unconstrained ``theta`` of the optimiser.
+
+    Where ``alpha_min`` and ``alpha_max`` bound a coefficient, ``alpha = mapfun(theta)`` and the score and information of ``theta`` follow by the
+    chain rule: ``J g`` and ``J I J - diag(g alpha'')`` with ``J = diag(d alpha / d theta)``. A coefficient fixed by ``alpha_arg`` has ``J = 0``.
+    """
+    lb, ub = problem.alpha_min, problem.alpha_max
+    bounded = numpy.isfinite(lb) & numpy.isfinite(ub)
+    fixed = ~numpy.isnan(alpha_arg)
+
+    def to_alpha(x: FloatArray) -> FloatArray:
+        return numpy.where(fixed, alpha_arg, mapfun(x, lb, ub))
+
+    def derivatives(x: FloatArray) -> tuple[FloatArray, FloatArray]:
+        with numpy.errstate(over='ignore'):
+            sig = numpy.where(bounded, 1.0 / (1.0 + numpy.exp(-x)), 0.0)
+        width = numpy.where(bounded, ub - lb, 0.0)
+        d1 = numpy.where(bounded, width * sig * (1 - sig), 1.0)
+        d2 = numpy.where(bounded, width * sig * (1 - sig) * (1 - 2 * sig), 0.0)
+        return numpy.where(fixed, 0.0, d1), numpy.where(fixed, 0.0, d2)
+
+    def score(x: FloatArray) -> FloatArray:
+        d1, _ = derivatives(x)
+        return numpy.asarray(d1 * problem.log_score(to_alpha(x)), dtype=numpy.float64)
+
+    def information(x: FloatArray) -> FloatArray:
+        d1, d2 = derivatives(x)
+        return numpy.asarray(
+            d1[:, None] * problem.log_information(to_alpha(x)) * d1[None, :] - numpy.diag(d2 * problem.log_score(to_alpha(x))), dtype=numpy.float64
+        )
+
+    return metafopy.models.rma_ls_opt.polish_log(
+        theta,
+        lambda x: problem.loglik(x, alpha_arg, beta_arg, alpha_transf=True),
+        score,
+        information,
+        numpy.isnan(alpha_arg),
+    )
 
 
 def pos_chol_inverse(A: FloatArray) -> FloatArray | None:
@@ -637,6 +710,9 @@ def fit_rma_ls(
             ),
             alpha_arg,
         )
+
+    if link == 'log' and not optbeta and optimizer == 'BFGS' and metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer') == 'nlminb':
+        par_opt = polish_log_fit(problem, par_opt, alpha_arg, beta_arg)
 
     pos_beta = numpy.arange(p) if optbeta else numpy.arange(0)
     pos_alpha = numpy.arange(p, p + q) if optbeta else numpy.arange(q)

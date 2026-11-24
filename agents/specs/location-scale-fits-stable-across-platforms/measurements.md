@@ -91,3 +91,24 @@ started from metafopy's end point, bring every one of the six REML fits to locat
   see the spec's Motivation.
 
 <!-- doc-counts: accept-end -->
+
+## Task 4: the log-link Newton polish (`polish_log`), development Mac (arm64), 2026-11-24
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+
+Largest relative change of each log-link fit of `src/tests/test_rma_ls.py` (`FITS`) between the unpolished BFGS stop and the polished fit, over `alpha`,
+`beta` and `se_alpha`; every fixture still passes at its committed tolerance and none is regenerated.
+
+| Fit | `alpha` | `beta` | `se_alpha` |
+|---|---|---|---|
+| `bd_poly` | 1.3e-07 (largest `alpha`) | 4.3e-10 | 3.4e-08 |
+| `mc_factors` | 1.5e-08 | 1.2e-07 (largest `beta`) | 2.1e-08 |
+| `mo_quality` | 4.1e-08 | 2.9e-09 | 2.5e-07 (largest `se_alpha`) |
+| `bcg_ablat`, `bcg_ablat_t` | 2.3e-08 | 1.7e-11 | 3.6e-08 |
+| `bd_3_ml` | 1.0e-08 | 2.0e-09 | 1.7e-08 |
+| every other fit with a free scale | at most 3e-09 | at most 6e-10 | at most 4e-09 |
+| `bcg_int_scale`, the three `optbeta` fits | 0 (not polished) | 0 | 0 |
+
+The exact p of `ls.permutest.location.exact.ML.z.bcglat` after the polish: `[0.61693862, 0.23931624]` (794 and 308 of 1287), as before (794/1287).
+
+<!-- doc-counts: accept-end -->

@@ -123,7 +123,7 @@ error on every platform.
 
 ## Task 4: Case 3, the log-link Newton polish
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`LSProblem.log_score`, `log_information`, `polish_log` and its constants); Implementation, Case 3; decision D2
@@ -132,27 +132,27 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/test_rma_ls_opt.py` with the spec's reproduction (five draws of `yi * (1 + 1e-15 N(0, 1))` on `ls.vif.REML.bcg2`'s model:
+- [x] Write `src/tests/test_rma_ls_opt.py` with the spec's reproduction (five draws of `yi * (1 + 1e-15 N(0, 1))` on `ls.vif.REML.bcg2`'s model:
       the location vif within `1e-8` relative of the unperturbed fit's and of the reference's) and the degenerate-fit test; run it on the
       unchanged code: the draws must spread (the test fails)
-- [ ] Add `log_score` and `log_information` to `LSProblem` in `src/metafopy/models/rma_ls_fit.py`; test both against finite differences of the
+- [x] Add `log_score` and `log_information` to `LSProblem` in `src/metafopy/models/rma_ls_fit.py`; test both against finite differences of the
       log-likelihood in `test_rma_ls_opt.py`
-- [ ] Add `polish_log` and its constants to `src/metafopy/models/rma_ls_opt.py`, and call it in `fit_rma_ls` after `rma_ls_opt.minimise` as the
+- [x] Add `polish_log` and its constants to `src/metafopy/models/rma_ls_opt.py`, and call it in `fit_rma_ls` after `rma_ls_opt.minimise` as the
       spec says (log link, default optimiser, not with `optbeta=True`, through `mapfun` where bounds are set; not logged by `verbose`, not
       counted in `maxiter`)
-- [ ] Update the `rma_ls_opt` module docstring and the location-scale optimiser line of `docs/differences-notes.md`
-- [ ] Run `src/tests/test_rma_ls.py` and every other R parity test of location-scale fits at their committed tolerances; record the largest change
+- [x] Update the `rma_ls_opt` module docstring and the location-scale optimiser line of `docs/differences-notes.md`
+- [x] Run `src/tests/test_rma_ls.py` and every other R parity test of location-scale fits at their committed tolerances; record the largest change
       per fixture, and the exact p of `ls.permutest.location.exact.ML.z.bcglat` before and after (794/1287 before), in `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] The reproduction passes and failed on the unchanged code; `ls.vif.REML.bcg2` passes; no fixture is regenerated
+- [x] The reproduction passes and failed on the unchanged code; `ls.vif.REML.bcg2` passes; no fixture is regenerated
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_opt.py src/tests/test_rma_ls_opt.py` passes
-- [ ] `pytest src/tests/test_rma_ls_opt.py src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_opt.py src/tests/test_rma_ls_opt.py` passes
+- [x] `pytest src/tests/test_rma_ls_opt.py src/tests/test_rma_ls.py` passes
 
 **Notes:**
 
