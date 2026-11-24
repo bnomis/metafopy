@@ -47,6 +47,8 @@ the `ls.vif` cases, and the whole of `test_derived.py`, pass locally with `--mpl
 
 Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: `agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md`.
 
+Note 2026-11-24: the task list is done and the branch passes the full local run on macOS arm64 (log in the main checkout's `ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`). This item moves to `DONE.md` once the CI run of the merge commit is green on every runner; check with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`.
+
 ## Location-scale fits can stop at a lower local maximum than the test reference
 
 <!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->

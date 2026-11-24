@@ -197,7 +197,7 @@ error on every platform.
 
 ## Task 6: The full local check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation, Closing
@@ -207,27 +207,27 @@ follows is recorded on the `TODO.md` item.
 
 **Subtasks:**
 
-- [ ] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included) and `src/tests/test_docs_examples.py`
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included) and `src/tests/test_docs_examples.py`
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Add a dated note at the end of the `TODO.md` item "CI fails three numerical tests that pass on a local macOS run": the list is done and
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Add a dated note at the end of the `TODO.md` item "CI fails three numerical tests that pass on a local macOS run": the list is done and
       the item moves to `DONE.md` once the CI run of the merge commit is green on every runner (spec, Closing steps 3 and 4); the operator
       session checks it with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`
 
 **Acceptance Criteria:**
 
-- [ ] The final test run passes, the spec says `implemented`, and the `TODO.md` item carries the note
+- [x] The final test run passes, the spec says `implemented`, and the `TODO.md` item carries the note
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy src/metafopy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy src/metafopy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**
