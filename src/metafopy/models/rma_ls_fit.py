@@ -38,6 +38,7 @@ type BoolArray = numpy.typing.NDArray[numpy.bool_]
 # auditme: accept[literal-duplication] the option values metafor lists, repeated as in the R source
 LS_METHODS: tuple[str, ...] = ('ML', 'REML')
 DBL_EPS = float(numpy.finfo(float).eps)
+LEVERAGE_ONE = 1e-10  # a study with 1 - h_ii below this has a zero residual in exact arithmetic
 SCIPY_METHODS = ('BFGS', 'CG', 'L-BFGS-B', 'Nelder-Mead')
 CONSTRAINED = ('constrOptim',)
 # identity link: the optimisers metafor accepts for the constraint tau_i^2 >= 0; solnp and nloptr are also allowed with the log link
@@ -284,13 +285,18 @@ def quad_form(coef: FloatArray, V: FloatArray, idx: tuple[int, ...]) -> float:
 
 
 def marginal_residuals(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) -> tuple[FloatArray, FloatArray]:
-    """Raw residuals and their standard errors for the weighted fit with heterogeneity ``tau2`` (metafor's ``rstandard``)."""
+    """Raw residuals and their standard errors for the weighted fit with heterogeneity ``tau2`` (metafor's ``rstandard``).
+
+    A residual under ``100 * DBL_EPS``, or of a study with ``1 - h_ii < LEVERAGE_ONE``, is 0: the latter is 0 in exact arithmetic and only rounding
+    noise in floating point, which differs between platforms.
+    """
     w = 1.0 / (vi + tau2)
     inv = metafopy.core.linalg.invcalc(X, w)
     beta = inv @ (X.T @ (w * yi))
     H = X @ inv @ (X.T * w)
     ei = yi - X @ beta
     ei[numpy.abs(ei) < 100 * DBL_EPS] = 0.0
+    ei[1.0 - numpy.diag(H) < LEVERAGE_ONE] = 0.0
     ImH = numpy.eye(yi.shape[0]) - H
     ve = ImH @ numpy.diag(vi + tau2) @ ImH.T
     return ei, numpy.sqrt(numpy.diag(ve))
