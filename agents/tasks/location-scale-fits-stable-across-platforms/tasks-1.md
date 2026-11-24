@@ -29,7 +29,7 @@ library change here cannot change its result.
 
 ## Task 1: File the local-maximum finding
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Decisions, D3 (the finding filed separately)
@@ -39,18 +39,18 @@ maximum than the test's reference is recorded before the list changes the code t
 
 **Subtasks:**
 
-- [ ] Read the finding in `measurements.md` (permutation 68: metafopy and R log-likelihood `-12.58248229`, the reference `-12.57323737`; 8
+- [x] Read the finding in `measurements.md` (permutation 68: metafopy and R log-likelihood `-12.58248229`, the reference `-12.57323737`; 8
       regular permutations in all)
-- [ ] File it in `TODO.md` with the `/todo-add` shape: dated finding, cause marked unconfirmed, fix direction (decide which maximum metafopy
+- [x] File it in `TODO.md` with the `/todo-add` shape: dated finding, cause marked unconfirmed, fix direction (decide which maximum metafopy
       reports; compare with R), placed by the file's order
 
 **Acceptance Criteria:**
 
-- [ ] `TODO.md` has the item, dated 2026-11-24, naming the case, the permutations and the values
+- [x] `TODO.md` has the item, dated 2026-11-24, naming the case, the permutations and the values
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 ---
 
