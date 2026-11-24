@@ -162,7 +162,7 @@ error on every platform.
 
 ## Task 5: Case 4, the exact permutation bounds
 
-**Status:** in-progress
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Implementation, Case 4; decision D3
@@ -171,24 +171,27 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Re-measure the classification of `ls.permutest.location.exact.ML.z.bcglat` with Tasks 3 and 4 in: the number of permutations without a
+- [x] Re-measure the classification of `ls.permutest.location.exact.ML.z.bcglat` with Tasks 3 and 4 in: the number of permutations without a
       reference fit and the bounds (expected 77, 774 to 851 of 1287). A different count stops the task as `blocked`, recorded in
       `measurements.md` with the reason
-- [ ] Run both exact permutation cases (`ls.permutest.location.exact.ML.z.bcglat`, `ls.permutest.scale.exact.ML.z.bcglat`): both pass, the
+- [x] Run both exact permutation cases (`ls.permutest.location.exact.ML.z.bcglat`, `ls.permutest.scale.exact.ML.z.bcglat`): both pass, the
       scale case with its verdict unchanged; add the counts to `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] Both exact permutation cases pass, and the counts are recorded
+- [x] Both exact permutation cases pass, and the counts are recorded
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/correctness/test_derived.py -k "permutest and exact"` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/correctness/test_derived.py -k "permutest and exact"` passes
 
 **Notes:**
 
 - Depends on Tasks 3 and 4
+- Closed on 2026-11-24 by the operator session: the count is 68, not 77, and the location case is one permutation over its bound because of
+  permutation 433, one of the lower-local-maximum permutations filed in Task 1 (metafopy = R, the reference higher). By the operator's choice
+  (2026-11-24) the location case is recorded as a mismatch (strict xfail) naming that item; the scale case passes. See `measurements.md`
 
 ---
 

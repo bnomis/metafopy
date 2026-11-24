@@ -64,3 +64,6 @@ Fix direction: decide which maximum metafopy should report (the higher one is th
 the eight permutations, and if metafopy should search more starts, write a spec first. Filed apart from
 `agents/specs/location-scale-fits-stable-across-platforms/spec.md`, whose decision D3 checks the exact permutation cases against widened
 bounds only.
+
+Note 2026-11-24: permutation 433 alone puts metafopy one over the reference bound of `ls.permutest.location.exact.ML.z.bcglat`, now a
+strict-xfail mismatch naming this item; remove its `status = "mismatch"` once this item is fixed.

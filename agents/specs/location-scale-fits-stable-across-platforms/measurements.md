@@ -128,3 +128,13 @@ case `ls.permutest.location.exact.ML.z.bcglat` fails.
   classification). Which of the 9 add a hit to the reference or move metafopy's is to be found before any change.
 
 <!-- doc-counts: accept-end -->
+
+## Case 4 after Tasks 3 and 4 (2026-11-24)
+
+<!-- doc-counts: accept-start measured on 2026-11-24 - a dated record, not a claim about the present -->
+Measured on 2026-11-24 on macOS arm64 at `50de347`: 68 of 1287 permutations of `ls.permutest.location.exact.ML.z.bcglat` have no reference fit,
+not the 77 expected; Task 3's `ls_is_maximum` guard keeps 9 of the 77 as regular. The bounds of the `lat` coefficient become 239 to 307 of
+1287; metafopy gives 308. Comparing every regular permutation's verdict, only permutation 433 differs: metafopy and R metafor 5.2-1 give
+`z = -2.504695` (R ll `-12.33207`), the reference `z = 1.902` at the higher ll `-11.968`. The case is recorded as a mismatch (strict xfail) on
+2026-11-24 by the operator's choice; `ls.permutest.scale.exact.ML.z.bcglat` passes.
+<!-- doc-counts: accept-end -->
