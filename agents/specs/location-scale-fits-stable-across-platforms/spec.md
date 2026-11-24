@@ -1,6 +1,6 @@
 # Location-scale fits stable across platforms
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** proposed
 **Date:** 2026-11-24
 **Review:** `agents/reviews/location-scale-fits-stable-across-platforms-spec.md` (page https://claude.ai/artifact/CmGGzkSKzMSKFE7pnXqeVY); answered 2026-11-24: approved, D1 a, D2 a, D3 a.
@@ -230,3 +230,7 @@ permutations metafopy and R stop at a lower local maximum than the reference.
 - *b. Bounds plus per-permutation agreement* of the `|z| >= |z_obs| - comptol` verdict on the regular permutations: stronger; it passes only
   once the 8 permutations are recorded as a mismatch (reference against metafopy and R) in `agents/specs/correctness-ls-extensions/mismatches.md`.
 **Recommended:** a, with the finding filed: b makes this item depend on a separate question (which local maximum metafopy should report).
+
+Version 1.2, 2026-11-24: the recall step of Case 1 is dropped. `bin/metafor-audit.sh --recall` audits metafopy as of each earlier audit's
+commit (`--metafopy-src`), so a library change cannot change its result; the `--only 'construct/ls_na*'` run stays. The CI check of the
+Closing happens after the operator's `/ship`, outside the task list, since the merge gate needs every task done.

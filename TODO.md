@@ -45,4 +45,4 @@ the `ls.vif` cases, and the whole of `test_derived.py`, pass locally with `--mpl
 - `ls.permutest.location.exact.ML.z.bcglat` (windows only): p `0.61694` against a reference upper bound `0.61616`, a difference of
   exactly 1/1287, one permutation on the other side of a near-tie.
 
-Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: none yet.
+Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: `agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md`.
