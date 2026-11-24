@@ -56,7 +56,7 @@ maximum than the test's reference is recorded before the list changes the code t
 
 ## Task 2: Case 1, a study of leverage 1
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`LEVERAGE_ONE`, `marginal_residuals`); Implementation, Case 1; decision D1
@@ -66,23 +66,23 @@ error on every platform.
 
 **Subtasks:**
 
-- [ ] Write the test in `src/tests/test_rma_ls.py` as the spec gives it (unperturbed and nine perturbed inputs, `numpy.random.default_rng(1)`),
+- [x] Write the test in `src/tests/test_rma_ls.py` as the spec gives it (unperturbed and nine perturbed inputs, `numpy.random.default_rng(1)`),
       run it on the unchanged code: the unperturbed case must fit (so the test fails), as on the Mac
-- [ ] Add `LEVERAGE_ONE = 1e-10` and the leverage check to `marginal_residuals` in `src/metafopy/models/rma_ls_fit.py`, as the API docstring says
-- [ ] Remove the `docs/differences.md` section "A location-scale fit with an interaction whose column R drops" (with its compare block) and the
+- [x] Add `LEVERAGE_ONE = 1e-10` and the leverage check to `marginal_residuals` in `src/metafopy/models/rma_ls_fit.py`, as the API docstring says
+- [x] Remove the `docs/differences.md` section "A location-scale fit with an interaction whose column R drops" (with its compare block) and the
       `src/audit/data/known.toml` entry `construct/ls_na/mods={"$formula":"~ ablat * alloc"}`; grep `docs/` for any link to the section and fix it
-- [ ] Run `bin/metafor-audit.sh --only 'construct/ls_na*'` (with `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`
+- [x] Run `bin/metafor-audit.sh --only 'construct/ls_na*'` (with `METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`
       `METAFOPY_AUDIT_WORK=/Users/simonb/src/metafopy/.audit`): it must report that both sides refuse; record the run directory in the commit body
 
 **Acceptance Criteria:**
 
-- [ ] The new test passes; it failed on the unchanged code; `test_docs_examples.py` passes on `differences.md`
+- [x] The new test passes; it failed on the unchanged code; `test_docs_examples.py` passes on `differences.md`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py` passes
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py` passes
+- [x] `pytest src/tests/test_rma_ls.py src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
