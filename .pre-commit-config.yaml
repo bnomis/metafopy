@@ -7,7 +7,7 @@ repos:
       - id: ruff-format
   # The shared audit hooks, pinned to one commit of the checker.
   - repo: https://github.com/bnomis/auditor
-    rev: 3e232368c42ae4147aa8607ac73570adfc3f786f
+    rev: 133ca2c819d32fbc369ff921c1eba491ab36e222
     hooks:
       - id: auditme-changed
       - id: auditme-all
