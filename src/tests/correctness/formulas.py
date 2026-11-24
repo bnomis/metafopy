@@ -2842,7 +2842,7 @@ LS_START_FACTORS = (1.0, 0.1, 10.0, 0.01, 100.0)  # the multiples of the moment-
 LS_SCORE_TOLERANCE = 1e-6  # the largest absolute score at which ``ls_reference_fit`` accepts a log-link fit as stationary
 LS_NEWTON_STEPS = 50  # the most Newton steps spent polishing one start: quadratic convergence needs few, and a start heading for tau2 = 0 never ends
 LS_DEGENERATE = 1e-8  # a log-link end point whose information has min/max eigenvalue ratio at or below this has no finite maximum
-LS_LOGLIK_NOISE = 1e-9  # the fall in a log-link restricted log-likelihood that rounding alone can cause, which ``ls_newton_polish`` accepts
+LS_LOGLIK_NOISE = 1e-9  # the fall in a log-likelihood that rounding alone can cause near an optimum, which ``ls_newton_polish`` accepts
 LS_AGREEMENT = 1e-9  # two log-link starts whose log-likelihoods differ by no more than this end the search over starts
 IDENTITY_ACTIVE = 1e-8  # ``z_i' alpha`` at most this far above zero makes the identity link's constraint of row i active in ``ls_face_basis``
 IDENTITY_SLACK = 1e-10  # the amount by which SLSQP may leave Z alpha >= 0 before the reference treats alpha as infeasible
@@ -3010,7 +3010,9 @@ def ls_newton_polish(
     Stops when the largest absolute projected score is below ``1e-10``, when the projected information is not positive definite, or when a step cannot be
     halved into one that does not lower the log-likelihood. An identity-link optimum on the boundary has a score that does not vanish across the
     constraint; along the face it does, and this finds that point to rounding error where Nelder-Mead stops about ``1e-6`` short.
-    ``noise`` is the fall in the log-likelihood that a step may cause, for a log-likelihood whose rounding error is above the step's gain.
+    ``noise`` is the fall in the log-likelihood that a step may cause, for a log-likelihood whose rounding error is above the step's gain;
+    ``ls_reference_fit`` passes ``LS_LOGLIK_NOISE`` for both links, since without it a polish can stop short of the optimum wherever rounding
+    first refuses a step (an identity-link face score of 2e-7 locally and 4.9e-6 on a Windows runner, 2026-11-24, against 2e-11 with it).
     """
     current = alpha
     value = ls_loglik(yi, vi, X, Z, current, link, method)
@@ -3114,7 +3116,7 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         if not math.isfinite(negative(point)):
             messages.append(str(res.message))
             continue
-        point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS), LS_LOGLIK_NOISE if link == 'log' else 0.0)
+        point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS), LS_LOGLIK_NOISE)
         value = negative(point)
         if link == 'log':
             score = float(numpy.max(numpy.abs(ls_score(yi, vi, X, Z, point, link, method))))
@@ -3137,7 +3139,7 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
             polish = scipy.optimize.minimize(negative, best_point, method='Nelder-Mead', options={'maxiter': maxiter * 10, 'xatol': 1e-11, 'fatol': 1e-13})
         alpha = polish.x if polish.fun <= best_value else best_point
     if link == 'identity':
-        alpha = ls_newton_polish(yi, vi, X, Z, alpha, link, method, min(maxiter, LS_NEWTON_STEPS))
+        alpha = ls_newton_polish(yi, vi, X, Z, alpha, link, method, min(maxiter, LS_NEWTON_STEPS), LS_LOGLIK_NOISE)
     parts = ls_components(yi, vi, X, Z, alpha, link)
     if parts is None:
         raise RuntimeError(f'ls_reference_fit: the best point leaves M not positive ({link} link, {method})')
