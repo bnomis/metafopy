@@ -25,6 +25,27 @@ bounds only.
 Note 2026-11-24: permutation 433 alone puts metafopy one over the reference bound of `ls.permutest.location.exact.ML.z.bcglat`, now a
 strict-xfail mismatch naming this item; remove its `status = "mismatch"` once this item is fixed.
 
+Note 2026-11-25: at `9bb0947` the reference fit agrees with metafopy on six of the eight permutations and reaches the higher maximum only on 433
+and 1278; on all eight a second, higher interior maximum exists (a 15-start sweep). The operator chose that metafopy reports the higher maximum.
+
+Spec: agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (approved 2026-11-25); tasks: none yet.
+
+## Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`
+
+<!-- doc-counts: accept-start found on 2026-11-25 - a dated record, not a claim about the present -->
+Found on 2026-11-25 at `9bb0947` while prototyping `agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md` (macOS arm64): on the data of
+`ls.permutest.location.exact.ML.z.bcglat` fitted with `link='identity'`, 83 of the 1287 permutations of the location model have a higher maximum
+than metafopy's single-start fit reaches, most of them on the face `tau2 = 0` of one `lat` group (a valid boundary estimate under this link). No
+start kind tried (slope reflection, a start just inside that face, a start mapped from the log-link fit) recovered more than 12 of the 83.
+<!-- doc-counts: accept-end -->
+
+Cause: the identity-link fit (`fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py`, then `rma_ls_opt.polish_identity`) starts once, from
+`start_alpha`, as metafor does; the log-link restarts of the spec above leave this link out (approved choice, 2026-11-25).
+
+Fix direction: design starts for the identity link (one per group with that group's `tau2` near zero is untested) and a guard on the active face
+(the information on the face, as `formulas.ls_face_basis` in `src/tests/correctness/formulas.py` builds it); measure before writing a spec. Do after
+the log-link spec ships, so its `restarts` setting and tests are in place.
+
 ## Auditor rev 133ca2c reports unaccepted hits under three new rules
 
 <!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
