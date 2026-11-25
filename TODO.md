@@ -4,51 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## CI fails three numerical tests that pass on a local macOS run
-
-<!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
-Found on 2026-11-24 in CI run 45270718992 (commit `93fea02`, Python 3.14.8, numpy 2.5.4, scipy 1.18.1 on every runner, as on the local
-`.venv`), the first run whose test jobs got past `uv sync --locked`: every earlier run since at least `58c7418` (2026-11-23) stopped there,
-until `93fea02` declared `exclude-newer` in `pyproject.toml`. Failing on ubuntu-26.04, macos-26 and windows-2025-vs2026:
-
-- `src/tests/correctness/test_derived.py::test_derived[ls.vif.reestimate.ML.bcg2]`: `numpy.linalg.LinAlgError: Singular matrix`;
-- `src/tests/test_docs_examples.py::test_page_examples_run[differences.md]`: `differences.md line 1442: InputError: No missing values
-  allowed in 'alpha_init'.`
-
-Failing on ubuntu-26.04 only: `test_derived[ls.vif.REML.bcg2]`, location vif `4.723135238933293` against the reference
-`4.723144269851787` (tolerance `1e-06`).
-
-On 2026-11-24, on macOS arm64 at `93fea02`, all three pass run alone, and the four `ls.vif` cases of `test_derived.py` pass run together.
-<!-- doc-counts: accept-end -->
-
-Cause: unconfirmed. Library versions match, and the macos-26 runner is arm64 like the local run, so a BLAS or CPU difference is not the
-first suspect. CI runs the whole suite in one process with `uv run pytest --mpl --cov --cov-report=term-missing`; state left by an earlier
-test, or the coverage tracer, are the suspects. All three cases fit a location-scale model on `dat.bcg`. The `differences.md` example
-(around line 1442) is the one where R stops with "No missing values allowed in 'alpha.init'" on
-`rma(yi, vi, mods = ~ablat * alloc, scale = ~ablat)` and metafopy is documented to fit; on CI metafopy raises R's error, so its
-computed `alpha` start is NaN there. A NaN or ill-conditioned start is the suspected common symptom.
-
-Fix direction: reproduce first - run `uv run pytest --mpl --cov` over the whole suite locally, then bisect by module; then fix the cause in
-`src/metafopy/`, or record a platform difference in `docs/differences.md` and `src/audit/data/known.toml` if it is one. Until then the
-`test` jobs of CI stay red, which hides any new failure.
-
-Note 2026-11-24: causes found from CI run 45335133105 (commit `00f7fda`); test order and coverage are not them (`test_coverage.py` then
-the `ls.vif` cases, and the whole of `test_derived.py`, pass locally with `--mpl --cov`, and the local `.venv` matches `uv sync --locked
---all-extras`). Four cases, all ill-conditioned location-scale fits on `dat.bcg`:
-- `differences.md` line 1442: with the three NA studies dropped (k = 10, five location columns) one study has leverage 1, so its HE residual
-  in `start_alpha` (`src/metafopy/models/rma_ls_fit.py:312-321`) is zero in exact arithmetic; locally it is `2.3e-14` and the fit goes on,
-  on CI the start is NaN and metafopy raises R's own error. The documented difference is a local round-off artefact.
-- `ls.vif.reestimate.ML.bcg2`: the singular matrix is in the test's reference fit (`ls_reference_fit`,
-  `src/tests/correctness/formulas.py:3111`, `numpy.linalg.inv` of the information), with `year` uncentred in both parts.
-- `ls.vif.REML.bcg2`: metafopy's location vif is `4.723135` (ubuntu) and `4.723162` (windows) against the reference `4.723144` on every
-  runner, so metafopy's optimiser end point moves with the platform.
-- `ls.permutest.location.exact.ML.z.bcglat` (windows only): p `0.61694` against a reference upper bound `0.61616`, a difference of
-  exactly 1/1287, one permutation on the other side of a near-tie.
-
-Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks: `agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md`.
-
-Note 2026-11-24: the task list is done and the branch passes the full local run on macOS arm64 (log in the main checkout's `ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`). This item moves to `DONE.md` once the CI run of the merge commit is green on every runner; check with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`.
-
 ## Location-scale fits can stop at a lower local maximum than the test reference
 
 <!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
