@@ -77,6 +77,14 @@ def bcg() -> pandas.DataFrame:
     return frame('bcg_data')
 
 
+def bcg_perm() -> pandas.DataFrame:
+    """``dat.bcg`` with ``lat`` and its permutation 433 of the bcglat exact permutest (``perm``), as ``generate_location_scale.R`` builds them."""
+    d = bcg()
+    d['lat'] = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1]
+    d['perm'] = [0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0]
+    return d
+
+
 def bd6() -> pandas.DataFrame:
     return frame('bd6_data')
 
@@ -139,6 +147,9 @@ FITS: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
         'bcg_ablat_t': lambda: ls(bcg(), '~ ablat', '~ ablat', test='t'),
         'bcg_int_scale': lambda: ls(bcg(), '~ ablat', '~ 1'),
         'bcg_year_identity': lambda: ls(bcg(), '~ ablat', '~ I(ablat/10)', link='identity', method='ML'),
+        # R stops at a lower local maximum here than the restarts reach (spec location-scale-fits-reach-the-higher-maximum), so the port of
+        # metafor's single start is checked with restarts=False; test_rma_ls_restarts.py and a correctness case check the restart
+        'bcg_perm433': lambda: ls(bcg_perm(), '~ perm', '~ lat', method='ML', control={'restarts': False}),
         'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100'),
         'mo_int': lambda: ls(mo()),
         'mo_quality': lambda: ls(mo(), '~ quality', '~ quality', method='ML'),
@@ -906,6 +917,18 @@ def test_unsupported_methods_raise() -> None:
 
 # -- permutest --------------------------------------------------------------------------------------------------------------
 
+# The permutation tests compare with metafor's single-start fits, so their models are fitted with restarts=False: a restart reaches a higher
+# maximum on some permuted refits, which moves the permutation p-values (spec location-scale-fits-reach-the-higher-maximum).
+NO_RESTARTS = {'restarts': False}
+PERM_FITS: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
+    {
+        'bcg_ablat': lambda: ls(bcg(), '~ ablat', '~ ablat', control=NO_RESTARTS),
+        'bcg_ablat_t': lambda: ls(bcg(), '~ ablat', '~ ablat', test='t', control=NO_RESTARTS),
+        'bcg_int_scale': lambda: ls(bcg(), '~ ablat', '~ 1', control=NO_RESTARTS),
+        'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100', control=NO_RESTARTS),
+    }
+)
+
 # auditme: accept[non-alphabetical-dict-keys] order follows the R script that generates the fixtures
 PERM_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
     'both': ('bcg_ablat', 'permutest', {'iter': 100, 'seed': 1234}),
@@ -922,7 +945,7 @@ PERM_CASES: dict[str, tuple[str, str, dict[str, typing.Any]]] = {
 @pytest.mark.parametrize('case', sorted(PERM_CASES))
 def test_permutest(case: str) -> None:
     name, key, kwargs = PERM_CASES[case]
-    pt = any_permutest(result(name), **kwargs)
+    pt = any_permutest(PERM_FITS[name](), **kwargs)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)
     ref = REF[name][key]
     # p-values of a skipped part come from the model fit (optimizer precision), the others are proportions of permutations
@@ -966,13 +989,13 @@ def same_loose(actual: str, expected: str) -> bool:
 @pytest.mark.parametrize('case', ['both', 'beta', 'alpha', 't', 'int_scale'])
 def test_permutest_print(case: str) -> None:
     name, key, kwargs = PERM_CASES[case]
-    pt = any_permutest(result(name), **kwargs)
+    pt = any_permutest(PERM_FITS[name](), **kwargs)
     assert same_loose(str(pt), REF[name][key]['print'])
 
 
 def test_permutest_exact_iter_and_exact() -> None:
-    assert any_permutest(result('bcg_ablat'), exact='i') == REF['bcg_ablat']['permutest_iter']
-    small = result('bd6_exact')
+    assert any_permutest(PERM_FITS['bcg_ablat'](), exact='i') == REF['bcg_ablat']['permutest_iter']
+    small = PERM_FITS['bd6_exact']()
     assert any_permutest(small, exact='i') == REF['bd6_exact']['permutest_iter']
     pt = any_permutest(small, exact=True)
     assert isinstance(pt, metafopy.methods.ls_permutest.LSPermutestResult)

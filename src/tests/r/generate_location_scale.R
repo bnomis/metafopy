@@ -344,6 +344,13 @@ out$bcg_int_scale <- fit(rma(yi, vi, mods = ~ ablat, scale = ~ 1, data = bc), fu
 })
 out$bcg_year_identity <- fit(rma(yi, vi, mods = ~ ablat, scale = ~ I(ablat / 10), data = bc, link = "identity", method = "ML"))
 
+# Permutation 433 of the exact permutest of the bcglat case (agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md): metafor stops at
+# a lower local maximum here than metafopy's restarts reach, so metafopy's control = list(restarts = FALSE) fit is compared with this one.
+bcp <- bc
+bcp$lat <- c(1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1)
+bcp$perm <- c(0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0)
+out$bcg_perm433 <- fit(rma(yi, vi, mods = ~ perm, scale = ~ lat, data = bcp, method = "ML"))
+
 # exact permutation tests on a small data set (6 studies of dat.bangertdrowns2004 for which the scale model is identified)
 bd6 <- bdc[29:34, ]
 out$bd6_data <- frame_cols(bd6[, c("author", "year", "ni", "ni100", "meta", "imag", "subject", "yi", "vi")])

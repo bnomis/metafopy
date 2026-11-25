@@ -892,9 +892,20 @@ setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di =
 args = { yi = "yi", vi = "vi", mods = "~ lat", scale = "~ lat", method = "ML", link = "log", test = "z" }
 then = { function = "permutest", args = { exact = true, skip_alpha = true } }
 check = "test_derived.ls_permutest_exact"
-status = "mismatch"
-reason = "pval (location) of lat: metafopy 308/1287, one over the reference's upper bound 307/1287, because on permutation 433 metafopy and R metafor 5.2-1 stop at the same lower local maximum (ll -12.332, z -2.5047) and the reference fit reaches a higher one (ll -11.968, z 1.902). Recorded on 2026-11-24; filed in TODO.md as 'Location-scale fits can stop at a lower local maximum than the test reference' (operator choice, 2026-11-24)"
 covers = ["ls.permutest.location.exact"]
+
+# Permutation 433 of the exact permutest above (agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md): R metafor 5.2-1 stops at a
+# lower local maximum (ll -12.332, z -2.5047) and the higher regular one (ll -11.968, z 1.902) is the estimate the paper defines. `perm` is the
+# permuted `lat` of the location part; the scale part keeps `lat`.
+[[case]]
+id = "ls.fit.ML.log.bcglat.permuted433"
+kind = "derived"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1], perm = [0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ perm", scale = "~ lat", method = "ML", link = "log", test = "z" }
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.log"]
 
 [[case]]
 id = "ls.permutest.scale.exact.ML.z.bcglat"

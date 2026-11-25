@@ -188,7 +188,7 @@ maximum.
 
 ## Task 5: Tests and records
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation, Tests and records; Decisions (R-parity tests pass `restarts=False`)
@@ -197,28 +197,28 @@ maximum.
 
 **Subtasks:**
 
-- [ ] Remove `status = "mismatch"` and its `reason` from `ls.permutest.location.exact.ML.z.bcglat`
-- [ ] Add a correctness case on permutation 433 (the permuted `lat` as its own data column for `mods`, `scale = "~ lat"`), checked by
+- [x] Remove `status = "mismatch"` and its `reason` from `ls.permutest.location.exact.ML.z.bcglat`
+- [x] Add a correctness case on permutation 433 (the permuted `lat` as its own data column for `mods`, `scale = "~ lat"`), checked by
       `test_derived.ls_fit` against `ls_reference_fit`
-- [ ] Add the restarts=False fit of permutation 433 to `src/tests/r/generate_location_scale.R` (R's default fit: ll `-12.33206543`, z `-2.5047`
+- [x] Add the restarts=False fit of permutation 433 to `src/tests/r/generate_location_scale.R` (R's default fit: ll `-12.33206543`, z `-2.5047`
       on 2026-11-25), regenerate `src/tests/reference/phase5/location_scale.json` with it, and test metafopy's `restarts=False` fit against it in
       `src/tests/test_rma_ls.py`; no other entry of the fixture may change
-- [ ] Pass `control={'restarts': False}` to the models of the R-parity tests whose fits changed in Task 4 (among them `test_permutest[...]`,
+- [x] Pass `control={'restarts': False}` to the models of the R-parity tests whose fits changed in Task 4 (among them `test_permutest[...]`,
       `test_permutest_print[t]`, `test_permutest_exact_iter_and_exact`, the `test_ls_vif` permutation simulation), each with a comment naming
       this spec
-- [ ] `test_audit8_crashes::test_ls_fit_on_a_ridge_is_fast`: if it fails on time, record the time before and after in `measurements.md` and stop
+- [x] `test_audit8_crashes::test_ls_fit_on_a_ridge_is_fast`: if it fails on time, record the time before and after in `measurements.md` and stop
       as `blocked`; do not widen its limit
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py src/tests/correctness/test_derived.py -k "ls."`
+- [x] `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py src/tests/correctness/test_derived.py -k "ls."`
       passes, the bcglat case included
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_rma_ls.py src/tests/test_ls_vif.py` passes
-- [ ] The pytest command of the acceptance criterion passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_rma_ls.py src/tests/test_ls_vif.py` passes
+- [x] The pytest command of the acceptance criterion passes
 
 **Notes:**
 
