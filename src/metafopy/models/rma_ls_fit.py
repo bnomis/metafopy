@@ -50,6 +50,9 @@ OPTIMIZER_SETTINGS = ('abstol', 'maxit', 'ndeps', 'reltol', 'tol')
 # how far inside alpha_min and alpha_max, as a fraction of the box's width, a start clipped into the box is placed: on a bound the logistic map
 # puts the start at infinity, where its gradient is zero and the optimiser cannot leave it
 BOX_START_MARGIN = 1e-4
+RESTART_STEP = 4.0  # a restart moves each slope towards and past zero by this many standard deviations of its column of Z, inverted
+RESTART_GAIN = 1e-6  # a restart replaces the fit only when its log-likelihood is higher by more than this
+RESTART_RATIO = 1e-5  # ... and its information on the standardised Z has min/max eigenvalue ratio above this
 
 
 def make_ls_control(
@@ -336,6 +339,84 @@ def polish_log_fit(problem: LSProblem, theta: FloatArray, alpha_arg: FloatArray,
         information,
         numpy.isnan(alpha_arg),
     )
+
+
+def restart_fit(
+    problem: LSProblem,
+    par_opt: FloatArray,
+    optimizer: str,
+    con: metafopy.models.rma_ls_result.LSControl,
+    alpha_arg: FloatArray,
+    beta_arg: FloatArray,
+) -> FloatArray:
+    """Refit a log-link model with every scale coefficient free from each of :func:`restart_starts`, through the optimiser and polish of the first fit.
+
+    The end point with the highest log-likelihood replaces ``par_opt`` when it beats it by more than ``RESTART_GAIN`` and
+    :func:`is_regular_maximum` holds there. A start whose fit fails or is not finite is skipped.
+    """
+
+    def objective(x: FloatArray) -> float:
+        return problem.negloglik(x, alpha_arg, beta_arg, alpha_transf=True)
+
+    best = par_opt
+    best_ll = problem.loglik(par_opt, alpha_arg, beta_arg, alpha_transf=True)
+    for start in restart_starts(par_opt, problem.Z):
+        try:
+            if optimizer in SCIPY_METHODS:
+                end = metafopy.models.rma_ls_opt.minimise(
+                    objective, start, method=optimizer, maxiter=con.maxiter, polish_converged=con.polish_converged
+                ).par.copy()
+            else:
+                end = minimise_standin(objective, start, metafopy.models.sel_opt.OptimizerChoice(optimizer, 'BFGS'), con, None)
+            if optimizer == 'BFGS' and metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer') == 'nlminb':
+                end = polish_log_fit(problem, end, alpha_arg, beta_arg)
+        except metafopy.errors.EstimationError, numpy.linalg.LinAlgError:
+            continue
+        ll = problem.loglik(end, alpha_arg, beta_arg, alpha_transf=True)
+        if math.isfinite(ll) and ll > best_ll + RESTART_GAIN and is_regular_maximum(problem, end):
+            best, best_ll = end, ll
+    return best
+
+
+def restart_starts(alpha: FloatArray, Z: FloatArray) -> list[FloatArray]:
+    """One start per non-constant column ``j`` of ``Z``: ``alpha`` with ``alpha[j] - sign(alpha[j]) * RESTART_STEP / sd(Z[:, j])`` (``sign(0)`` is 1).
+
+    A log-link likelihood can have a second interior maximum with the slope of the opposite sign (Viechtbauer and Lopez-Lopez, 2022, section 2.5,
+    <https://doi.org/10.1002/jrsm.1562>); the start moves the slope across zero to find it.
+    """
+    spread = numpy.std(Z, axis=0, ddof=1) if Z.shape[0] > 1 else numpy.zeros(Z.shape[1])
+    starts: list[FloatArray] = []
+    for j in range(Z.shape[1]):
+        if spread[j] > 0.0:
+            start = alpha.copy()
+            start[j] = alpha[j] - (1.0 if alpha[j] >= 0 else -1.0) * RESTART_STEP / spread[j]
+            starts.append(start)
+    return starts
+
+
+def is_regular_maximum(problem: LSProblem, alpha: FloatArray) -> bool:
+    """The observed information of the log link (:meth:`LSProblem.log_information`) at ``alpha``, taken on the standardised ``Z`` (each non-constant
+    column scaled, and centred where a constant column absorbs the mean), is finite and has min/max eigenvalue ratio above ``RESTART_RATIO``.
+
+    An end point on the ridge where ``tau2`` tends to 0 in one group has a singular information, and an interior maximum a well-conditioned one.
+    """
+    Z = problem.Z
+    q = Z.shape[1]
+    spread = numpy.std(Z, axis=0, ddof=1) if Z.shape[0] > 1 else numpy.zeros(q)
+    constant = [j for j in range(q) if spread[j] == 0.0]
+    T = numpy.eye(q)
+    for j in range(q):
+        if spread[j] > 0.0:
+            T[j, j] = spread[j]
+            if constant:
+                T[constant[0], j] = float(numpy.mean(Z[:, j]))
+    scaled = dataclasses.replace(problem, Z=Z @ numpy.linalg.inv(T))
+    with numpy.errstate(all='ignore'):
+        info = scaled.log_information(T @ alpha)
+    if not numpy.all(numpy.isfinite(info)):
+        return False
+    eigenvalues = numpy.linalg.eigvalsh(info)
+    return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > RESTART_RATIO)
 
 
 def pos_chol_inverse(A: FloatArray) -> FloatArray | None:
@@ -716,6 +797,17 @@ def fit_rma_ls(
 
     if link == 'log' and not optbeta and optimizer == 'BFGS' and metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer') == 'nlminb':
         par_opt = polish_log_fit(problem, par_opt, alpha_arg, beta_arg)
+
+    if (
+        link == 'log'
+        and con.restarts
+        and not optbeta
+        and user_w is None
+        and numpy.all(numpy.isnan(alpha_arg))
+        and numpy.all(numpy.isinf(alpha_min))
+        and numpy.all(numpy.isinf(alpha_max))
+    ):
+        par_opt = restart_fit(problem, par_opt, optimizer, con, alpha_arg, beta_arg)
 
     pos_beta = numpy.arange(p) if optbeta else numpy.arange(0)
     pos_alpha = numpy.arange(p, p + q) if optbeta else numpy.arange(q)

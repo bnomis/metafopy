@@ -62,3 +62,25 @@ Measured on 2026-11-25 at the Task 2 working tree (on top of `69c0d1d`), macOS (
 - Every other location-scale correctness case keeps its verdict (`pytest src/tests/correctness/test_derived.py -k "ls."`: all pass but two xfails,
   the bcglat case and `ls.profile.ML.identity.bcg`).
 <!-- doc-counts: accept-end -->
+
+<!-- doc-counts: accept-start measured on 2026-11-25 - a dated record, not a claim about the present -->
+## Task 4: after the restart in `fit_rma_ls`
+
+Measured on 2026-11-25 at the Task 4 working tree (on top of `eb34725`), macOS (development machine).
+
+- The eight permutations (`rma_uni`, log-likelihood and `lat` z): 68 `-12.57323737` and `-1.241`; 264 `-11.64011395` and `2.1205`; 433 `-11.96789514` and
+  `1.9024`; 651 `-12.60144281` and `-1.2079`; 805 `-12.13242026` and `1.8008`; 979 `-11.67846163` and `2.0919`; 1110 `-12.58432080` and `-1.24`; 1278
+  `-12.17150179` and `1.7704`. Each log-likelihood equals the test reference's (Task 2). `control={'restarts': False}` on 433 gives `-12.33206543`
+  and `-2.5047`, R's fit.
+- The exact `permutest` of the bcglat case: 306 hits for `lat` (`pval` 0.23776224) and 793 for the intercept (`pval` 0.61616162), both inside the
+  reference bounds (238 to 306, 781 to 849). Task 1 had 308 and 794.
+- Times: median of 20 `rma_uni` fits of the bcglat model 20.3 ms (Task 1: 7.6 ms); one exact `permutest` 19.5 s (Task 1: 8.5 s).
+- The information of the guard is the observed information of the log link (`LSProblem.log_information`) on the standardised `Z`, the matrix the
+  test reference's `ls_is_maximum` uses; the spec's `LSProblem.ls_information` is the expected information of the identity link, which does not
+  apply to the log link.
+- Failures of `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py`, all of which the spec's Output changes name:
+  `test_permutest[alpha]`, `[both]`, `[btt]`, `[less]`, `[px2]`, `[t]`, `test_permutest_print[both]`, `test_permutest_print[t]` and
+  `test_permutest_exact_iter_and_exact`. `test_ls_vif.py` and `test_audit8_crashes.py` pass.
+- `pytest src/tests/correctness/test_derived.py -k "ls."`: the bcglat case fails as a strict xfail that now passes (Task 5 removes the xfail); every
+  other case keeps its verdict.
+<!-- doc-counts: accept-end -->

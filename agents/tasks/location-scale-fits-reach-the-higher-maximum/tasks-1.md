@@ -140,7 +140,7 @@ that is not a bool is refused.
 
 ## Task 4: The restart in `fit_rma_ls`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`RESTART_*`, `restart_starts`, `is_regular_maximum`); Implementation, When it runs and The restart; Cost
@@ -150,33 +150,33 @@ maximum.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/test_rma_ls_restarts.py`: on permutation 433, `rma_uni` reaches ll `-11.96789514` and `lat` z `1.9024`, and with
+- [x] Write `src/tests/test_rma_ls_restarts.py`: on permutation 433, `rma_uni` reaches ll `-11.96789514` and `lat` z `1.9024`, and with
       `control={'restarts': False}` ll `-12.33206543` and z `-2.5047`; on a ridge permutation (one whose default fit has `|alpha| > 10`, from
       Task 1's records) the fit is unchanged; `restart_starts` gives one start per non-constant column; `is_regular_maximum` is true at the
       interior maximum and false at a ridge end point. Run it on the code before this task: the first test must fail
-- [ ] Add `RESTART_STEP`, `RESTART_GAIN`, `RESTART_RATIO`, `restart_starts` and `is_regular_maximum` to `src/metafopy/models/rma_ls_fit.py`
+- [x] Add `RESTART_STEP`, `RESTART_GAIN`, `RESTART_RATIO`, `restart_starts` and `is_regular_maximum` to `src/metafopy/models/rma_ls_fit.py`
       as the spec gives them; `is_regular_maximum` uses `LSProblem.ls_information` on the standardised `Z`
-- [ ] In `fit_rma_ls`, after the end point (`polish_log_fit` included) and before the Hessian, run the restarts under exactly the spec's
+- [x] In `fit_rma_ls`, after the end point (`polish_log_fit` included) and before the Hessian, run the restarts under exactly the spec's
       conditions (log link, `con.restarts`, no `optbeta`, every `alpha` free, infinite `alpha_min`/`alpha_max`, no user weights, a non-constant
       column), each through the same optimiser and polish without the Hessian; skip a restart that raises `EstimationError` or
       `numpy.linalg.LinAlgError` or gives a non-finite log-likelihood; replace the end point only when the gain exceeds `RESTART_GAIN` and
       `is_regular_maximum` holds
-- [ ] Record in `measurements.md`: the eight permutations' new ll and z; the case's exact `permutest` hits (306 and 793 expected from the
+- [x] Record in `measurements.md`: the eight permutations' new ll and z; the case's exact `permutest` hits (306 and 793 expected from the
       prototype); the median time of 20 bcglat fits and of one exact permutest, against Task 1's
-- [ ] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py`: list each failing test in
+- [x] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py`: list each failing test in
       `measurements.md`; every failure must be one the spec names (Output changes), or stop as `blocked`. Task 5 makes them pass
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and the first failed before the change; exactly the eight bcglat permutations change in the exact permutest
-- [ ] No main fit of the test suite changes: every location-scale correctness case keeps its verdict
+- [x] The new tests pass, and the first failed before the change; exactly the eight bcglat permutations change in the exact permutest
+- [x] No main fit of the test suite changes: every location-scale correctness case keeps its verdict
       (`pytest src/tests/correctness/test_derived.py -k "ls."`), the bcglat case aside
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
-- [ ] `pytest src/tests/test_rma_ls_restarts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
+- [x] `pytest src/tests/test_rma_ls_restarts.py` passes
 
 **Notes:**
 
