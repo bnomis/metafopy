@@ -59,6 +59,7 @@ def make_ls_control(
 
     Raises:
         metafopy.errors.ArgumentError: an unknown control argument was given.
+        metafopy.errors.InputError: ``restarts`` is not a ``bool``.
     """
     if control is None:
         return metafopy.models.rma_ls_result.LSControl()
@@ -79,6 +80,8 @@ def make_ls_control(
                 continue
             raise metafopy.errors.ArgumentError(f'unknown control argument {key!r}')
         else:
+            if name == 'restarts' and not isinstance(value, bool):
+                raise metafopy.errors.InputError(f"control['restarts'] must be a bool, not {value!r}")
             kwargs[name] = value
     if ignored:
         kwargs['ignored'] = ignored

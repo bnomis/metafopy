@@ -1111,3 +1111,23 @@ def test_study_of_leverage_one_is_refused_on_every_platform(draw: int) -> None:
         warnings.simplefilter('ignore')
         with pytest.raises(metafopy.errors.InputError, match="No missing values allowed in 'alpha_init'"):
             metafopy.rma(yi='yi', vi='vi', data=dat, mods='~ ablat * alloc', scale='~ ablat')
+
+
+def test_restarts_control_defaults_on_and_is_stored() -> None:
+    """``LSControl.restarts`` is on by default and ``control={'restarts': False}`` is kept in ``res.control``."""
+    assert ls(bd(), mods=MODS3, scale=SCALE3).control.restarts is True
+    assert ls(bd(), mods=MODS3, scale=SCALE3, control={'restarts': False}).control.restarts is False
+
+
+def test_restarts_control_is_carried_into_refits() -> None:
+    """A refit through ``refit_ls`` keeps ``restarts=False``, as the permutation test and the profile need."""
+    res = ls(bd(), mods=MODS3, scale=SCALE3, control={'restarts': False})
+    refit = metafopy.methods.ls_common.refit_ls(res)
+    assert refit is not None
+    assert refit.control.restarts is False
+
+
+def test_restarts_control_refuses_a_non_bool() -> None:
+    """A truthy string such as ``'FALSE'`` would turn the restarts on, so only a ``bool`` is accepted."""
+    with pytest.raises(metafopy.errors.InputError, match='restarts'):
+        ls(bd(), mods=MODS3, scale=SCALE3, control={'restarts': 'FALSE'})

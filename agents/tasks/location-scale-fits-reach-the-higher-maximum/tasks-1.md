@@ -106,7 +106,7 @@ estimate the paper defines and do not move when either side changes its starts.
 
 ## Task 3: The `restarts` control setting
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API (`LSControl.restarts`); Error handling; Settings
@@ -116,21 +116,21 @@ that is not a bool is refused.
 
 **Subtasks:**
 
-- [ ] Write tests in `src/tests/test_rma_ls.py`: the default is `True`; `control={'restarts': False}` is stored in `res.control`; a refit
+- [x] Write tests in `src/tests/test_rma_ls.py`: the default is `True`; `control={'restarts': False}` is stored in `res.control`; a refit
       through `metafopy.methods.ls_common.refit_ls` keeps it; `control={'restarts': 'FALSE'}` raises `metafopy.errors.InputError`
-- [ ] Add `restarts: bool = True` to `LSControl` in `src/metafopy/models/rma_ls_result.py` with the spec's docstring
-- [ ] In `make_ls_control` (`src/metafopy/models/rma_ls_fit.py`), raise `InputError` for a `restarts` that is not a `bool`; add it to the
+- [x] Add `restarts: bool = True` to `LSControl` in `src/metafopy/models/rma_ls_result.py` with the spec's docstring
+- [x] In `make_ls_control` (`src/metafopy/models/rma_ls_fit.py`), raise `InputError` for a `restarts` that is not a `bool`; add it to the
       `Raises:` section
 
 **Acceptance Criteria:**
 
-- [ ] The tests pass; no fit changes yet (nothing reads the setting)
+- [x] The tests pass; no fit changes yet (nothing reads the setting)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_result.py src/metafopy/models/rma_ls_fit.py` passes
-- [ ] `pytest src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_result.py src/metafopy/models/rma_ls_fit.py` passes
+- [x] `pytest src/tests/test_rma_ls.py` passes
 
 **Notes:**
 
