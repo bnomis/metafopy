@@ -28,7 +28,8 @@ strict-xfail mismatch naming this item; remove its `status = "mismatch"` once th
 Note 2026-11-25: at `9bb0947` the reference fit agrees with metafopy on six of the eight permutations and reaches the higher maximum only on 433
 and 1278; on all eight a second, higher interior maximum exists (a 15-start sweep). The operator chose that metafopy reports the higher maximum.
 
-Spec: agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (approved 2026-11-25); tasks: none yet.
+Spec: agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (approved 2026-11-25); tasks:
+agents/tasks/location-scale-fits-reach-the-higher-maximum/tasks-1.md.
 
 ## Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`
 
