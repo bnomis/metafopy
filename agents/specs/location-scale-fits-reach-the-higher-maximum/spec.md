@@ -1,7 +1,7 @@
 # Location-scale fits reach the higher maximum
 
 **Version:** 1.1
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-25
 **Review:** `agents/reviews/location-scale-fits-reach-the-higher-maximum-spec.md` (page https://claude.ai/artifact/MsBFkxwxF87RoVgnkLtSKv); answered 2026-11-25: approved, with every choice under Decisions.
 
