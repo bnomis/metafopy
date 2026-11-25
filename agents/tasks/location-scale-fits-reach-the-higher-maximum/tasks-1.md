@@ -28,7 +28,7 @@ a restarted fit. Widen no tolerance and regenerate no fixture except the one Tas
 
 ## Task 1: Starting checks and the baselines
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Implementation, Tests and records (the scoped audit)
@@ -37,23 +37,23 @@ a restarted fit. Widen no tolerance and regenerate no fixture except the one Tas
 
 **Subtasks:**
 
-- [ ] Check that no new name exists yet: `grep -rnwE 'restarts|RESTART_STEP|RESTART_GAIN|RESTART_RATIO|restart_starts|is_regular_maximum' src/metafopy`
+- [x] Check that no new name exists yet: `grep -rnwE 'restarts|RESTART_STEP|RESTART_GAIN|RESTART_RATIO|restart_starts|is_regular_maximum' src/metafopy`
       prints nothing; otherwise stop as `blocked`, naming the hit
-- [ ] Check that `ls.permutest.location.exact.ML.z.bcglat` still has `status = "mismatch"` naming the `TODO.md` item; otherwise stop as `blocked`
-- [ ] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
-- [ ] Record, at the task's starting commit: for the eight permutations, metafopy's log-likelihood and the `lat` z from `rma_uni` and from
+- [x] Check that `ls.permutest.location.exact.ML.z.bcglat` still has `status = "mismatch"` naming the `TODO.md` item; otherwise stop as `blocked`
+- [x] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
+- [x] Record, at the task's starting commit: for the eight permutations, metafopy's log-likelihood and the `lat` z from `rma_uni` and from
       `formulas.ls_reference_fit`; the case's exact `permutest` hits (lat 308, intercept 794 of 1287 on 2026-11-25), the reference bounds and its
       count of permutations without a fit (68); the median time of 20 bcglat fits and of one exact permutest
-- [ ] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
+- [x] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
       directory and its count of unaccepted differences
 
 **Acceptance Criteria:**
 
-- [ ] `measurements.md` holds every baseline above, dated, with the commit
+- [x] `measurements.md` holds every baseline above, dated, with the commit
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
