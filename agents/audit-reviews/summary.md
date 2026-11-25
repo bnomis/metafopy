@@ -1,6 +1,6 @@
 # Audit Summary
 
-**Last updated:** 2026-11-21
+**Last updated:** 2026-11-25
 **Last review:** review-1
 **Total reviews conducted:** 1
 **Last script run hit count:** every hit accepted when run on the tasks-1 branch, 2026-11-21 (run `audit.py` for the figure)
@@ -8,25 +8,7 @@
 
 ## Unresolved findings
 
-Both were first raised in review-1 (2026-11-21). Per-candidate lists are in `agents/audit-reviews/ledger/T1.jsonl` and `T2.jsonl`; the full lists are in [review-1](review-1.md).
-
-### F11. Functions with branches and no direct test
-
-- **Rule or category:** T1
-- **Severity:** medium
-- **Location:** see the T1 block in review-1
-- **First raised:** review-1 (2026-11-21)
-- **Description:** public helpers that the tests reach only through a higher-level function.
-- **Recommendation:** tracked in `TODO.md` (decision D4 of review-1).
-
-### F12. Pure functions with no property test
-
-- **Rule or category:** T2
-- **Severity:** low
-- **Location:** see the T2 block in review-1
-- **First raised:** review-1 (2026-11-21)
-- **Description:** pure functions whose stated property no test checks.
-- **Recommendation:** tracked in `TODO.md` (decision D5 of review-1).
+None. F11 and F12, the two left open by review-1, were closed through `TODO.md` (see the table below). The T1 ledger verdicts in `agents/audit-reviews/ledger/T1.jsonl` were not re-judged and are refreshed by the next audit (`DONE.md`, item "Ten `src/metafopy` functions newly flagged as having no direct test").
 
 ## Recently resolved
 
@@ -42,6 +24,8 @@ Both were first raised in review-1 (2026-11-21). Per-candidate lists are in `age
 | F8. Literal chains without `assert_never` | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |
 | F9. File and subprocess calls with no translating envelope | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |
 | F10. Package-surface drift | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |
+| F11. Functions with branches and no direct test (T1) | medium | review-1 (2026-11-21) | `direct-tests-for-metafopy-helpers` (2026-11-22), `direct-tests-for-the-audit-harness` (2026-11-22), `test/direct-tests-ten-metafopy` (2026-11-23) |
+| F12. Pure functions with no property test (T2) | low | review-1 (2026-11-21) | `property-tests-for-metafopy-helpers` (2026-11-22) |
 | F13. Small design defects | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |
 | F14. Duplicated construction of result objects | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |
 | F15. Same value passed to two slots | low | review-1 (2026-11-21) | tasks-1 (2026-11-21) |

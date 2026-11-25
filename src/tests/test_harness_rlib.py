@@ -1,8 +1,8 @@
 """Direct tests of the R-library shims in audit.rlib (group A of the audit-harness spec), checked against the R values recorded in
 reference/audit/snippets.json.
 
-A strict xfail names a case where the shim disagrees with R (the item "R-library shims disagree with R" in TODO.md); the passing tests of the
-same candidates cover the branches that agree.
+Every shim case agrees with R except `list_mixed`, which the shim refuses (decisions D1 and D2 of
+`agents/reviews/r-library-shims-follow-r-spec.md`) and which a test checks is refused.
 """
 
 import contextlib

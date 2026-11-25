@@ -1635,6 +1635,8 @@ not, so the alias branch is not a plain rejection-sampler draw either. metafopy'
 Fix direction: fix `RRandom.walker` to draw as R does, then add the two cases above as tests. `RRandom.sample_int` in `gosh`
 (`src/metafopy/methods/gosh.py`) passes `prob` and `replace=True` and may reach the branch for large `k`; not checked.
 
+Done: 2026-11-22 - agents/tasks/direct-tests-for-metafopy-helpers/tasks-1.md Task 6 (f01a470): `RRandom.walker` draws as R does; src/tests/test_rng.py checks the two R cases. Line added by the TODO review of 2026-11-25.
+
 ## Public metafopy helpers with branches have no direct test
 
 <!-- doc-counts: accept-start found on 2026-11-21 - a dated record, not a claim about the present -->
