@@ -591,6 +591,85 @@ alpha.1  -3.0288 <-44.2512 0.4381
 </div>
 </div>
 
+### A location-scale fit restarts at the higher maximum
+
+The log-likelihood of a location-scale model with a log link can have two regular maxima, one with the scale slope near zero and a higher
+one with the slope far from it. metafor starts `nlminb` once and stops at whichever it reaches. metafopy fits once, then refits from one
+further start per scale slope (that slope moved by `-sign(alpha) * 4 / sd(Z)`, `Z` being the scale model matrix) and keeps the end point
+with the higher log-likelihood, when the gain is more than `1e-6` and the end point is a regular maximum (an observed information on the
+standardised scale matrix whose smallest eigenvalue is positive and more than `1e-5` of the largest). A ridge end point, where a scale coefficient
+runs off to minus infinity, is never taken. The restart runs only when the link is `'log'`, `control={'restarts': True}` (the default),
+every scale coefficient is free (no fixed coefficient, so no `profile()` or `confint()` refit of a scale coefficient), `alpha_min` and
+`alpha_max` are infinite, `optbeta` is off, no weights are given, and the scale model has a column that is not constant. It is not done
+for the identity link. The refits of `permutest()`, `vif(sim=True)` and `profile()` of the location part run through the same fit, so they
+restart too.
+
+In `permutest(exact=True)` of `mods = ~ lat`, `scale = ~ lat` on `dat.bcg`, the refit at permutation 433 (below, `perm` is the permuted
+`lat` of the location part, and the scale part keeps `lat`) is the example: R stops at a log-likelihood of -12.3321 with a `z` of -2.5047 for `perm`; the higher maximum is at -11.9679 with a
+`z` of 1.9024. The exact `permutest` of that model counts 306 hits for `lat` here and 308 without the restart (checked 2026-11-25).
+
+*Why:* the paper defining the model estimates by maximum likelihood, and the higher regular maximum is that estimate; metafor's single
+start does not always reach it, and the departure would otherwise move with the optimiser's path. `control={'restarts': False}` gives R's
+single start (checked 2026-11-25, R 4.6.2, metafor 5.2-1).
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- data.frame(
+  tpos = c(4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27),
+  tneg = c(119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886),
+  cpos = c(11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29),
+  cneg = c(128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825),
+  lat = c(1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1),
+  perm = c(0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0))
+dat <- escalc(measure = "RR", ai = tpos, bi = tneg, ci = cpos, di = cneg, data = dat)
+res <- rma(yi, vi, mods = ~ perm, scale = ~ lat, method = "ML", data = dat)
+c(logLik = logLik(res), z = res$zval[2])
+```
+
+```text
+    logLik          z 
+-12.332065  -2.504695 
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+import pandas
+
+from metafopy import escalc, rma
+
+bcg_perm = pandas.DataFrame(
+    {
+        'tpos': [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27],
+        'tneg': [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886],
+        'cpos': [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29],
+        'cneg': [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825],
+        'lat': [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1],
+        'perm': [0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0],
+    }
+)
+bcg_perm = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=bcg_perm)
+for control in (None, {'restarts': False}):
+    res = rma('yi', 'vi', mods='~ perm', scale='~ lat', method='ML', data=bcg_perm, control=control)
+    print(round(res.fit_stats.loc['ll', 'ML'], 4), round(res.zval[1], 4))
+```
+
+```text
+-11.9679 1.9024
+-12.3321 -2.5047
+```
+
+</div>
+</div>
+
 ### Numerical Hessians of selection models and failed refits of rma_mv
 
 Standard errors of selection models come from a numerical Hessian, and R's and metafopy's are computed differently. On the

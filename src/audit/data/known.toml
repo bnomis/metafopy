@@ -1262,6 +1262,14 @@ reason = "permutest() of the location-scale model ls_bangert with seed = 42: the
 ref = "docs/differences.md"
 
 [[known]]
+match = "options/permutest/ls_year/seed=42"
+kind = "value-diff"
+path = ["$QM.perm", "$beta.perm$*", "$zval.perm$*"]
+detail = "*element 14:*"
+reason = "permutest(iter = 20, seed = 42) of ls_year: at one permutation R's single start stops at a lower local maximum (the location refit with `control = {'restarts': False}` reproduces R's beta to 1e-6) and metafopy's restart from the opposite sign of the scale slopes ends at a higher regular maximum (log-likelihood -9.1905 against -9.3856 for the single start). See agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (checked 2026-11-25, R 4.6.2, metafor 5.2-1)."
+ref = "docs/differences.md"
+
+[[known]]
 match = "scripts/vif/rd/14"
 kind = "value-diff"
 path = "$H"

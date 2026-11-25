@@ -84,3 +84,18 @@ Measured on 2026-11-25 at the Task 4 working tree (on top of `eb34725`), macOS (
 - `pytest src/tests/correctness/test_derived.py -k "ls."`: the bcglat case fails as a strict xfail that now passes (Task 5 removes the xfail); every
   other case keeps its verdict.
 <!-- doc-counts: accept-end -->
+
+<!-- doc-counts: accept-start measured on 2026-11-25 - a dated record, not a claim about the present -->
+## Task 6: the scoped audit after the restarts
+
+Measured on 2026-11-25 at `f2b6048` plus the Task 6 working tree, macOS (development machine).
+
+- Task 1's run (`23d7f89`, unchanged code): `.audit/runs/20261125-213640/`, 0 unaccepted differences.
+- This run: `bin/metafor-audit.sh --only '*/ls_*'`, `.audit/runs/20261125-224631/` in this worktree (ignored by git): 7 unaccepted differences, all one case,
+  `options/permutest/ls_year/seed=42` (`$QM.perm`, `$beta.perm$*` and `$zval.perm$*`, element 14).
+- Each is a restarted fit: with `control={'restarts': False}` the refit at that permutation reproduces R's `beta` to 1e-6 (-5.02450 against R's
+  -5.02453), and the restart ends at a higher regular maximum (probe of `restart_fit` over the 20 permutations: two refits improved, -9.3856 to
+  -9.1905 and -7.7043 to -7.2969). The other differences of that case moved between permutations and were already accepted by earlier entries.
+- Accepted in `src/audit/data/known.toml` (entry for `options/permutest/ls_year/seed=42`, `*element 14:*`); the rendered report of the same run
+  then has 0 unaccepted differences.
+<!-- doc-counts: accept-end -->
