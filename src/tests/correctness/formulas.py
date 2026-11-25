@@ -2841,7 +2841,8 @@ def saddlepoint_pvalue(X: FloatArray, W: FloatArray, theta: FloatArray, cluster:
 LS_START_FACTORS = (1.0, 0.1, 10.0, 0.01, 100.0)  # the multiples of the moment-based intercept that ``ls_starts`` returns
 LS_SCORE_TOLERANCE = 1e-6  # the largest absolute score at which ``ls_reference_fit`` accepts a log-link fit as stationary
 LS_NEWTON_STEPS = 50  # the most Newton steps spent polishing one start: quadratic convergence needs few, and a start heading for tau2 = 0 never ends
-LS_DEGENERATE = 1e-8  # a log-link end point whose information has min/max eigenvalue ratio at or below this has no finite maximum
+LS_MAXIMUM_RATIO = 1e-5  # a log-link end point whose information on the standardised Z has min/max eigenvalue ratio at or below this has no finite maximum
+LS_RESTART_STEP = 4.0  # ``ls_reference_fit`` restarts from the best end point with one slope moved towards and past zero by this many standard deviations
 LS_LOGLIK_NOISE = 1e-9  # the fall in a log-likelihood that rounding alone can cause near an optimum, which ``ls_newton_polish`` accepts
 LS_AGREEMENT = 1e-9  # two log-link starts whose log-likelihoods differ by no more than this end the search over starts
 IDENTITY_ACTIVE = 1e-8  # ``z_i' alpha`` at most this far above zero makes the identity link's constraint of row i active in ``ls_face_basis``
@@ -3041,12 +3042,14 @@ def ls_newton_polish(
 
 
 def ls_is_maximum(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> bool:
-    """``ls_information`` at ``alpha`` has min/max eigenvalue ratio above ``LS_DEGENERATE`` (an interior maximum, not an underflowed ``tau2``)."""
-    info = ls_information(yi, vi, X, Z, alpha, link, method)
+    """``ls_information`` at ``alpha``, taken on the standardised ``Z`` (``ls_standardise``), has min/max eigenvalue ratio above ``LS_MAXIMUM_RATIO``
+    (an interior maximum, not an underflowed ``tau2``). ``Z`` and ``alpha`` are in the caller's coordinates; standardised ones are unchanged by it."""
+    T = ls_standardise(Z)
+    info = ls_information(yi, vi, X, Z @ numpy.linalg.inv(T), T @ alpha, link, method)
     if not bool(numpy.all(numpy.isfinite(info))):
         return False
     eigenvalues = numpy.linalg.eigvalsh(info)
-    return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > LS_DEGENERATE)
+    return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > LS_MAXIMUM_RATIO)
 
 
 def ls_standardise(Z: FloatArray) -> FloatArray:
@@ -3078,7 +3081,9 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
 
     For the log link the search runs on ``Zs`` (``ls_standardise``) and maps ``alpha`` and ``va`` back, so that the platform's rounding does not decide
     whether the information of a column such as an uncentred year is singular. A start is kept only when ``ls_is_maximum`` holds at its end point, and
-    the final Nelder-Mead polish is skipped: the Newton steps already reach rounding.
+    the final Nelder-Mead polish is skipped: the Newton steps already reach rounding. Once the starts agree, the log link also restarts from the best
+    end point with each non-constant slope moved past zero by ``LS_RESTART_STEP`` standard deviations (the second interior maximum of a binary column,
+    which no moment-based start reaches), so that the kept point of highest log-likelihood is the highest regular maximum.
     """
     T = ls_standardise(Z) if link == 'log' else numpy.eye(Z.shape[1])
     Z = Z @ numpy.linalg.inv(T)
@@ -3096,10 +3101,8 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
 
     kept: list[tuple[float, FloatArray]] = []
     messages: list[str] = []
-    starts = ls_starts(yi, vi, X, Z, link)
-    if link == 'identity':
-        starts.extend(ls_identity_starts(yi, vi, X, Z, method))
-    for start in starts:
+
+    def run_start(start: FloatArray) -> None:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             if link == 'log':
@@ -3112,23 +3115,38 @@ def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArra
         point = numpy.asarray(res.x, dtype=float)
         if not bool(numpy.all(numpy.isfinite(point))):
             messages.append(str(res.message))
-            continue
+            return
         if not math.isfinite(negative(point)):
             messages.append(str(res.message))
-            continue
+            return
         point = ls_newton_polish(yi, vi, X, Z, point, link, method, min(maxiter, LS_NEWTON_STEPS), LS_LOGLIK_NOISE)
         value = negative(point)
         if link == 'log':
             score = float(numpy.max(numpy.abs(ls_score(yi, vi, X, Z, point, link, method))))
             if score > LS_SCORE_TOLERANCE:
                 messages.append(f'{res.message} (score {score:.3g})')
-                continue
+                return
             if not ls_is_maximum(yi, vi, X, Z, point, link, method):
                 messages.append(f'{res.message} (no finite maximum)')
-                continue
+                return
         kept.append((value, point))
+
+    starts = ls_starts(yi, vi, X, Z, link)
+    if link == 'identity':
+        starts.extend(ls_identity_starts(yi, vi, X, Z, method))
+    for start in starts:
+        run_start(start)
         if link == 'log' and len(kept) >= 2 and abs(sorted(v for v, _ in kept)[1] - min(v for v, _ in kept)) <= LS_AGREEMENT:
             break
+    if link == 'log' and kept:
+        # A second interior maximum has the slope of the opposite sign (the "group swap"): restart from the best point with each slope moved past zero.
+        best_point = min(kept, key=lambda item: item[0])[1]
+        spread = numpy.std(Z, axis=0, ddof=1) if Z.shape[0] > 1 else numpy.zeros(Z.shape[1])
+        for j in range(Z.shape[1]):
+            if spread[j] > 0.0:
+                restart = best_point.copy()
+                restart[j] -= (1.0 if best_point[j] >= 0 else -1.0) * LS_RESTART_STEP / spread[j]
+                run_start(restart)
     if not kept:
         raise RuntimeError(f'ls_reference_fit: no start converged ({link} link, {method}): {"; ".join(messages)}')
     best_value, best_point = min(kept, key=lambda item: item[0])

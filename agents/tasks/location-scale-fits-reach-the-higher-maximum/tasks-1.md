@@ -63,7 +63,7 @@ a restarted fit. Widen no tolerance and regenerate no fixture except the one Tas
 
 ## Task 2: The test reference reaches the higher maximum
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation, The test reference
@@ -73,27 +73,27 @@ estimate the paper defines and do not move when either side changes its starts.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/correctness/test_ls_reference_fit.py` (no test file of `formulas.ls_reference_fit` existed on 2026-11-25), a test that fits permutations 68, 264, 651, 805, 979 and 1110 and expects the higher log-likelihood
+- [x] Write `src/tests/correctness/test_ls_reference_fit.py` (no test file of `formulas.ls_reference_fit` existed on 2026-11-25), a test that fits permutations 68, 264, 651, 805, 979 and 1110 and expects the higher log-likelihood
       (68: `-12.57323737`); run it on the unchanged code: it must fail
-- [ ] In `ls_reference_fit`, after the present search, refit from one start per non-constant column of `Z` (the slope moved by
+- [x] In `ls_reference_fit`, after the present search, refit from one start per non-constant column of `Z` (the slope moved by
       `-sign(alpha_j) * 4 / sd(Z_j)`, `sign(0) = 1`) in the reference's own code, and keep the end point with the highest log-likelihood that
       passes `ls_is_maximum`
-- [ ] Make `ls_is_maximum` take the information on the standardised `Z` (`ls_standardise`) with the threshold `1e-5` (a new constant beside
+- [x] Make `ls_is_maximum` take the information on the standardised `Z` (`ls_standardise`) with the threshold `1e-5` (a new constant beside
       `LS_DEGENERATE`, which stays for its other uses); update its docstring
-- [ ] Run every location-scale correctness case, `pytest src/tests/correctness/test_derived.py -k "ls."` (slow included), and the bcglat
+- [x] Run every location-scale correctness case, `pytest src/tests/correctness/test_derived.py -k "ls."` (slow included), and the bcglat
       reference: record the new bounds and the count without a fit in `measurements.md`; the count must stay 68 and no other case may change
       its verdict, or stop as `blocked`
 
 **Acceptance Criteria:**
 
-- [ ] The new test passes and failed on the unchanged code; the reference reaches the higher maximum on all eight permutations
-- [ ] Every other location-scale correctness case keeps its verdict; the bcglat case is still a strict xfail (metafopy is unchanged)
+- [x] The new test passes and failed on the unchanged code; the reference reaches the higher maximum on all eight permutations
+- [x] Every other location-scale correctness case keeps its verdict; the bcglat case is still a strict xfail (metafopy is unchanged)
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_ls_reference_fit.py` passes
-- [ ] `pytest src/tests/correctness/test_ls_reference_fit.py` and `pytest src/tests/correctness/test_derived.py -k "ls."` pass (the bcglat
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/correctness/formulas.py src/tests/correctness/test_ls_reference_fit.py` passes
+- [x] `pytest src/tests/correctness/test_ls_reference_fit.py` and `pytest src/tests/correctness/test_derived.py -k "ls."` pass (the bcglat
       case as xfail)
 
 **Notes:**

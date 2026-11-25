@@ -45,3 +45,20 @@ metafopy is `rma_uni` on the permuted `lat`; the reference is `formulas.ls_refer
 `data/known.toml` and 9894 numeric differences below the reporting threshold were not listed. The run took about 18 minutes, nearly all in the
 options step.
 <!-- doc-counts: accept-end -->
+
+<!-- doc-counts: accept-start measured on 2026-11-25 - a dated record, not a claim about the present -->
+## Task 2: the test reference after the restarts
+
+Measured on 2026-11-25 at the Task 2 working tree (on top of `69c0d1d`), macOS (development machine).
+
+- `formulas.ls_reference_fit` now reaches the highest regular interior maximum on all eight permutations. Log-likelihoods, found independently as
+  the best of 40 random starts per permutation (ridge end points with `|alpha| > 10` dropped): 68 `-12.57323737`, 264 `-11.64011395`,
+  433 `-11.96789514`, 651 `-12.60144281`, 805 `-12.13242026`, 979 `-11.67846163`, 1110 `-12.58432080`, 1278 `-12.17150179`. Before the change the
+  reference stopped low on 68, 264, 651, 805, 979 and 1110 (and was already right on 433 and 1278).
+- The reference's exact bounds for `ls.permutest.location.exact.ML.z.bcglat` (`ls_exact_permutation_p`, location part): `lat` hits 238 to 306
+  of 1287 (`pval` 0.18492618 to 0.23776224), intercept 781 to 849 (`pval` 0.60683761 to 0.65967366); permutations without a fit 68. Task 1 had
+  239 to 307 and 782 to 850, also 68.
+- metafopy's 308 `lat` hits are still above the upper bound 306, so the case stays a strict xfail until Task 4.
+- Every other location-scale correctness case keeps its verdict (`pytest src/tests/correctness/test_derived.py -k "ls."`: all pass but two xfails,
+  the bcglat case and `ls.profile.ML.identity.bcg`).
+<!-- doc-counts: accept-end -->
