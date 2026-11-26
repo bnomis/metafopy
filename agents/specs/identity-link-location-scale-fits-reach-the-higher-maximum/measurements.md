@@ -33,3 +33,24 @@ Scoped audit on the unchanged code: `bin/metafor-audit.sh --only '*/ls_*'` with 
 differences. 14647 findings matched known differences and 9896 numeric differences below the reporting threshold were not listed. The run
 covered the matrix, options and construct steps (280, 3076 and 848 cases), so the later comparison is of this report as a whole.
 <!-- doc-counts: accept-end -->
+
+<!-- doc-counts: accept-start measured on 2026-11-26 - a dated record, not a claim about the present -->
+## Task 3: the restart in `fit_rma_ls`
+
+Measured on 2026-11-26 on top of commit `28b10e7` (Task 3's change uncommitted), same machine and fits as Task 1.
+
+| Permutation | ll before | ll after | `alpha` after | location z (`lat`) after |
+|---|---|---|---|---|
+| 18 | -12.62494604 | -11.42937466 | 0.0, 0.86439 (`tau2` 0 / 0.86439) | -3.5966 |
+| 68 | -12.58248229 | -12.57323737 | 0.04772, 0.54912 | -1.2410 |
+| 679 | -10.46818400 | -10.46391648 | 0.76851, -0.76851 | 4.8125 |
+| 914 | -12.64295219 | -12.64031716 | 0.49166, -0.35534 | -1.1012 |
+
+Over the 1287 permutation fits (JSON, outside the repository: `/tmp/idlink-scratch/task3.json`), 85 log-likelihoods changed by more than
+1e-6 against Task 1's JSON, and none went down (the smallest change is 0.0).
+
+Time: median of 20 identity fits of permutation 18, 202.6 ms (Task 1: 80.9 ms); one loop over the 1287 permutation fits, 131.5 s (Task 1: 47.5 s).
+
+Tests: `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` 213 passed; `pytest
+src/tests/correctness/test_derived.py -k "ls."` 198 passed, 1 xfailed (the xfail is the recorded 2026-11-20 difference). No result changed.
+<!-- doc-counts: accept-end -->

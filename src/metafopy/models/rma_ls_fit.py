@@ -496,6 +496,31 @@ def is_face_maximum(problem: LSProblem, alpha: FloatArray) -> bool:
     return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > RESTART_RATIO)
 
 
+def identity_restart_fit(problem: LSProblem, par_opt: FloatArray, alpha_arg: FloatArray) -> FloatArray:
+    """Polish from each of :func:`identity_restart_starts` with ``rma_ls_opt.polish_identity`` and return the end point of highest log-likelihood
+    when it beats ``par_opt`` by more than ``RESTART_GAIN`` and :func:`is_face_maximum` holds there; otherwise ``par_opt``.
+
+    Every coefficient is free and no optimiser runs: the barrier stand-in needs an interior start and drifts off a face maximum (Viechtbauer and
+    Lopez-Lopez, 2022, <https://doi.org/10.1002/jrsm.1562>). A start whose polish fails or ends non-finite is skipped.
+    """
+    free = numpy.isnan(alpha_arg)
+
+    def loglik(a: FloatArray) -> float:
+        return problem.loglik(a, alpha_arg, numpy.full(problem.X.shape[1], numpy.nan), alpha_transf=False)
+
+    best = par_opt
+    best_ll = loglik(par_opt)
+    for start in identity_restart_starts(par_opt, problem.Z):
+        try:
+            end = metafopy.models.rma_ls_opt.polish_identity(start, loglik, problem.ls_score, problem.ls_information, problem.Z, free)
+        except metafopy.errors.EstimationError, numpy.linalg.LinAlgError:
+            continue
+        ll = loglik(end)
+        if math.isfinite(ll) and ll > best_ll + RESTART_GAIN and is_face_maximum(problem, end):
+            best, best_ll = end, ll
+    return best
+
+
 def pos_chol_inverse(A: FloatArray) -> FloatArray | None:
     """``chol2inv(chol(A))``, or ``None`` when ``A`` is not positive definite or not finite."""
     if not numpy.all(numpy.isfinite(A)):
@@ -871,6 +896,8 @@ def fit_rma_ls(
             ),
             alpha_arg,
         )
+        if con.restarts and user_w is None and numpy.all(numpy.isnan(alpha_arg)) and numpy.ptp(Z, axis=0).max() > 0.0:
+            par_opt = identity_restart_fit(problem, par_opt, alpha_arg)
 
     if link == 'log' and not optbeta and optimizer == 'BFGS' and metafopy.models.sel_opt.partial_match(con.optimizer, OPTIMIZERS, 'optimizer') == 'nlminb':
         par_opt = polish_log_fit(problem, par_opt, alpha_arg, beta_arg)

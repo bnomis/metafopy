@@ -66,8 +66,8 @@ class LSControl:
     parallel: collections.abc.Mapping[str, typing.Any] = dataclasses.field(default_factory=dict)
     polish_converged: bool = True
     restarts: bool = True
-    """Refit a log-link model from one derived start per scale slope and keep a higher regular maximum (metafopy only; ``False`` is metafor's
-    single start)."""
+    """Refit from derived starts and keep a higher regular maximum, for both links: one start per scale slope for the log link, one per face
+    ``tau2_i = 0`` and slope reflection for the identity link (metafopy only; ``False`` is metafor's single start)."""
     REMLf: bool = True
     scaleZ: bool = True  # noqa: N815  mirrors the metafor control argument name
     tau2_max: float = numpy.inf

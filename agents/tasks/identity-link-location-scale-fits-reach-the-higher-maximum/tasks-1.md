@@ -112,7 +112,7 @@ one Task 4 extends.
 
 ## Task 3: The restart in `fit_rma_ls`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`identity_restart_fit`, `LSControl.restarts`); Implementation, When it runs and The restart; Error handling; Settings;
@@ -123,33 +123,33 @@ maximum on its face.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_rma_ls_restarts.py`: on permutation 18 with `link='identity'`, `rma_uni` reaches ll `-11.42937466` (to 1e-6)
+- [x] Add tests to `src/tests/test_rma_ls_restarts.py`: on permutation 18 with `link='identity'`, `rma_uni` reaches ll `-11.42937466` (to 1e-6)
       with the `tau2` of `lat = 0` equal to 0, and with `control={'restarts': False}` ll `-12.62494606` and location z `0.2490`; a
       `restarts=False` identity fit equals the fit of the code before this task on a case of `src/tests/test_rma_ls.py`. Run them before the change:
       the first must fail
-- [ ] Add `identity_restart_fit` to `src/metafopy/models/rma_ls_fit.py` as the spec gives it: each start through `polish_identity` with the fit's
+- [x] Add `identity_restart_fit` to `src/metafopy/models/rma_ls_fit.py` as the spec gives it: each start through `polish_identity` with the fit's
       own `loglik`, `ls_score` and `ls_information` and every coefficient free, no optimiser; skip a start that raises `EstimationError` or
       `numpy.linalg.LinAlgError` or ends non-finite; keep the best end point only when it beats `par_opt` by more than `RESTART_GAIN` and
       `is_face_maximum` holds there
-- [ ] Call it in `fit_rma_ls` right after the existing `polish_identity` of the end point, under exactly the spec's conditions (identity link,
+- [x] Call it in `fit_rma_ls` right after the existing `polish_identity` of the end point, under exactly the spec's conditions (identity link,
       `con.restarts`, no `optbeta`, no user weights, `alpha_arg` all NaN, a non-constant column of `Z`), before the Hessian
-- [ ] Update the docstring of `LSControl.restarts` in `src/metafopy/models/rma_ls_result.py` to say it covers both links
-- [ ] Record in `measurements.md`: the four permutations' new ll, `tau2` and z; over the 1287 permutation fits, the count whose ll changed by more
+- [x] Update the docstring of `LSControl.restarts` in `src/metafopy/models/rma_ls_result.py` to say it covers both links
+- [x] Record in `measurements.md`: the four permutations' new ll, `tau2` and z; over the 1287 permutation fits, the count whose ll changed by more
       than 1e-6 against Task 1's JSON (85 expected from the prototype), and that none went down; the median time of 20 identity fits of
       permutation 18 and of the 1287-fit loop, against Task 1's
-- [ ] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` and
+- [x] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` and
       `pytest src/tests/correctness/test_derived.py -k "ls."` (slow included): no test may change its result, or stop as `blocked` naming it
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and the first failed before the change; no permutation fit ends below its Task 1 value; every listed test and
+- [x] The new tests pass, and the first failed before the change; no permutation fit ends below its Task 1 value; every listed test and
       location-scale correctness case keeps its result
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_result.py src/tests/test_rma_ls_restarts.py` passes
-- [ ] `pytest src/tests/test_rma_ls_restarts.py src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_result.py src/tests/test_rma_ls_restarts.py` passes
+- [x] `pytest src/tests/test_rma_ls_restarts.py src/tests/test_rma_ls.py` passes
 
 **Notes:**
 

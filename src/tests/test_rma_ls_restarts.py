@@ -111,8 +111,11 @@ def identity_problem(Z: numpy.ndarray, yi: numpy.ndarray, vi: numpy.ndarray, X: 
     )
 
 
-def permuted_identity(index: int) -> metafopy.RMALSResult:
-    """A permutation of the bcglat data with ``lat`` permuted in the location model only (``grp`` is the scale model's ``lat``), single start."""
+def permuted_identity(index: int, *, restarts: bool = False) -> metafopy.RMALSResult:
+    """A permutation of the bcglat data with ``lat`` permuted in the location model only (``grp`` is the scale model's ``lat``).
+
+    Single start unless ``restarts``.
+    """
     ai, bi, ci, di = (numpy.array(v, dtype=float) for v in (TPOS, TNEG, CPOS, CNEG))
     n1, n2 = ai + bi, ci + di
     order = next(itertools.islice(correctness.formulas.distinct_label_orders(sorted(LAT)), index, None))
@@ -126,7 +129,7 @@ def permuted_identity(index: int) -> metafopy.RMALSResult:
     )
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        res = metafopy.rma_uni('yi', 'vi', mods='~ lat', scale='~ grp', data=data, method='ML', link='identity', test='z', control={'restarts': False})
+        res = metafopy.rma_uni('yi', 'vi', mods='~ lat', scale='~ grp', data=data, method='ML', link='identity', test='z', control={'restarts': restarts})
     assert isinstance(res, metafopy.RMALSResult)
     return res
 
@@ -188,3 +191,16 @@ def test_is_face_maximum_refuses_a_singular_face() -> None:
     rng = numpy.random.default_rng(1)
     problem = identity_problem(Z, rng.normal(size=6), numpy.full(6, 0.2), numpy.ones((6, 1)))
     assert not metafopy.models.rma_ls_fit.is_face_maximum(problem, numpy.array([0.0, 0.5, 0.5]))
+
+
+def test_identity_restart_reaches_the_face_maximum() -> None:
+    """Permutation 18: R's single start stops at ll -12.625, the restart reaches the face maximum with tau2 of the grp = 0 group at 0."""
+    res = permuted_identity(18, restarts=True)
+    assert res.fit_stats.loc['ll', 'ML'] == pytest.approx(-11.42937466, abs=1e-6)
+    assert numpy.min(res.tau2) == pytest.approx(0.0, abs=1e-6)
+
+
+def test_identity_single_start_without_restarts() -> None:
+    res = permuted_identity(18)
+    assert res.fit_stats.loc['ll', 'ML'] == pytest.approx(-12.62494606, abs=1e-6)
+    assert res.zval[1] == pytest.approx(0.2490, abs=1e-4)
