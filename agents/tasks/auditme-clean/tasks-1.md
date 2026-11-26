@@ -366,8 +366,8 @@ every push and in CI.
 
 **Acceptance Criteria:**
 
-- [ ] `git push` runs `auditme-all` (seen in the push output)
-- [ ] The CI `lint` job runs the audit step and passes, once the secret exists
+- [x] `git push` runs `auditme-all` (seen in the push output)
+- [x] The CI `lint` job runs the audit step and passes, once the secret exists
 
 **Definition of Done:**
 
