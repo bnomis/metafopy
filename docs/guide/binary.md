@@ -91,6 +91,7 @@ print(rma_glmm(ai='tpos', bi='tneg', ci='cpos', di='cneg', data=bcg, measure='OR
 ```
 
 ```text
+
 Random-Effects Model (k = 13; tau^2 estimator: ML)
 Model Type: Unconditional Model with Fixed Study Effects
 
@@ -106,10 +107,11 @@ LRT(df = 12) = 176.9544, p-val < .0001
 Model Results:
 
 estimate      se     zval    pval    ci.lb    ci.ub
- -0.7450  0.1756  -4.2436  <.0001  -1.0891  -0.4009  ***
+ -0.7450  0.1756  -4.2435  <.0001  -1.0891  -0.4009  ***
 
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
 ```
 
 `rma_glmm` accepts moderators (`mods='~ ablat'`). `predict`, `blup` and `ranef` work on its result.

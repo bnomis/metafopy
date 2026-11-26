@@ -97,7 +97,7 @@ through, so that I know what to handle.
 
 ## Task 3: User-guide example output
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** F1 (Doc5): the example-output findings
@@ -107,23 +107,24 @@ pages.
 
 **Subtasks:**
 
-- [ ] For each Doc5 finding about printed output (`docs/differences.md:587`, `docs/guide/binary.md:109`, `docs/guide/diagnostics.md`
+- [x] For each Doc5 finding about printed output (`docs/differences.md:587`, `docs/guide/binary.md:109`, `docs/guide/diagnostics.md`
       residuals, influence, heteroscedasticity and VIF blocks, `docs/guide/effect-sizes.md:103` and `:118`), run the page's example and
       paste exactly what it prints, blank lines included
-- [ ] Leave the code alone: where the printed output looks wrong rather than the page, stop as `blocked` and name the example
+- [x] Leave the code alone: where the printed output looks wrong rather than the page, stop as `blocked` and name the example
 
 **Acceptance Criteria:**
 
-- [ ] Every output block named by these findings matches a fresh run character for character
+- [x] Every output block named by these findings matches a fresh run character for character
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
 - Key files: `docs/guide/diagnostics.md`, `docs/guide/effect-sizes.md`, `docs/guide/binary.md`, `docs/differences.md`
+- Done 2026-11-26: blank lines added to the residuals, influence, hettest, VIF and predict blocks; zval, the `confint` header and the glmm block corrected. `docs/guide/binary.md:115` (blup and ranef claim) is a claim, not output, left to Task 4.
 
 ---
 
