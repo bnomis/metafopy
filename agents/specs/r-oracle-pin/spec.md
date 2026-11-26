@@ -6,8 +6,8 @@
 **Corrected:** 2026-11-21 (version 1.1): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 The audit harness compares metafopy with R metafor, so R and every package
-it loads are the oracle. Only metafor, metadat and gsl are pinned today, and
-the check that would catch a moved library never runs. This spec pins the
+it loads are the oracle. Before this spec, only metafor, metadat and gsl were pinned, and
+the check that would catch a moved library never ran. This spec pins the
 whole R library, makes `check-r` refuse a run on a different one unless told
 otherwise, installs the pins on a new machine, and records recall items whose
 difference the pinned R no longer shows. It then brings the ledger, the
@@ -85,8 +85,8 @@ def library_drift(lock: Json, installed: Json) -> dict[str, tuple[str | None, st
 
 
 def check_r(ctx: Context) -> Outcome:
-    """Check the installed R library against ``data/r-versions.json``. A missing pin file or any drift raises RuntimeError naming each
-    difference and how to proceed, unless ``ctx.allow_r_drift``, when the drift becomes a note in the report."""
+    """Check the installed R library against ``data/r-versions.json``. A missing pin file or any drift raises ``audit.errors.HarnessError`` naming each
+    difference and how to proceed (also for a wrong metafor version), unless ``ctx.allow_r_drift``, when the drift becomes a note in the report."""
 
 
 # audit/recall.py
@@ -157,9 +157,9 @@ vanishes or appears is noted on its item, dated.
 
 ## Error handling
 
-- No pin file: `RuntimeError("no data/r-versions.json: pin the R library
+- No pin file: `audit.errors.HarnessError("no data/r-versions.json: pin the R library
   first ...")` naming the re-pin step; `--allow-r-drift` does not skip it.
-- Drift: `RuntimeError` listing every difference and the three ways to
+- Drift: `audit.errors.HarnessError` listing every difference and the three ways to
   proceed, as above.
 - `setup.R` failing to install a pinned version: listed, not fatal; the next
   `check-r` refuses the run.

@@ -63,14 +63,17 @@ def literal_options(func: collections.abc.Callable[..., typing.Any], parameter: 
 
 New `check` functions (module `test_derived`), each comparing with a formula at the case's tolerance and naming case, quantity and both values:
 `kendall_z` (Begg and Mazumdar's normal deviate from `tau` and k, for sources that print Z), `trimfill_filled` (the filled effects and variances,
-order-free), `selmodel_fit` (maximises `formulas.selection_loglik` with `scipy.optimize` from metafopy's start values and compares `beta`, `tau2`,
-`delta` and `ll`) and `hc_interval` (Henmi and Copas's interval by their integral). `fetch` is unchanged: every value checked is a result attribute
-(`zval`, `pval`, `est`, `tau`, `k0`, `se_k0`, `p_k0`, `fsnum`, `O`, `E`, `X2`, `theta_lim`, `beta`, `ci_lb`, `tau2`, `delta[i]`, `LRT`).
+order-free, and the side chosen against the reference), `selmodel_fit` (maximises `formulas.selection_loglik` with `scipy.optimize` from metafopy's
+start values, through `selmodel_maximum`, which maximises `formulas.truncation_loglik` for the `trunc` and `truncest` models; compares `beta`, `tau2`,
+`delta`, `ll` and the likelihood ratio `LRT` against the fit without selection) and `hc_interval` (Henmi and Copas's interval by their integral).
+`fetch` is unchanged: every value checked is a result attribute (for example `zval`, `pval`, `est`, `tau`, `k0`, `se_k0`, `p_k0`, `fsnum`, `O`, `E`,
+`X2`, `theta_lim`, `beta`, `ci_lb`, `ci_ub`, `se`, `est_fsn`, `pval_fsn`, `tau2_fsn`, `tau2`, `delta[i]`, `LRT`).
 
 ## Coverage list
 
 `test_coverage.py`'s `coverage_items()` adds the items below, reading each option list from the code, so a newly ported option fails the gate
-until it has a case. Module constants are read with `importlib.import_module` (`metafopy.bias.regtest` as an attribute is the
+until it has a case. Module constants are read with `importlib.import_module` (`metafopy.models.sel_spec.TYPE_OPTIONS` is read by attribute access on the imported package)
+(`metafopy.bias.regtest` as an attribute is the
 function `regtest`, which the package re-exports over its submodule; checked 2026-11-12). Each needs a `published` or `derived` case (`pass` or `mismatch`) or an `[[exempt]]` entry with a reason.
 
 - `regtest.<model>.<predictor>`: every `model` in `literal_options(metafopy.regtest, 'model')` with every predictor in

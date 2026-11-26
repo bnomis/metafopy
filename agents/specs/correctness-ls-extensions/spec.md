@@ -34,7 +34,7 @@ only after the user confirms it. Figures quoted below are in [measurements.md](m
 ## Module location
 
 - `src/tests/correctness/formulas.py` - the functions under API; `numpy` and `scipy` only, no metafopy import.
-- `src/tests/correctness/test_derived.py`, `test_properties.py` - the new checks; `ls_optbeta` takes the method from the case (it is ML only today).
+- `src/tests/correctness/test_derived.py`, `test_properties.py` - the new checks; `ls_optbeta` takes the method from the case (it was ML only when this spec began; the `ls.optbeta.REML.*` cases now run it under REML).
 - `src/tests/correctness/test_formulas_ls.py` - harness tests of the new formulas.
 - `src/tests/correctness/cases/location_scale.toml` - a new section with the cases and `[[exempt]]` entries.
 - `src/tests/correctness/test_coverage.py` - the new items in `ls_items()`.
@@ -86,7 +86,7 @@ def ls_constrained_fit(
     upper: FloatArray | None = None,
 ) -> dict[str, typing.Any]:
     """Equation 7 or 9 maximised over the alpha that ``fixed`` leaves NaN, the others held (eq 17), within ``[lower, upper]`` when given
-    (L-BFGS-B). Starts include the fitted-line start of ``ls_profile_ll``. Returns alpha, beta (eq 6), ll and the inverse information of the free
+    (SLSQP with Z alpha >= 0 for the identity link, L-BFGS-B for the log link). Starts include the fitted-line start of ``ls_profile_ll``. Returns alpha, beta (eq 6), ll and the inverse information of the free
     alpha. Raises ``RuntimeError`` with the optimiser's message when no start ends at a finite value."""
 
 
@@ -96,7 +96,7 @@ def ls_joint_information(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: Float
 
 def ls_joint_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, beta_fixed: FloatArray) -> dict[str, typing.Any]:
     """Equation 5 (ML) maximised over the free beta (NaN in ``beta_fixed``) and every alpha (eq 15 with the constraint at a given value), from the
-    profile fit; returns beta, alpha, ll and the inverse of ``ls_joint_information`` over the free coefficients."""
+    profile fit; returns beta, alpha, ll, free_beta (and the vb and va blocks) and the inverse of ``ls_joint_information`` over the free coefficients."""
 
 
 def ls_blups(yi: FloatArray, vi: FloatArray, X: FloatArray, tau2: FloatArray) -> dict[str, FloatArray]:

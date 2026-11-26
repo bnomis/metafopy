@@ -86,11 +86,11 @@ def polish_log(start: FloatArray, loglik: Objective, score: Gradient, informatio
 
 
 # src/tests/correctness/formulas.py
-LS_DEGENERATE = 1e-8  # a log-link end point whose information has min/max eigenvalue ratio at or below this has no finite maximum
+LS_MAXIMUM_RATIO = 1e-5  # a log-link end point whose information, on the standardised Z, has min/max eigenvalue ratio at or below this has no finite maximum
 
 
 def ls_is_maximum(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alpha: FloatArray, link: str, method: str) -> bool:
-    """``ls_information`` at ``alpha`` has min/max eigenvalue ratio above ``LS_DEGENERATE`` (an interior maximum, not an underflowed ``tau2``)."""
+    """The information on the standardised ``Z`` (``ls_standardise``) at ``alpha`` has min/max eigenvalue ratio above ``LS_MAXIMUM_RATIO`` (an interior maximum, not an underflowed ``tau2``)."""
 ```
 
 `Gradient` is `collections.abc.Callable[[FloatArray], FloatArray]`. `ls_reference_fit` keeps its signature and return keys.
@@ -169,7 +169,7 @@ metafopy's 794 lies inside. `ls.permutest.scale.exact.ML.z.bcglat` must pass unc
 ## Settings
 
 No `control` entry. Module constants: `LEVERAGE_ONE` (`float`, `1e-10`), `POLISH_LOG_SCORE` (`float`, `1e-10`), `POLISH_LOG_MAX_STEP`
-(`float`, `1e-3`), `POLISH_LOG_STEPS` (`int`, `8`) in the library; `LS_DEGENERATE` (`float`, `1e-8`) in `formulas.py`. `LS_SCORE_TOLERANCE`
+(`float`, `1e-3`), `POLISH_LOG_STEPS` (`int`, `8`) in the library; `LS_MAXIMUM_RATIO` (`float`, `1e-5`) in `formulas.py`. `LS_SCORE_TOLERANCE`
 stays `1e-6`; `LS_RELATIVE` (the location vif tolerance) stays `1e-6`.
 
 ## External dependencies

@@ -136,7 +136,8 @@ are unchanged: `stalled` gives `R did not return within <s>s (timeout)`;
 `(killed)` ending.
 
 The Python `dead` result is `{"id", "r_status", "py_status": "error",
-"py_error", "findings": [one finding]}` with kind `memory`, `process-died`
+"py_error", "findings": [one finding]}`, plus `r_error`, `secs_r` and `secs_py`
+(written on every dead result), with kind `memory`, `process-died`
 or, for `stalled`, `timeout` (compiled code ignores the in-process
 `SIGALRM`). Its detail names the limit or the exit status.
 

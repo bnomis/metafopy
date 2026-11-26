@@ -99,7 +99,11 @@ class Script:
 
 
 def list_scripts(source: pathlib.Path, work: pathlib.Path, only: list[str] | None) -> list[Script]:
-    """Every script ``runscripts.R list`` finds in the metafor source, in R's order, filtered by ``only`` as today."""
+    """Every script ``runscripts.R list`` finds in the metafor source, in R's order, filtered by ``only`` as today.
+
+    Raises:
+        audit.errors.HarnessError: the list of scripts could not be read.
+    """
 
 
 def run_r_scripts(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[Script], timeout: float) -> None:
@@ -199,7 +203,7 @@ and its `dead` callbacks ignore the parts, so its results are unchanged.
   a lost record with a dead unit at index 0, as `run_shard` does for cases
   today (no loop).
 - `runscripts.R list` failing, or writing nothing readable, raises
-  `RuntimeError` naming its log: the harness cannot run the step, and that
+  `audit.errors.HarnessError` naming its log: the harness cannot run the step, and that
   is not a unit's fault.
 - An unreadable job file raises in the Python shard process, which then dies
   before its first script and is reported as above.

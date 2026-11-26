@@ -167,7 +167,7 @@ conventions, so that I am not misled.
 
 ## Task 5: Specs that no longer match the code
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** F2 (Doc4)
@@ -176,17 +176,17 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] For each Doc4 finding in the ledger report, correct the statement in the spec, or turn a "today" sentence into a dated record
+- [x] For each Doc4 finding in the ledger report, correct the statement in the spec, or turn a "today" sentence into a dated record
       ("before this spec, on <date>, ...") where it describes the state the spec started from
-- [ ] Change specs only: where a finding says the code, not the spec, is wrong, stop as `blocked` and name it
+- [x] Change specs only: where a finding says the code, not the spec, is wrong, stop as `blocked` and name it
 
 **Acceptance Criteria:**
 
-- [ ] Each of the 39 findings' statements is corrected or dated
+- [x] Each of the 39 findings' statements is corrected or dated
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 

@@ -93,6 +93,7 @@ class MVDeletion:
     X2: FloatArray
     converged: tuple[bool, ...]
     gradient_norms: FloatArray
+    messages: tuple[str, ...] = ()  # the optimiser message of each refit
 
 
 def mv_deletion(

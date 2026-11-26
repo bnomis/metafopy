@@ -5,7 +5,7 @@
 **Date:** 2026-11-11
 **Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
-Every numeric test in `src/tests/` today compares metafopy with R metafor: the JSON fixtures in `src/tests/reference/` are written by `src/tests/r/*.R`, and
+Before this spec (on its date), every numeric test in `src/tests/` compared metafopy with R metafor: the JSON fixtures in `src/tests/reference/` are written by `src/tests/r/*.R`, and
 `bin/metafor-audit.sh` diffs the whole API against R. Those tests prove that metafopy reproduces metafor, not that either is right; a bug in metafor passes
 them. This spec adds a second, independent layer: tests whose expected values come from the publications that define each method, from formulas re-derived
 independently of metafopy's code, from properties theory guarantees, and from other software. **Correctness comes first, metafor compatibility second**
@@ -126,7 +126,7 @@ def case_params(kind: str) -> list[pytest.param]:
     """Cases of one kind as pytest params, id = case id; a ``mismatch`` case is marked ``xfail(strict=True, reason=...)``."""
 ```
 
-A `derived` case's `expect` value is a float or `"formulas.<name>"`, a function called with the arguments of the case that it declares (a column name
+A `derived` case's `expect` value is a float or `"<module>.<name>"` with `<module>` one of `FORMULA_MODULES` (`formulas`, `glmm_formulas`), a function called with the arguments of the case that it declares (a column name
 replaced by the column). A case lists in `covers` the coverage items it checks, such as `escalc.yi.RD`, `escalc.vi.RD.LS`, `tau2.DL`, `test.knha`,
 `confint.pl`, `predict.pi`, `heterogeneity.I2`, `rma_mh.OR.estimate`, `rma_mh.OR.variance` or `rma_peto`; the gate counts only the `covers` of `published`
 and `derived` cases. `load_cases` takes a `directory` keyword for tests of the harness, and `[[exempt]]` entries (`item`, `reason`) and the `escalc` `vtypes`

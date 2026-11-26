@@ -185,7 +185,7 @@ open for them; if none remain, the item moves to `DONE.md`.
 
 - `check_r`: a pin without `R_platform` or `R_fma` is drift (the entry is
   missing on one side); a different value, or `R_fma` against Python's
-  `FUSED`, raises `RuntimeError` naming both values and the three ways on
+  `FUSED`, raises `audit.errors.HarnessError` (not a `RuntimeError`) naming both values and the three ways on
   (reinstall, re-pin, `--allow-r-drift`).
 - `r_identity()` gives `R_fma = "unknown"` for a value neither variant
   produces; `check_r` refuses it unless allowed.

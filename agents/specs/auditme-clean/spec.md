@@ -60,7 +60,8 @@ SETTINGS: dict[str, int] = {'width': 80}  # auditme: accept[mutable-module-level
 A `Raises:` section lists every domain error from `metafopy.errors` that can
 reach the caller, in the project's existing form (full module path, then the
 condition), with each condition read from the body and its callees. For `fsn`,
-whose section today names `InputError` and `NotSupportedError`:
+whose section, before this spec, named `InputError` and `NotSupportedError`
+(it now also names `EstimationError`):
 
 ```python
 def fsn(x: RMAResult | ArrayLike | str, vi: ArrayLike | str | None = None, *, ...) -> FsnResult:
@@ -138,7 +139,7 @@ fixes pull in. Task 4 of the first task list stopped on this on 2026-11-01
 (72 hits in scope); the operator chose to clear by package.
 
 1. **Commit hook.** Run `/project-setup adopt`: add the
-   `git@github.com:bnomis/agents.git` hook block (now `git@github.com:bnomis/auditor.git`, since `31d809f`) with `auditme-changed`
+   `git@github.com:bnomis/agents.git` hook block (then `git@github.com:bnomis/auditor.git` since `31d809f`; `https://github.com/bnomis/auditor` since `955eb7d`) with `auditme-changed`
    (commit stage) and `auditme-all` (manual stage), pinned at the shared
    repository's current `main`, then `pre-commit install --hook-type
    pre-commit --hook-type pre-push`. `project-setup` files a `TODO.md` item
@@ -186,9 +187,9 @@ Each step's Definition of Done: `ruff format`, `ruff check`, `mypy` and
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `.pre-commit-config.yaml` auditor `rev` (repository `git@github.com:bnomis/auditor.git`) | commit hash | shared `main` at step 1 | the checker version every hook and CI runs |
+| `.pre-commit-config.yaml` auditor `rev` (repository `https://github.com/bnomis/auditor`) | commit hash | shared `main` at step 1 | the checker version every hook and CI runs |
 | `auditme-all` `stages` | list | `[manual]`, then `[manual, pre-push]` at step 5 | when the whole-tree sweep runs |
-| `AUDITOR_DEPLOY_KEY` | GitHub secret | none until step 5 | read-only key CI uses to fetch the shared hooks |
+| `AUDITOR_DEPLOY_KEY` | GitHub secret | none until step 5 | read-only key CI used to fetch the shared hooks; dropped in `955eb7d` (2026-11-23), CI now fetches the public hooks over HTTPS with no secret |
 
 ## External dependencies
 

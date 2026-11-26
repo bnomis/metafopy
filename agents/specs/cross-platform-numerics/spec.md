@@ -128,7 +128,7 @@ def main(argv: list[str] | None = None) -> int:
 bin/linux-tests.sh [--arch arm64|amd64] [--probe OUT_DIR] [-- PYTEST_ARGS...]
     Build (or reuse) the image from bin/linux-tests.Dockerfile for linux/<arch>, copy the working tree into it, run `uv sync --locked --all-extras`, then
     pytest with PYTEST_ARGS (default: the group test files, see Settings) or, with --probe, bin/platform-probe.py writing OUT_DIR/probe-linux-<arch>.json.
-    Exit status: pytest's or the probe's; 2 when Docker is not running or the image cannot be built.
+    Exit status: pytest's or the probe's; 2 when Docker is not running, the image cannot be built, or the arguments are wrong (a missing --arch or --probe value, an unknown argument, an --arch other than arm64 or amd64).
 ```
 
 ## Failure groups
