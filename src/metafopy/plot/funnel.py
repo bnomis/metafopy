@@ -249,6 +249,8 @@ def funnel(
         metafopy.errors.NotSupportedError: ``yaxis='wi'`` for a model without weights, or a robust fit with moderators.
         metafopy.errors.ArgumentError: the fit has moderators and is an ``rma_glmm``, ``rma.ls`` or selection-model fit, which has no
             residuals to plot against.
+        metafopy.errors.InternalError: with moderators and ``type='rstudent'`` a refit hits an internal invariant violation (a weight matrix missing in the
+            refit).
 
     Metafor reference:
         [funnel](https://wviechtb.github.io/metafor/reference/funnel.html)

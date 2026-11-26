@@ -162,6 +162,8 @@ def profile(fitted: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> Prof
         metafopy.errors.ArgumentError: there is no implementation for the class of ``fitted``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
         metafopy.errors.NotSupportedError: raised by the selection-model implementation for an unsupported request.
+        metafopy.errors.InternalError: raised by the location-scale or univariate implementation when a refit hits an internal invariant violation that the
+            refit does not catch.
     """
     raise metafopy.errors.ArgumentError(f'profile() not implemented for {type(fitted).__name__}')
 
@@ -276,6 +278,8 @@ def profile_rma_uni(
         metafopy.errors.InputError: the model uses an equal- or fixed-effects method; ``steps`` has missing values or is a single number below 2;
             ``xlim`` or ``ylim`` does not have length 2; ``xlim`` cannot be set automatically; ``parallel`` is not one of the accepted values or
             ``ncpus`` is below 1; with ``pred=True`` no predictions can be computed.
+        metafopy.errors.InternalError: a refit of the model (``fit_rma_uni`` through ``refit_arrays``) hits an internal invariant
+            violation, which the refit's caught errors do not include.
 
     Metafor reference:
         [profile.rma](https://wviechtb.github.io/metafor/reference/profile.rma.html)

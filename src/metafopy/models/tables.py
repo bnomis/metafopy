@@ -184,6 +184,7 @@ def prepare_tables(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.InternalError: ``escalc`` hits an internal invariant violation.
     """
     rate = measure in ('IRR', 'IRD')
     one_group = measure in PROPORTION_MEASURES or measure == 'IRLN'

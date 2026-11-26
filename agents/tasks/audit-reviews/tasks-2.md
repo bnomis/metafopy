@@ -63,7 +63,7 @@ not make.
 
 ## Task 2: `InternalError` in ten `Raises:` sections
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** F3 (A4)
@@ -73,24 +73,25 @@ through, so that I know what to handle.
 
 **Subtasks:**
 
-- [ ] Add `metafopy.errors.InternalError`, with the condition the finding names, to the `Raises:` section of each of: `confint`
+- [x] Add `metafopy.errors.InternalError`, with the condition the finding names, to the `Raises:` section of each of: `confint`
       (`src/metafopy/methods/confint.py`), `profile` and `profile_rma_uni` (`methods/profile.py`), `residuals` (`methods/residuals.py`),
       `vif` and `vif_rma_uni` (`methods/vif.py`), `evaluate` (`models/sel_lik.py`), `prepare_tables` (`models/tables.py`), `funnel`
       (`plot/funnel.py`) and `labbe` (`plot/labbe.py`)
-- [ ] Check each against its A4 finding text in the ledger report, so the wording names where the error comes from
+- [x] Check each against its A4 finding text in the ledger report, so the wording names where the error comes from
 
 **Acceptance Criteria:**
 
-- [ ] Each of the ten docstrings declares `InternalError`; no code changes
+- [x] Each of the ten docstrings declares `InternalError`; no code changes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on the eight changed files passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on the eight changed files passes
 
 **Notes:**
 
 - Generics are judged by dispatch: review-1's decision D1 (answered 2026-11-21)
+- Done 2026-11-26: the drift rule then flagged three callers (`rma_mh`, `rma_peto`, `selmodel`); each now declares `InternalError` too.
 
 ---
 

@@ -304,6 +304,7 @@ def rma_mh(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or ``measure`` is not one of the supported measures.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.InternalError: ``prepare_tables`` hits an internal invariant violation in ``escalc``.
 
     Examples:
         >>> from metafopy import datasets, rma_mh

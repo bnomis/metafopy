@@ -258,6 +258,7 @@ def labbe(
             outcomes.
         metafopy.errors.NotSupportedError: ``x`` is an ``rma_mv``, location-scale or selection-model fit.
         metafopy.errors.ArgumentError: ``x`` is not a fitted model.
+        metafopy.errors.InternalError: ``escalc`` hits an internal invariant violation.
 
     Metafor reference:
         [labbe](https://wviechtb.github.io/metafor/reference/labbe.html)

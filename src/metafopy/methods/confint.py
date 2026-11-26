@@ -149,6 +149,8 @@ def confint(model: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> typin
             argument the implementation does not have is a ``TypeError`` from Python, as for any function.
         metafopy.errors.InputError: raised by an implementation for an invalid argument.
         metafopy.errors.NotSupportedError: raised by the selection-model implementation for an unsupported request.
+        metafopy.errors.InternalError: raised by the location-scale implementation (``confint_rma_ls``) when a profile-likelihood refit hits an internal
+            invariant violation that the refit does not catch.
     """
     raise metafopy.errors.ArgumentError(f'confint() not implemented for {type(model).__name__}')
 

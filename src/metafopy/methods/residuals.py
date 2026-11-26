@@ -132,6 +132,7 @@ def residuals(x: typing.Any, type: metafopy.models.rma_uni.ResidualType = 'respo
         metafopy.errors.NotSupportedError: the type is not available for the class of ``x``.
         metafopy.errors.InputError: ``type`` or ``na_action`` is not valid, studies are missing and ``na_action='fail'``, or the marginal
             variance-covariance matrix is not positive definite (``'cholesky'``).
+        metafopy.errors.InternalError: ``rstudent`` refits the model and a refit hits an internal invariant violation.
     """
     metafopy.methods.fitview.check_class(x)
     metafopy.methods.common.check_na_action(na_action)
