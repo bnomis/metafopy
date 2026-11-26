@@ -71,7 +71,7 @@ one Task 4 extends.
 
 ## Task 2: The starts and the face guard
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`identity_restart_starts`, `is_face_maximum`); Implementation, The starts
@@ -80,26 +80,26 @@ one Task 4 extends.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_rma_ls_restarts.py`: on a binary `Z` with an intercept, `identity_restart_starts` gives the two `tau2_g = 0`
+- [x] Add tests to `src/tests/test_rma_ls_restarts.py`: on a binary `Z` with an intercept, `identity_restart_starts` gives the two `tau2_g = 0`
       starts (the other group's `tau2` unchanged) and the reflection that swaps the two `tau2`; on a continuous `Z` every start returned has
       `Z a >= 0`; a start's near-zero entries are exactly `0.0` (no `-0.` residue that makes `Z a` negative); `is_face_maximum` is true at a face
       maximum (permutation 18's, reached by `rma_ls_opt.polish_identity` from its `tau2_{lat=0} = 0` start, ll `-11.42937466`) and false on a
       face whose projected information is singular. Run them on the code before this task: they must fail on the missing names
-- [ ] Add `identity_restart_starts` and `is_face_maximum` to `src/metafopy/models/rma_ls_fit.py` with the spec's signatures and docstrings: the
+- [x] Add `identity_restart_starts` and `is_face_maximum` to `src/metafopy/models/rma_ls_fit.py` with the spec's signatures and docstrings: the
       projection `a = alpha - G r (r' alpha) / (r' G r)` with `G = pinv(Z'Z)` per distinct non-zero row, the zeroing below
       `1e-12 * max(1, max|a|)`, the intercept top-up within `ACTIVE_TOL * max(1, max|Z a|)`, the reflection about each non-constant column's
       midrange when `Z` has a constant column, and the active rows within `rma_ls_opt.ACTIVE_TOL` of zero relative to the largest `z_i' alpha`
-- [ ] Link the paper (Viechtbauer and Lopez-Lopez 2022, doi:10.1002/jrsm.1562) and the R source of the identity fit in the docstrings
+- [x] Link the paper (Viechtbauer and Lopez-Lopez 2022, doi:10.1002/jrsm.1562) and the R source of the identity fit in the docstrings
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass and failed before the change; nothing calls the new functions yet, so `pytest src/tests/test_rma_ls.py` is unchanged
+- [x] The new tests pass and failed before the change; nothing calls the new functions yet, so `pytest src/tests/test_rma_ls.py` is unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
-- [ ] `pytest src/tests/test_rma_ls_restarts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
+- [x] `pytest src/tests/test_rma_ls_restarts.py` passes
 
 **Notes:**
 

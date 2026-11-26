@@ -419,6 +419,83 @@ def is_regular_maximum(problem: LSProblem, alpha: FloatArray) -> bool:
     return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > RESTART_RATIO)
 
 
+def identity_restart_starts(alpha: FloatArray, Z: FloatArray) -> list[FloatArray]:
+    """Starts for the identity link from the end point ``alpha``, each with ``Z alpha >= 0``.
+
+    One per distinct non-zero row ``r`` of ``Z``: the nearest ``alpha`` (in the metric ``Z'Z``) with ``r' alpha = 0``, kept only when it is feasible
+    on every row. One per non-constant column ``j`` when ``Z`` has a constant column: the slope reflected about the column's midrange
+    (``alpha[j] -> -alpha[j]``, the intercept gains ``2 alpha[j] c_j``), which swaps the ``tau2`` at the column's two ends; kept when feasible.
+
+    The identity-link likelihood can have its maximum on a face ``tau2_i = 0``, which the single start of metafor's ``constrOptim`` can miss
+    (Viechtbauer and Lopez-Lopez, 2022, after equation 8, <https://doi.org/10.1002/jrsm.1562>; the fit is ``rma.uni`` in
+    <https://github.com/wviechtb/metafor/blob/master/R/rma.uni.r>). Entries of a face start below ``1e-12 * max(1, max|a|)`` are set to exactly 0,
+    since a negative residue evaluates to a log-likelihood of ``-inf``. A deficit of ``Z a`` within ``ACTIVE_TOL * max(1, max|Z a|)`` is added to
+    the intercept.
+    """
+    q = Z.shape[1]
+    spread = numpy.std(Z, axis=0, ddof=1) if Z.shape[0] > 1 else numpy.zeros(q)
+    constant = [j for j in range(q) if spread[j] == 0.0 and Z[0, j] != 0.0]
+
+    def feasible(a: FloatArray, *, clean: bool) -> FloatArray | None:
+        a = a.copy()
+        if clean:
+            a[numpy.abs(a) < 1e-12 * max(1.0, float(numpy.max(numpy.abs(a))))] = 0.0
+        za = Z @ a
+        deficit = float(numpy.min(za))
+        if deficit < 0 and constant and -deficit <= metafopy.models.rma_ls_opt.ACTIVE_TOL * max(1.0, float(numpy.max(numpy.abs(za)))):
+            a[constant[0]] += -deficit / Z[0, constant[0]]
+        return a if float(numpy.min(Z @ a)) >= 0.0 else None
+
+    starts: list[FloatArray] = []
+    G = numpy.linalg.pinv(Z.T @ Z)
+    for r in numpy.unique(Z[numpy.any(Z != 0.0, axis=1)], axis=0):
+        gr = G @ r
+        denom = float(r @ gr)
+        if denom > 0.0:
+            start = feasible(alpha - gr * float(r @ alpha) / denom, clean=True)
+            if start is not None:
+                starts.append(start)
+    if constant:
+        c0 = constant[0]
+        for j in range(q):
+            if spread[j] > 0.0:
+                mid = (float(numpy.min(Z[:, j])) + float(numpy.max(Z[:, j]))) / 2
+                reflected = alpha.copy()
+                reflected[j] = -alpha[j]
+                reflected[c0] = alpha[c0] + 2 * alpha[j] * mid / Z[0, c0]
+                start = feasible(reflected, clean=False)
+                if start is not None:
+                    starts.append(start)
+    return starts
+
+
+def is_face_maximum(problem: LSProblem, alpha: FloatArray) -> bool:
+    """The analytic information ``problem.ls_information`` at ``alpha``, projected on the null space of the active rows (``z_i' alpha`` within
+    ``rma_ls_opt.ACTIVE_TOL`` of zero, relative to the largest), is finite and has min/max eigenvalue ratio above ``RESTART_RATIO``. A face of
+    dimension 0 (the active rows pin every coefficient) passes.
+
+    The identity-link counterpart of :func:`is_regular_maximum`, on the face where the maximum lies (Viechtbauer and Lopez-Lopez, 2022,
+    <https://doi.org/10.1002/jrsm.1562>).
+    """
+    Z = problem.Z
+    za = Z @ alpha
+    rows = za <= metafopy.models.rma_ls_opt.ACTIVE_TOL * max(1.0, float(numpy.max(numpy.abs(za))))
+    if rows.any():
+        _, sv, vt = numpy.linalg.svd(Z[rows])
+        rank = int(numpy.sum(sv > 1e-10 * sv[0]))
+        N = vt[rank:].T
+    else:
+        N = numpy.eye(Z.shape[1])
+    if N.shape[1] == 0:
+        return True
+    with numpy.errstate(all='ignore'):
+        info = N.T @ problem.ls_information(alpha) @ N
+    if not numpy.all(numpy.isfinite(info)):
+        return False
+    eigenvalues = numpy.linalg.eigvalsh(info)
+    return bool(eigenvalues[0] > 0 and eigenvalues[0] / eigenvalues[-1] > RESTART_RATIO)
+
+
 def pos_chol_inverse(A: FloatArray) -> FloatArray | None:
     """``chol2inv(chol(A))``, or ``None`` when ``A`` is not positive definite or not finite."""
     if not numpy.all(numpy.isfinite(A)):
