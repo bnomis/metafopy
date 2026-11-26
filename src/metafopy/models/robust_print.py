@@ -11,7 +11,11 @@ import numpy.typing
 import metafopy.models.robust_info
 import metafopy.printing
 
-__all__ = ['FOOT_LEGEND', 'FOOT_MARK', 'decorate', 'df_cells']
+__all__ = [
+    'FOOT_MARK',
+    'decorate',
+    'df_cells',
+]
 
 FOOT_MARK = '¹'
 FOOT_LEGEND = '1)'

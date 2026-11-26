@@ -403,7 +403,7 @@ conventions, so that I am not misled.
 
 ## Task 12: Trim internal `__all__` lists
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** D2 (answered "trim all", internal modules only), F6 (A17)
@@ -413,28 +413,28 @@ exports.
 
 **Subtasks:**
 
-- [ ] For every A17 finding except `src/metafopy/__init__.py` and `src/metafopy/plot/__init__.py`, drop the names it lists from that
+- [x] For every A17 finding except `src/metafopy/__init__.py` and `src/metafopy/plot/__init__.py`, drop the names it lists from that
       module's `__all__`, documented ones included (as answered); keep each name defined in its module
-- [ ] Dismiss the two public-package findings:
+- [x] Dismiss the two public-package findings:
       `direnv exec /Users/simonb/src/metafopy auditor phaseb dismiss . --question A17 <id> --reason "2026-11-26: decision D2 of agents/audit-reviews/review-2.md (answered 2026-11-26): metafopy's public API, read by users, as review-1 D3 kept it"`
       for the ids `src/metafopy/__init__.py` and `src/metafopy/plot/__init__.py` as the report prints them
-- [ ] Fix the read in `src/metafopy/interactive/data.py:20` and `:50`: read `level_to_alpha` through a module that exports it (export it
+- [x] Fix the read in `src/metafopy/interactive/data.py:20` and `:50`: read `level_to_alpha` through a module that exports it (export it
       from `metafopy.plot.rutils`'s package or move it to a public module), not through a submodule `metafopy.plot` leaves out
-- [ ] If `mkdocs build --strict` then fails because a reference page renders a name a module no longer exports, stop as `blocked` naming
+- [x] If `mkdocs build --strict` then fails because a reference page renders a name a module no longer exports, stop as `blocked` naming
       the page and the name: the answer covered dropping documented names, not changing the reference pages
 
 **Acceptance Criteria:**
 
-- [ ] No name an A17 finding lists for an internal module is left in that module's `__all__`; the two public-package findings are
+- [x] No name an A17 finding lists for an internal module is left in that module's `__all__`; the two public-package findings are
       dismissed in the ledger; `level_to_alpha` is read through an exporting module
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` passes
-- [ ] `pytest src/tests/test_signatures.py src/tests/test_transf.py src/tests/test_vcalc.py` and the own test files of every changed
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` passes
+- [x] `pytest src/tests/test_signatures.py src/tests/test_transf.py src/tests/test_vcalc.py` and the own test files of every changed
       module pass
-- [ ] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
+- [x] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
 
 **Notes:**
 

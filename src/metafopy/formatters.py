@@ -21,7 +21,13 @@ import pandas
 import metafopy.errors
 import metafopy.printing
 
-__all__ = ['NoQuote', 'fmtp', 'fmtp2', 'fmtt', 'fmtx', 'r_as_character']
+__all__ = [
+    'fmtp',
+    'fmtp2',
+    'fmtt',
+    'fmtx',
+    'r_as_character',
+]
 
 type Number = float | int | None
 type Numbers = Number | collections.abc.Sequence[Number] | numpy.ndarray[typing.Any, typing.Any]

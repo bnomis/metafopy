@@ -17,10 +17,7 @@ import metafopy.methods.accessors
 
 __all__ = [
     'Diff',
-    'Node',
-    'cell_equal',
     'compare',
-    'lookup',
     'py_name',
     'to_node',
 ]

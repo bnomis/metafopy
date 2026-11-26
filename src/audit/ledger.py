@@ -24,7 +24,6 @@ import audit.harness_io
 __all__ = [
     'Entry',
     'Ledger',
-    'bracket_sets',
 ]
 
 Json = dict[str, typing.Any]

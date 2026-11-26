@@ -18,7 +18,9 @@ import scipy.sparse
 
 import metafopy.errors
 
-__all__ = ['Factor', 'to_categorical']
+__all__ = [
+    'Factor',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type IntArray = numpy.typing.NDArray[numpy.intp]

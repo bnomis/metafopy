@@ -19,7 +19,6 @@ import metafopy.errors
 # auditme: accept[non-alphabetical-literal] ruff's RUF022 sorts the constants before the names
 __all__ = [
     'SETTINGS',
-    'SIGNIF_LEGEND',
     'HtmlRepr',
     'console_width',
     'fmt_named_vector',

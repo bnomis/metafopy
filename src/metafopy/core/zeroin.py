@@ -20,7 +20,9 @@ import warnings
 
 import metafopy.errors
 
-__all__ = ['RootResult', 'uniroot']
+__all__ = [
+    'uniroot',
+]
 
 EPSILON = sys.float_info.epsilon
 DEFAULT_TOL = EPSILON**0.25

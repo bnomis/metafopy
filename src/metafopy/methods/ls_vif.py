@@ -30,7 +30,7 @@ import metafopy.mfopt
 import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 
-__all__ = ['LSVIFResult', 'vif_rma_ls']
+__all__ = ()
 
 # R's formatC(x, format = 'f', digits = NULL) and fmtp(p, digits = NULL)
 NULL_DIGITS = 4

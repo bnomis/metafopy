@@ -40,10 +40,8 @@ __all__ = [
     'Link',
     'binomial',
     'canonical_link',
-    'link_fun',
     'link_inv',
     'poisson',
-    'valid_eta',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]

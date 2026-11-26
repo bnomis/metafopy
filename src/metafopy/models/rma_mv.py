@@ -38,7 +38,10 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['DFS', 'METHODS', 'RSCALES', 'TESTS', 'MVControl', 'rma_mv']
+__all__ = [
+    'MVControl',
+    'rma_mv',
+]
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CVVC_OPTIONS = ('varcor', 'varcov', 'transf')

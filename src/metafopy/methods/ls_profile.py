@@ -27,7 +27,9 @@ import metafopy.methods.ls_common
 import metafopy.methods.profile
 import metafopy.models.rma_ls_result
 
-__all__ = ['LSProfileResult', 'profile_rma_ls']
+__all__ = [
+    'LSProfileResult',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

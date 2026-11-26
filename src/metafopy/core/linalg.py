@@ -10,7 +10,6 @@ import numpy.typing
 import metafopy.errors
 
 __all__ = [
-    'NearPDResult',
     'invcalc',
     'is_intercept',
     'is_nested',

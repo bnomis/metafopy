@@ -29,8 +29,6 @@ __all__ = [
     'Context',
     'Finding',
     'Outcome',
-    'check_r',
-    'library_drift',
 ]
 
 Json = dict[str, typing.Any]

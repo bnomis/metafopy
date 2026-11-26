@@ -34,7 +34,6 @@ import metafopy.errors
 
 __all__ = [
     'DIGIT_KEYS',
-    'OPTIONS',
     'digit_map_of',
     'digits_map',
     'getmfopt',

@@ -25,7 +25,7 @@ import metafopy.models.mv_result
 import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 
-__all__ = ['ranef_rma_mv']
+__all__ = ()
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type MV = metafopy.models.mv_result.RMAMVResult

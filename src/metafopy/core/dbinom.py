@@ -22,7 +22,10 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['FUSED', 'dbinom', 'platform_fuses']
+__all__ = [
+    'FUSED',
+    'dbinom',
+]
 
 FloatArray = numpy.typing.NDArray[numpy.float64]
 

@@ -29,7 +29,6 @@ __all__ = [
     'build_env',
     'classify',
     'r_killed',
-    'r_timed_out',
     'run_guarded',
 ]
 

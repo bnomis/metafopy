@@ -33,7 +33,9 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_result
 
-__all__ = ['VCOV_TYPES', 'vcov']
+__all__ = [
+    'vcov',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

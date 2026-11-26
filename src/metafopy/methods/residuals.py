@@ -29,7 +29,9 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_result
 
-__all__ = ['RESIDUAL_TYPES', 'residuals']
+__all__ = [
+    'residuals',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

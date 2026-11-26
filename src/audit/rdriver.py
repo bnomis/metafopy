@@ -12,7 +12,6 @@ import audit.harness_io
 
 __all__ = [
     'environment',
-    'limit_memory',
     'rscript_command',
     'run',
     'start',

@@ -31,7 +31,6 @@ __all__ = [
     'SparseVCovMat',
     'escalc_frame',
     'frame_text',
-    'vector_text',
 ]
 
 SIGNIF = 7

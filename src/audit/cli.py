@@ -14,7 +14,6 @@ import audit.steps
 
 __all__ = [
     'main',
-    'parse_args',
 ]
 
 

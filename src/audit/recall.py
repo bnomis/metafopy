@@ -20,11 +20,8 @@ import audit.harness_io
 
 __all__ = [
     'Corpus',
-    'Item',
     'evaluate',
-    'hints',
     'run_audit',
-    'steps_for',
     'write',
 ]
 

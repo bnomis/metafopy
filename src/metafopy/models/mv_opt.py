@@ -25,7 +25,11 @@ import metafopy.errors
 import metafopy.models.mv_lik
 import metafopy.models.sel_opt
 
-__all__ = ['POLISH_GRADIENT', 'POLISH_MAX_STEP', 'POLISH_STEPS', 'OptResult', 'maximise', 'polish_score', 'score_jacobian']
+__all__ = [
+    'maximise',
+    'polish_score',
+    'score_jacobian',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

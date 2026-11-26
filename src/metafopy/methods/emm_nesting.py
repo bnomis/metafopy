@@ -20,7 +20,13 @@ import pandas
 
 import metafopy.errors
 
-__all__ = ['TermInfo', 'find_nests', 'parse_nest', 'std_order', 'term_info', 'union']
+__all__ = [
+    'find_nests',
+    'parse_nest',
+    'std_order',
+    'term_info',
+    'union',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type Nesting = dict[str, tuple[str, ...]]

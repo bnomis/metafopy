@@ -23,7 +23,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.transf
 
-__all__ = ['confint_rma_ls']
+__all__ = ()
 
 # auditme: accept[literal-duplication] the labels repeat those of the confint tables
 COLUMNS = ('estimate', 'ci.lb', 'ci.ub')  # auditme: accept[non-alphabetical-literal] the order follows the metafor column order

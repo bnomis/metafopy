@@ -35,14 +35,7 @@ import metafopy
 import metafopy.errors
 
 __all__ = [
-    'Script',
-    'list_scripts',
-    'namespace',
     'run',
-    'run_r_scripts',
-    'run_script',
-    'stream_scripts',
-    'write_scripts',
 ]
 
 Json = dict[str, typing.Any]

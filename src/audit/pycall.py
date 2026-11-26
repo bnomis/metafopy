@@ -35,9 +35,7 @@ __all__ = [
     'match_positional',
     'option_value',
     'resolve_function',
-    'resolve_value',
     'run_call',
-    'setitem',
 ]
 
 Env = dict[str, typing.Any]

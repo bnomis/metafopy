@@ -36,10 +36,7 @@ import metafopy.errors
 __all__ = [
     'ConditionalFit',
     'Strata',
-    'cholesky2',
-    'chsolve2',
     'clogistic_settings',
-    'coxph_exact',
 ]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
