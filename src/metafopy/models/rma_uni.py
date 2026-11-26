@@ -1210,20 +1210,8 @@ def fit_rma_uni(
             dev_ml = -2 * ll_ml
     else:
         dev_ml = 0.0
-    fs_ml = FitStats(
-        ll=ll_ml,
-        dev=dev_ml,
-        AIC=-2 * ll_ml + 2 * parms,
-        BIC=-2 * ll_ml + parms * math.log(k),
-        AICc=aicc(ll_ml, parms, k),
-    )
-    fs_reml = FitStats(
-        ll=ll_reml,
-        dev=-2 * ll_reml,
-        AIC=-2 * ll_reml + 2 * parms,
-        BIC=-2 * ll_reml + parms * math.log(k - p) if k > p else math.nan,
-        AICc=aicc(ll_reml, parms, k - p),
-    )
+    fs_ml = fit_stats_from(ll_ml, dev_ml, parms, k)
+    fs_reml = fit_stats_from(ll_reml, -2 * ll_reml, parms, k - p)
 
     # -- pseudo R^2 ----------------------------------------------------------
     R2: float | None = None
@@ -1356,6 +1344,20 @@ def fixed_effects(
 def aicc(ll: float, parms: int, n: int) -> float:
     big = max(n, parms + 2)
     return -2 * ll + 2 * parms * big / (big - parms - 1)
+
+
+def fit_stats_from(ll: float, dev: float, parms: float, n: int) -> FitStats:
+    """``FitStats`` from a log-likelihood, its deviance, the parameter count and the effective sample size ``n`` (``k`` for ML, ``k - p`` for REML).
+
+    ``BIC`` is missing when ``n`` is not positive.
+    """
+    return FitStats(
+        ll=ll,
+        dev=dev,
+        AIC=-2 * ll + 2 * parms,
+        BIC=-2 * ll + parms * math.log(n) if n > 0 else math.nan,
+        AICc=-2 * ll + 2 * parms * max(n, parms + 2) / (max(n, parms + 2) - parms - 1),
+    )
 
 
 def pseudo_r2(

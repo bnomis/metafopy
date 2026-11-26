@@ -264,7 +264,7 @@ conventions, so that I am not misled.
 
 ## Task 8: One owner for fit statistics and the test `LSProblem`
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** medium
 **Source Reference:** F12 (A15)
@@ -273,22 +273,22 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] Grep `src/metafopy/models` for every hand-written `FitStats(` built from `ll`, `parms` and `n` (at least `rma_mv.py:1253`,
+- [x] Grep `src/metafopy/models` for every hand-written `FitStats(` built from `ll`, `parms` and `n` (at least `rma_mv.py:1253`,
       `rma_ls_fit.py:1073` and `binary.py:59`); add one helper beside `FitStats` that returns it from `(ll, parms, n)` with the same
       arithmetic, and call it at each site
-- [ ] Keep the arithmetic's order exactly, so each value is bit-identical; any changed printed value stops the task as `blocked`
-- [ ] In `src/tests/test_rma_ls_restarts.py`, build the 12-field `LSProblem` (`:80`, `:98` and any other copy) through one fixture or
+- [x] Keep the arithmetic's order exactly, so each value is bit-identical; any changed printed value stops the task as `blocked`
+- [x] In `src/tests/test_rma_ls_restarts.py`, build the 12-field `LSProblem` (`:80`, `:98` and any other copy) through one fixture or
       helper in that file
 
 **Acceptance Criteria:**
 
-- [ ] No hand-written ML/REML `FitStats` assembly is left; the fit tests pass unchanged
+- [x] No hand-written ML/REML `FitStats` assembly is left; the fit tests pass unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy` on the changed files passes
-- [ ] `pytest src/tests/test_rma_mv.py src/tests/test_rma_ls.py src/tests/test_rma_ls_restarts.py` and the own test files of every other
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy` on the changed files passes
+- [x] `pytest src/tests/test_rma_mv.py src/tests/test_rma_ls.py src/tests/test_rma_ls_restarts.py` and the own test files of every other
       module the task changes pass
 
 ---
