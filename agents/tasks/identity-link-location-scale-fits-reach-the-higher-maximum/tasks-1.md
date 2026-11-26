@@ -32,7 +32,7 @@ one Task 4 extends.
 
 ## Task 1: Starting checks and the baselines
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Implementation, Tests and records (the scoped audit); Cost
@@ -41,25 +41,25 @@ one Task 4 extends.
 
 **Subtasks:**
 
-- [ ] Check that no new name exists yet: `grep -rnwE 'identity_restart_starts|is_face_maximum|identity_restart_fit' src/metafopy` prints
+- [x] Check that no new name exists yet: `grep -rnwE 'identity_restart_starts|is_face_maximum|identity_restart_fit' src/metafopy` prints
       nothing; otherwise stop as `blocked`, naming the hit
-- [ ] Check that `LSControl.restarts`, `RESTART_GAIN`, `RESTART_RATIO` and `is_regular_maximum` exist in `src/metafopy/models/` (the log-link
+- [x] Check that `LSControl.restarts`, `RESTART_GAIN`, `RESTART_RATIO` and `is_regular_maximum` exist in `src/metafopy/models/` (the log-link
       spec's work); otherwise stop as `blocked`
-- [ ] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
-- [ ] Record, at the task's starting commit, with `link='identity'`: for permutations 18, 68, 679 and 914, metafopy's log-likelihood, the
+- [x] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
+- [x] Record, at the task's starting commit, with `link='identity'`: for permutations 18, 68, 679 and 914, metafopy's log-likelihood, the
       `tau2` of each `lat` group and the location z from `rma_uni`, and the log-likelihood from `formulas.ls_reference_fit`; the log-likelihood of
       every one of the 1287 permutation fits, saved as JSON outside the repository (in the session scratchpad), with its path in
       `measurements.md`; the median time of 20 identity fits of permutation 18 and the time of one loop over the 1287 permutation fits
-- [ ] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
+- [x] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
       directory and its count of unaccepted differences
 
 **Acceptance Criteria:**
 
-- [ ] `measurements.md` holds every baseline above, dated, with the commit; the four permutations' log-likelihoods match R's above to 1e-6
+- [x] `measurements.md` holds every baseline above, dated, with the commit; the four permutations' log-likelihoods match R's above to 1e-6
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
