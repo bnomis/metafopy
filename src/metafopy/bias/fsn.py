@@ -93,6 +93,7 @@ class FsnResult(metafopy.printing.HtmlRepr):
         d = metafopy.mfopt.option_digits(digits, self.digits)
         lines = ['', f'Fail-safe N Calculation Using the {self.type} Approach', '']
         alpha = f'{round(self.alpha, d):.7g}'
+        # auditme: accept[assert-never-missing] the else is the General approach; type is a str
         if self.type in ('Rosenthal', 'Binomial'):
             lines += [f'Observed Significance Level: {metafopy.bias.inputs.fp(self.pval, d)}', f'Target Significance Level:   {alpha}']
         elif self.type == 'Orwin':

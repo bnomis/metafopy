@@ -218,6 +218,7 @@ def build_contrasts(
     method = method.replace('.', '_')  # emmeans spells them trt.vs.ctrl and del.eff
     excl = excluded(levs, exclude, include)
     k = len(levs)
+    # auditme: accept[assert-never-missing] method is user input; an unknown one reaches the InputError below
     match method:
         case 'pairwise' | 'tukey':
             return pairwise(levs, excl, reverse)

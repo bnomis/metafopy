@@ -108,7 +108,7 @@ def panel(
     else:
         zi, infl, labs, n = zi_all, is_infl_all, ids, int(zi_all.shape[0])
     pos = numpy.arange(1, n + 1, dtype=float)
-    metafopy.plot.plain.plain_plot(
+    _ = metafopy.plot.plain.plain_plot(
         ax, (1.0, float(n)), ylim, '', '', main, xaxt=True, yaxt=True, logy=logy, xat=pos, xlabels=labs, thin_xlabels=las not in (2, 3), thin_ylabels=True
     )
     if las in (2, 3):
@@ -263,7 +263,7 @@ def plot_infl(
         zi = numpy.asarray(values[name], dtype=float)
         a = axes[0]
         if numpy.isnan(zi).all():
-            metafopy.plot.plain.plain_plot(a, (0.0, 1.0), (0.0, 1.0), '', '', name, xaxt=False, yaxt=False)
+            _ = metafopy.plot.plain.plain_plot(a, (0.0, 1.0), (0.0, 1.0), '', '', name, xaxt=False, yaxt=False)
             return
         zmin, zmax = float(numpy.nanmin(zi)), float(numpy.nanmax(zi))
         hl: list[tuple[float, str]]

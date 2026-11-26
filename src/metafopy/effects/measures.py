@@ -1996,6 +1996,7 @@ def means(
 
     k = ni.shape[0]
     m = numpy.full(k, metafopy.effects.na.NA) if mi is None else mi
+    # auditme: accept[assert-never-missing] the else is CVLN; measure is a str validated earlier
     if measure in ('MN', 'POMPMN'):
         yi = m
         sdpi = math.sqrt(wmean(sdi**2, ni - 1))

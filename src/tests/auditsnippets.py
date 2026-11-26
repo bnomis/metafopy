@@ -40,7 +40,7 @@ def read_fixture(path: pathlib.Path) -> dict[str, typing.Any]:
     return document
 
 
-def check_versions(meta: dict[str, typing.Any], path: pathlib.Path) -> None:
+def require_pinned_versions(meta: dict[str, typing.Any], path: pathlib.Path) -> None:
     pinned: dict[str, str] = json.loads((audit.config.DATA_DIR / 'r-versions.json').read_text(encoding='utf-8'))
     recorded_r = f'{meta["R_major"]}.{meta["R_minor"]}'
     if recorded_r != pinned['R'] or meta['metafor'] != pinned['metafor']:
@@ -53,7 +53,7 @@ def check_versions(meta: dict[str, typing.Any], path: pathlib.Path) -> None:
 def load_snippet(snippet_id: str, path: pathlib.Path = SNIPPETS_PATH) -> Snippet:
     """The recorded snippet; fails naming both versions when the fixture's metafor or R differs from src/audit/data/r-versions.json."""
     document = read_fixture(path)
-    check_versions(document['meta'], path)
+    require_pinned_versions(document['meta'], path)
     record = document['snippets'][snippet_id]
     return Snippet(
         id=record['id'],

@@ -66,6 +66,7 @@ def p_adjust(p: collections.abc.Sequence[float] | FloatArray, method: str = 'hol
     if n == 2 and method == 'hommel':
         method = 'hochberg'
     out: FloatArray
+    # auditme: accept[assert-never-missing] the else is method 'none', which leaves the p-values unadjusted
     if method == 'bonferroni':
         out = numpy.minimum(1.0, n * pv)
     elif method == 'holm':

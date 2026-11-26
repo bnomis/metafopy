@@ -264,5 +264,6 @@ def get_rng() -> RRandom:
     """The module-level generator, seeded from the clock on first use (as R seeds from time and process id)."""
     global GLOBAL
     if GLOBAL is None:
+        # auditme: accept[pure-name-has-side-effect] R seeds from the clock on first use too
         GLOBAL = RRandom(int(time.time() * 1000) % 2**31)
     return GLOBAL

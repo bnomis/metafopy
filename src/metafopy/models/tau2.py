@@ -349,7 +349,7 @@ def estimate_tau2(
 
     t = max(tau2, 0.0)
     se = math.nan
-    # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+    # auditme: accept[literal-duplication] metafor repeats these lists  # auditme: accept[assert-never-missing] no closed-form SE: se stays nan, as in metafor
     if method in ('HS', 'HSk'):
         if P is None:
             raise metafopy.errors.InternalError('P must not be None')

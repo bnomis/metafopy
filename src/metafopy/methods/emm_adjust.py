@@ -220,6 +220,7 @@ def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, 
             fam_size = (1 + math.sqrt(1 + 8 * n_contr)) / 2
         for pos, row in enumerate(rows):
             dfi = float(d[pos])
+            # auditme: accept[assert-never-missing] the default arm is the 'mvt' adjustment; method is a str validated earlier
             match method:
                 case 'none':
                     value = -qt((1 - level) / divisor, dfi)
@@ -305,6 +306,7 @@ def p_values(t: FloatArray, df: FloatArray, adjust: str, fam: Family, tail: int 
             continue
         for pos, row in enumerate(idx):
             dfi = float(d[pos])
+            # auditme: accept[assert-never-missing] the default arm is the 'mvt' adjustment; method is a str validated earlier
             match method:
                 case 'none':
                     pval[row] = unadj[pos]

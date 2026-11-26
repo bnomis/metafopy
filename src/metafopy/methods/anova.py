@@ -192,6 +192,7 @@ class ListAnovaResult(list[WaldResult]):
         cells: list[list[str]] = []
         for col in tab.columns:
             values = tab[col]
+            # auditme: accept[assert-never-missing] col ranges over the table's columns; the else formats every other numeric column
             if col in ('spec', 'coefs'):
                 cells.append([str(v) for v in values])
             elif col in ('df', 'df1', 'df2'):

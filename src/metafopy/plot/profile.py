@@ -80,7 +80,7 @@ def draw_one(
         pos = int(numpy.flatnonzero(xv >= x.vc)[0])
         xv = numpy.concatenate([xv[:pos], [x.vc], xv[pos:]])
         yv = numpy.concatenate([yv[:pos], [x.maxll], yv[pos:]])
-    metafopy.plot.plain.plain_plot(ax, xl, yl, xlab, ylab, main, bty='l', logx='x' in (log or ''), logy='y' in (log or ''))
+    _ = metafopy.plot.plain.plain_plot(ax, xl, yl, xlab, ylab, main, bty='l', logx='x' in (log or ''), logy='y' in (log or ''))
     if refline:
         metafopy.plot.draw.vline(ax, x.vc, lty='dotted')
         metafopy.plot.draw.hline(ax, x.maxll, lty='dotted')

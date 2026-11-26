@@ -1234,7 +1234,7 @@ def forest(
     elif order is not None:
         assert res is not None
         if isinstance(order, str):
-            # auditme: accept[literal-duplication] branches mirror metafor, which repeats these option lists
+            # auditme: accept[literal-duplication] metafor repeats these lists  # auditme: accept[assert-never-missing] unknown order: InputError
             if order in ('est', 'obs', 'yi'):
                 idx = numpy.argsort(yi, kind='stable')
             elif order == 'fit':

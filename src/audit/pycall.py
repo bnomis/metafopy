@@ -85,6 +85,7 @@ def resolve_value(x: typing.Any, env: Env) -> typing.Any:
     if isinstance(x, dict) and len(x) == 1:
         ((tag, val),) = x.items()
         if tag.startswith('$'):
+            # auditme: accept[assert-never-missing] tags come from recorded JSON; an unknown one raises HarnessError
             match tag:
                 case '$ref':
                     return env[val]

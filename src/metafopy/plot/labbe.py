@@ -353,6 +353,7 @@ def labbe(
     intrcpt = float(x.beta[0])
     if llim is None:
         m = x.measure
+        # auditme: accept[assert-never-missing] the else is measure 'AS'; m is a str validated earlier
         if m in ('RD', 'IRD', 'IRSD'):
             x_vals = numpy.linspace(0 if intrcpt > 0 else -intrcpt, 1 - intrcpt if intrcpt > 0 else 1, ln)
         elif m in ('RR', 'IRR'):

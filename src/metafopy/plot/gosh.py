@@ -277,9 +277,9 @@ def plot_int_only(
         dens = [(metafopy.plot.rutils.hist_density(g, brk), metafopy.plot.rutils.density_r(g, a_), ch, cl) for g, ch, cl in groups]
         top = max(float(numpy.nanmax(numpy.concatenate([h, dn[1]]))) for h, dn, _, _ in dens)
         if horizontal:
-            metafopy.plot.plain.plain_plot(axm, lim, (0.0, top), bty='n', xaxt=False, yaxt=False)
+            _ = metafopy.plot.plain.plain_plot(axm, lim, (0.0, top), bty='n', xaxt=False, yaxt=False)
         else:
-            metafopy.plot.plain.plain_plot(axm, (0.0, top), lim, bty='n', xaxt=False, yaxt=False)
+            _ = metafopy.plot.plain.plain_plot(axm, (0.0, top), lim, bty='n', xaxt=False, yaxt=False)
         for h, _, ch, _ in dens:
             for i in range(brk.shape[0] - 1):
                 if horizontal:
@@ -292,7 +292,7 @@ def plot_int_only(
 
     if ax_x is not None:
         margin(ax_x, est, hx_breaks, adj[0], xl, True, bd[0], lw[0])
-    metafopy.plot.plain.plain_plot(ax_main, xl, yl, labels[0], labels[1], bty='l')
+    _ = metafopy.plot.plain.plain_plot(ax_main, xl, yl, labels[0], labels[1], bty='l')
     metafopy.plot.draw.scatter(ax_main, est, hv, pch=pch, cex=cex, cols=col_pnts)
     if ax_y is not None:
         margin(ax_y, hv, hy_breaks, adj[1], yl, False, bd[1], lw[1])

@@ -94,7 +94,7 @@ def check_r(ctx: Context) -> Outcome:
         audit.config.R_DIR / 'versions.R',
         str(ctx.work / 'r-versions.json'),
     )
-    # auditme: accept[filesystem-op-without-envelope] an OSError on the work directory the run itself wrote is an environment failure, reported as it is
+    # auditme: accept[filesystem-op-without-envelope] OSError on its work dir: environment failure  # auditme: accept[pure-name-has-side-effect] check-r step
     versions: Json = json.loads((ctx.work / 'r-versions.json').read_text())
     out = Outcome()
     if versions.get('metafor') != audit.config.METAFOR_VERSION:

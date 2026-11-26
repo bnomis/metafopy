@@ -138,7 +138,7 @@ def test_glm_fails_like_r(name: str) -> None:
     """The log/identity-link ``glm`` cannot start (no valid fitted means), so R and metafopy both stop."""
     assert REF[name]['error'].startswith('Cannot fit FE model')
     with pytest.raises(metafopy.errors.EstimationError, match='Cannot fit FE model'):
-        fit_with_warnings(name)
+        _ = fit_with_warnings(name)
 
 
 @pytest.mark.parametrize('name', LME4_FAILS)

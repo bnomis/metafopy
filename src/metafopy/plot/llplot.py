@@ -275,7 +275,7 @@ def llplot(
     yl = (0.0, float(numpy.nanmax(lls))) if ylim is None else (float(min(ylim)), float(max(ylim)))
     xlab_c = ('Observed Outcome' if measure == 'GEN' else 'Log Odds Ratio') if xlab is None else xlab
     ylab_c = ('Scaled Likelihood' if scale else 'Likelihood') if ylab is None else ylab
-    metafopy.plot.plain.plain_plot(axx, xl, yl, xlab_c, ylab_c, thin_ylabels=True)
+    _ = metafopy.plot.plain.plain_plot(axx, xl, yl, xlab_c, ylab_c, thin_ylabels=True)
     for i in numpy.argsort(1 / vv, kind='stable'):
         metafopy.plot.draw.line(axx, xs, lls[i], lty=lty_l[i], col=col_l[i], lw=float(lwd_l[i]))
     if refline is not None and not math.isnan(refline):

@@ -336,6 +336,7 @@ def hist_breaks(x: FloatArray, breaks: typing.Any = 'Sturges') -> FloatArray:
     if isinstance(breaks, str):
         name = breaks.lower()
         n = x.shape[0]
+        # auditme: accept[assert-never-missing] breaks is user input; an unknown name raises InputError
         if name == 'sturges':
             nclass = math.ceil(math.log2(n) + 1)
         elif name == 'scott':

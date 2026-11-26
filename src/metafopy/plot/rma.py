@@ -74,7 +74,7 @@ def residual_panel(ax: matplotlib.axes.Axes, z: FloatArray, ids: tuple[int, ...]
     """The standardized residuals in study order, joined by a line (the last panel of ``plot.rma.uni``)."""
     k = int(z.shape[0])
     pos = numpy.arange(1, k + 1, dtype=float)
-    metafopy.plot.plain.plain_plot(ax, (1.0, float(k)), residual_bounds(z), 'Study', '', bty='l', xat=pos, xlabels=[str(i) for i in ids], thin_xlabels=True)
+    _ = metafopy.plot.plain.plain_plot(ax, (1.0, float(k)), residual_bounds(z), 'Study', '', bty='l', xat=pos, xlabels=[str(i) for i in ids], thin_xlabels=True)
     not_na = ~numpy.isnan(z)
     metafopy.plot.draw.line(ax, pos[not_na], z[not_na], col=metafopy.plot.rutils.coladj(-0.2))
     metafopy.plot.draw.line(ax, pos, z)
@@ -87,7 +87,7 @@ def residual_panel(ax: matplotlib.axes.Axes, z: FloatArray, ids: tuple[int, ...]
 
 def fitted_panel(ax: matplotlib.axes.Axes, pred: FloatArray, z: FloatArray) -> None:
     """The standardized residuals against the fitted values (the third panel of ``plot.rma.uni`` for a meta-regression)."""
-    metafopy.plot.plain.plain_plot(
+    _ = metafopy.plot.plain.plain_plot(
         ax, (float(numpy.nanmin(pred)), float(numpy.nanmax(pred))), residual_bounds(z), 'Fitted Value', 'Standardized Residual', bty='l'
     )
     reference_lines(ax)

@@ -535,6 +535,7 @@ def con_e(v: FloatArray, r: FloatArray, term: Term, vctransf: bool, vccov: bool)
 
     n1 = term.Z1.shape[1]
     E: FloatArray
+    # auditme: accept[assert-never-missing] the else is the spatial structures; struct is a str validated earlier
     if struct == 'CS':
         E = numpy.full((n1, n1), r[0] * v[0])
         numpy.fill_diagonal(E, v[0])

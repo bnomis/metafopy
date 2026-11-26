@@ -191,7 +191,7 @@ def radial(
     axx.set_box_aspect(1)
     pos = axx.get_position()  # room for the z-axis label on the left and the arcs on the right (metafor widens the margins)
     axx.set_position((pos.x0 + 0.2 * pos.width, pos.y0, 0.58 * pos.width, pos.height))
-    metafopy.plot.plain.plain_plot(axx, xlims, zlims, xlab, '', bty='n', xaxt=False, yaxt=False, xaxs_i=True, yaxs_i=True, cex_lab=cex_lab_)
+    _ = metafopy.plot.plain.plain_plot(axx, xlims, zlims, xlab, '', bty='n', xaxt=False, yaxt=False, xaxs_i=True, yaxs_i=True, cex_lab=cex_lab_)
     metafopy.plot.draw.poly(axx, [0, xmax, xmax, 0], [zcrit, zcrit + xmax * beta, -zcrit + xmax * beta, -zcrit], col=back_c, border=None, zorder=0.6)
     metafopy.plot.draw.seg(axx, 0, 0, xmax, xmax * beta, lty='solid')
     metafopy.plot.draw.seg(axx, 0, -zcrit, xmax, -zcrit + xmax * beta, lty='dotted')

@@ -227,7 +227,7 @@ def plot_selmodel(
 
     axx = metafopy.plot.rutils.get_ax(ax)
     if not add:
-        metafopy.plot.plain.plain_plot(axx, xl, yl, 'p-value', 'Relative Likelihood of Selection', '', bty=bty)
+        _ = metafopy.plot.plain.plain_plot(axx, xl, yl, 'p-value', 'Relative Likelihood of Selection', '', bty=bty)
     line_col = metafopy.plot.draw.FG if col is None else col
     style: typing.Literal['steps-post', 'default'] = 'steps-post' if stepwise else 'default'
     if do_ci:
