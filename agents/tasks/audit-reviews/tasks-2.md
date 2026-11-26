@@ -30,7 +30,7 @@ not make.
 
 ## Task 1: Starting checks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** all
@@ -39,23 +39,25 @@ not make.
 
 **Subtasks:**
 
-- [ ] Run `direnv exec /Users/simonb/src/metafopy auditor check . > <scratch>/audit-start.jsonl` and confirm every hit is accepted
-- [ ] For each of A1, A4, A17, T1, Doc4 and Doc5 run the ledger report and record its open count in this task's Notes; review-2 measured
+- [x] Run `direnv exec /Users/simonb/src/metafopy auditor check . > <scratch>/audit-start.jsonl` and confirm every hit is accepted
+- [x] For each of A1, A4, A17, T1, Doc4 and Doc5 run the ledger report and record its open count in this task's Notes; review-2 measured
       20, 10, 61, 6, 39 and 20 on 2026-11-26. A different count stops the task as `blocked`, naming the question and both counts
-- [ ] Check the new module name is free: `grep -rnw 'harness_io' src/audit` prints nothing (Task 10 adds `src/audit/harness_io.py`);
+- [x] Check the new module name is free: `grep -rnw 'harness_io' src/audit` prints nothing (Task 10 adds `src/audit/harness_io.py`);
       otherwise stop as `blocked`
 
 **Acceptance Criteria:**
 
-- [ ] The sweep is clean and the six counts match review-2's
+- [x] The sweep is clean and the six counts match review-2's
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
 - Key files: `agents/audit-reviews/review-2.md`, `agents/audit-reviews/ledger/`
+- Checked 2026-11-26: the sweep has only accepted hits; open counts A1 20, A4 10, A17 61, T1 6, Doc4 39, Doc5 20, all matching review-2;
+  `harness_io` is unused in `src/audit`.
 
 ---
 
