@@ -22,7 +22,7 @@ the log-link spec ships, so its `restarts` setting and tests are in place.
 
 Note 2026-11-25: the log-link restarts in `fit_rma_ls` and `control['restarts']` are in place (spec `agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md`); this item's identity-link fix can now build on them.
 
-Spec: agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md; tasks: not yet written.
+Spec: agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md; tasks: agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md.
 
 ## Auditor rev 133ca2c reports unaccepted hits under three new rules
 
