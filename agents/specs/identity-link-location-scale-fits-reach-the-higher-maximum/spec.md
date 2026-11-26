@@ -1,8 +1,9 @@
 # Identity-link location-scale fits reach the higher maximum
 
-**Version:** 1.0
-**Status:** proposed
+**Version:** 1.1
+**Status:** approved
 **Date:** 2026-11-26
+**Review:** `agents/reviews/identity-link-location-scale-fits-reach-the-higher-maximum-spec.md` (page https://claude.ai/artifact/BKmKMVHKKBrZjvFvSJMWhS); answered 2026-11-26: approved, with every choice under "Choices made, not asked".
 
 With `link='identity'` the likelihood of a location-scale model (`rma_uni(..., scale=)`) is maximised over `Z alpha >= 0`, and its maximum can lie
 on a face where `tau2_i = 0` for some rows. metafopy, like metafor 5.2-1, fits from one start (`start_alpha`), runs the optimiser (`constrOptim`'s

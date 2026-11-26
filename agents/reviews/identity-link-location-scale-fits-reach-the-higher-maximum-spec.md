@@ -61,3 +61,13 @@ None open.
 
 ## Answers
 
+Answered on 2026-11-26 (06:39 UTC) on the review page, read back from its `answers` collection. No item has a comment.
+
+| Item | Answer |
+|---|---|
+| The spec: identity-link location-scale fits reach the higher maximum | Approved |
+| Choice: the identity link follows the choice of 2026-11-25 and shares `control['restarts']` | Approved |
+| Choice: polish only, no optimiser refit | Approved |
+| Choice: the reflection start is kept | Approved |
+| Choice: the test reference is left as it is | Approved |
+| Choice: the same conditions as the log-link restart | Approved |
