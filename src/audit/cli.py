@@ -7,6 +7,7 @@ import time
 
 import audit.config
 import audit.errors
+import audit.harness_io
 import audit.recall
 import audit.report
 import audit.steps
@@ -116,7 +117,7 @@ def recall(args: argparse.Namespace) -> int:
     corpus = audit.recall.Corpus.load()
     numbers = sorted(corpus.audits) if args.recall == 'all' else [int(n) for n in args.recall.split(',')]
     out = args.out or audit.config.WORK / 'runs' / ('recall-' + time.strftime('%Y%m%d-%H%M%S'))
-    out.mkdir(parents=True, exist_ok=True)
+    audit.harness_io.ensure_dir(out, 'create the run directory')
     results: dict[int, dict[str, bool]] = {}
     for number in numbers:
         items = [i for i in corpus.items if i.audit == number]
@@ -146,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f'unknown steps: {", ".join(sorted(unknown))}', file=sys.stderr)
         return 2
     out = args.out or audit.config.WORK / 'runs' / time.strftime('%Y%m%d-%H%M%S')
-    out.mkdir(parents=True, exist_ok=True)
+    audit.harness_io.ensure_dir(out, 'create the run directory')
     ctx = audit.steps.Context(
         work=out,
         jobs=args.jobs,

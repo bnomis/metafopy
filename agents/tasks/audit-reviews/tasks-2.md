@@ -362,7 +362,7 @@ conventions, so that I am not misled.
 
 ## Task 11: Route the harness's 54 call sites through the helpers
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** large
 **Source Reference:** D1 (answered "wrap"), F5 (A1)
@@ -371,27 +371,27 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] List the sites: the open ones from `direnv exec /Users/simonb/src/metafopy auditor phaseb report . --question A1` (20 on 2026-11-26),
+- [x] List the sites: the open ones from `direnv exec /Users/simonb/src/metafopy auditor phaseb report . --question A1` (20 on 2026-11-26),
       and the dismissed ones that still carry a finding:
       `python3 -c "import json; [print(d['id']) for d in map(json.loads, open('agents/audit-reviews/ledger/A1.jsonl')) if d.get('dismissed') and any(d['findings'].values())]"`
       (34 on 2026-11-26)
-- [ ] Replace each call with the matching `audit.harness_io` helper, passing a `what` that names the step; where a site already catches
+- [x] Replace each call with the matching `audit.harness_io` helper, passing a `what` that names the step; where a site already catches
       `OSError` and returns a default (`engine.resident_bytes`, `report.git_head`), raise through the helper instead only if the default is
       not a deliberate fallback the code documents; otherwise stop as `blocked` and name the site
-- [ ] Remove each `# auditme: accept[filesystem-op-without-envelope]` marker the change makes stale
-- [ ] Add each function's `HarnessError` to its `Raises:` section where it has one
+- [x] Remove each `# auditme: accept[filesystem-op-without-envelope]` marker the change makes stale
+- [x] Add each function's `HarnessError` to its `Raises:` section where it has one
 
 **Acceptance Criteria:**
 
-- [ ] No call in the two lists above can raise `OSError` or a `subprocess` error untranslated
-- [ ] The harness tests pass unchanged
+- [x] No call in the two lists above can raise `OSError` or a `subprocess` error untranslated
+- [x] The harness tests pass unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/audit` passes
-- [ ] `pytest` on the test files of every changed `src/audit` module passes (find them with `grep -rln 'audit.<module>' src/tests`)
-- [ ] `direnv exec /Users/simonb/src/metafopy auditor check .` reports no unaccepted hit
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/audit` passes
+- [x] `pytest` on the test files of every changed `src/audit` module passes (find them with `grep -rln 'audit.<module>' src/tests`)
+- [x] `direnv exec /Users/simonb/src/metafopy auditor check .` reports no unaccepted hit
 
 **Notes:**
 

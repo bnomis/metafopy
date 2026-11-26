@@ -16,6 +16,7 @@ import audit.domains
 import audit.engine
 import audit.errors
 import audit.generate
+import audit.harness_io
 import audit.pyrun
 import audit.rdriver
 import audit.scripts
@@ -87,15 +88,15 @@ def check_r(ctx: Context) -> Outcome:
     """Check the installed R library against ``data/r-versions.json``. Drift becomes a note in the report when ``ctx.allow_r_drift``.
 
     Raises:
-        audit.errors.HarnessError: the installed metafor is not the oracle version, the pin file is missing, or there is drift (naming each
-            difference and how to proceed) without ``ctx.allow_r_drift``.
+        audit.errors.HarnessError: the installed metafor is not the oracle version, the pin file is missing, there is drift (naming each
+            difference and how to proceed) without ``ctx.allow_r_drift``, or a file it reads cannot be read.
     """
     audit.rdriver.run(
         audit.config.R_DIR / 'versions.R',
         str(ctx.work / 'r-versions.json'),
     )
-    # auditme: accept[filesystem-op-without-envelope] OSError on its work dir: environment failure  # auditme: accept[pure-name-has-side-effect] check-r step
-    versions: Json = json.loads((ctx.work / 'r-versions.json').read_text())
+    # auditme: accept[filesystem-op-without-envelope] read_text raises HarnessError  # auditme: accept[pure-name-has-side-effect] check-r step
+    versions: Json = json.loads(audit.harness_io.read_text(ctx.work / 'r-versions.json', 'read the R versions'))
     out = Outcome()
     if versions.get('metafor') != audit.config.METAFOR_VERSION:
         raise audit.errors.HarnessError(f'metafor {versions.get("metafor")} is installed, the oracle is {audit.config.METAFOR_VERSION}')
@@ -105,7 +106,7 @@ def check_r(ctx: Context) -> Outcome:
             'no data/r-versions.json: pin the R library first by copying the r-versions.json that `Rscript src/audit/r/versions.R <out.json>` '
             'writes to src/audit/data/r-versions.json'
         )
-    lock: Json = json.loads(lock_path.read_text())
+    lock: Json = json.loads(audit.harness_io.read_text(lock_path, 'read the R version pin'))
     drift = library_drift(lock, versions)
     pinned_fma = lock.get('R_fma')
     fused: bool | None = getattr(metafopy.core.dbinom, 'FUSED', None)
@@ -142,8 +143,10 @@ def build_universe(ctx: Context) -> Outcome:
     out = Outcome()
     snapshot = audit.universe.snapshot_path()
     if ctx.update_universe:
-        snapshot.write_text(path.read_text())
-    elif snapshot.exists() and json.loads(snapshot.read_text()) != json.loads(path.read_text()):
+        audit.harness_io.write_text(snapshot, audit.harness_io.read_text(path, 'read the universe'), 'write the universe snapshot')
+    elif snapshot.exists() and json.loads(audit.harness_io.read_text(snapshot, 'read the universe snapshot')) != json.loads(
+        audit.harness_io.read_text(path, 'read the universe')
+    ):
         out.findings.append(
             Finding(
                 'universe',

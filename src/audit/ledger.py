@@ -19,6 +19,7 @@ import tomllib
 import typing
 
 import audit.config
+import audit.harness_io
 
 __all__ = [
     'Entry',
@@ -92,7 +93,7 @@ class Ledger:
     @classmethod
     def load(cls) -> Ledger:
         path = audit.config.DATA_DIR / 'known.toml'
-        doc = tomllib.loads(path.read_text()) if path.exists() else {}
+        doc = tomllib.loads(audit.harness_io.read_text(path, 'load the ledger')) if path.exists() else {}
         entries = [
             Entry(e['match'], e.get('kind', '*'), e.get('path', '*'), e.get('detail', '*'), e['reason'], e.get('ref', ''), e.get('load_dependent', False))
             for e in doc.get('known', [])

@@ -71,3 +71,21 @@ def test_a_missing_executable_names_the_command(tmp_path: pathlib.Path) -> None:
 def test_a_timeout_is_translated() -> None:
     with pytest.raises(audit.errors.HarnessError, match=r'sleep'):
         audit.harness_io.run_command([sys.executable, '-c', 'import time; time.sleep(5)  # sleep'], 'testing', timeout=0.2)
+
+
+def test_append_text_adds_to_a_file_and_names_the_path_on_failure(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'a.txt'
+    audit.harness_io.append_text(path, 'one', 'test')
+    audit.harness_io.append_text(path, 'two', 'test')
+    assert path.read_text() == 'onetwo'
+    missing = tmp_path / 'no' / 'a.txt'
+    with pytest.raises(audit.errors.HarnessError, match='no'):
+        audit.harness_io.append_text(missing, 'x', 'test')
+
+
+def test_read_text_replaces_undecodable_bytes_on_request(tmp_path: pathlib.Path) -> None:
+    path = tmp_path / 'b.txt'
+    path.write_bytes(b'a\xffb')
+    assert audit.harness_io.read_text(path, 'test', errors='replace') == 'a�b'
+    with pytest.raises(UnicodeDecodeError):
+        audit.harness_io.read_text(path, 'test')

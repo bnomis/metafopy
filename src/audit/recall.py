@@ -10,13 +10,13 @@ import fnmatch
 import json
 import pathlib
 import re
-import subprocess
 import sys
 import tomllib
 import typing
 
 import audit.config
 import audit.errors
+import audit.harness_io
 
 __all__ = [
     'Corpus',
@@ -59,7 +59,7 @@ class Corpus:
 
     @classmethod
     def load(cls) -> Corpus:
-        doc = tomllib.loads((audit.config.DATA_DIR / 'recall.toml').read_text())
+        doc = tomllib.loads(audit.harness_io.read_text(audit.config.DATA_DIR / 'recall.toml', 'load the recall corpus'))
         items = [
             Item(i['id'], i['audit'], i['text'], i.get('find', []), i.get('hint', []), i.get('reach', ''), i.get('why', ''), i.get('oracle_moved', ''))
             for i in doc['item']
@@ -104,8 +104,10 @@ def checkout(commit: str) -> pathlib.Path:
     """A detached worktree of metafopy at ``commit``, reused between runs."""
     path = audit.config.WORK / 'worktrees' / commit
     if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(['git', 'worktree', 'add', '--detach', str(path), commit], cwd=audit.config.ROOT, check=True, capture_output=True)
+        audit.harness_io.ensure_dir(path.parent, 'create the worktrees directory')
+        audit.harness_io.run_command(
+            ['git', 'worktree', 'add', '--detach', str(path), commit], f'check out {commit}', cwd=audit.config.ROOT, check=True, capture_output=True
+        )
     return path
 
 
@@ -130,8 +132,8 @@ def run_audit(number: int, spec: Json, items: list[Item], out: pathlib.Path, job
         command += ['--steps', ','.join(steps_for(items))]
         for hint in hints(items):
             command += ['--only', hint]
-    subprocess.run(command, check=True)
-    doc: Json = json.loads((run_dir / 'findings.json').read_text())
+    audit.harness_io.run_command(command, f'run the audit for audit {number}', check=True)
+    doc: Json = json.loads(audit.harness_io.read_text(run_dir / 'findings.json', 'read the audit findings'))
     findings: list[Json] = doc['new'] + doc['known']
     return findings
 
@@ -168,5 +170,5 @@ def write(out: pathlib.Path, corpus: Corpus, results: dict[int, dict[str, bool]]
             lines.append(f'- `{i.id}`: {i.text}{again}; {i.oracle_moved}')
         lines.append('')
     path = out / 'recall.md'
-    path.write_text('\n'.join(lines))
+    audit.harness_io.write_text(path, '\n'.join(lines), 'write the recall report')
     return path, ok

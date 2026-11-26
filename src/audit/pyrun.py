@@ -18,6 +18,7 @@ import matplotlib
 import matplotlib.pyplot
 
 import audit.config
+import audit.harness_io
 import audit.printdiff
 import audit.pycall
 import audit.valuetree
@@ -143,8 +144,7 @@ def run_guarded(call: collections.abc.Callable[[], object], timeout: float) -> t
         record.update(status='error', error_class=type(e).__name__, error=str(e)[:300])
         trace_file = os.environ.get('METAFOPY_AUDIT_TRACE')  # a file to append the traceback of every failing case to, for debugging the harness
         if trace_file:
-            with open(trace_file, 'a') as handle:
-                handle.write(''.join(traceback.format_exception(e)) + '\n')
+            audit.harness_io.append_text(pathlib.Path(trace_file), ''.join(traceback.format_exception(e)) + '\n', 'write the case traceback')
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         record['drawn'] = drawn_text()
@@ -263,9 +263,9 @@ def load_shard(
 ) -> tuple[list[Json], dict[str, Json], audit.pycall.Env, dict[str, str]]:
     """Cap memory, then read the shard's cases and R's results and build the fixtures: (cases, R results by id, env, fixture errors)."""
     audit.config.limit_memory()
-    fixtures = json.loads(fixtures_path.read_text())
-    cases = json.loads(cases_path.read_text())
-    r_doc = json.loads(r_path.read_text())
+    fixtures = json.loads(audit.harness_io.read_text(fixtures_path, 'read the fixtures'))
+    cases = json.loads(audit.harness_io.read_text(cases_path, 'read the cases'))
+    r_doc = json.loads(audit.harness_io.read_text(r_path, 'read the R results'))
     r_by_id = {r['id']: r for r in r_doc['results']}
     metafopy.set_seed(1234)
     env, fixture_errors = build_env(fixtures)
@@ -287,7 +287,7 @@ def run_stream(fixtures_path: pathlib.Path, cases_path: pathlib.Path, r_path: pa
 
 if __name__ == '__main__':
     # The shard process: argv[1] is a job file holding run_stream's arguments (an internal entry point, not a CLI).
-    job_doc = json.loads(pathlib.Path(sys.argv[1]).read_text())
+    job_doc = json.loads(audit.harness_io.read_text(pathlib.Path(sys.argv[1]), 'read the job file'))
     run_stream(
         pathlib.Path(job_doc['fixtures_path']),
         pathlib.Path(job_doc['cases_path']),

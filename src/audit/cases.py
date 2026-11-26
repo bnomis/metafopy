@@ -6,6 +6,7 @@ import pathlib
 import typing
 
 import audit.config
+import audit.harness_io
 
 __all__ = [
     'Case',
@@ -29,12 +30,12 @@ class Case:
 
 
 def load_fixtures() -> list[dict[str, typing.Any]]:
-    out: list[dict[str, typing.Any]] = json.loads((audit.config.DATA_DIR / 'fixtures.json').read_text())
+    out: list[dict[str, typing.Any]] = json.loads(audit.harness_io.read_text(audit.config.DATA_DIR / 'fixtures.json', 'load the fixtures'))
     return out
 
 
 def write_cases(path: pathlib.Path, cases: list[Case]) -> None:
-    path.write_text(json.dumps([c.to_json() for c in cases]))
+    audit.harness_io.write_text(path, json.dumps([c.to_json() for c in cases]), 'write the cases')
 
 
 def shards[T](items: list[T], n: int) -> list[list[T]]:

@@ -7,6 +7,7 @@ import pathlib
 import typing
 
 import audit.config
+import audit.harness_io
 
 __all__ = [
     'Universe',
@@ -22,7 +23,7 @@ class Universe:
 
     @classmethod
     def load(cls, path: pathlib.Path) -> Universe:
-        doc: Json = json.loads(path.read_text())
+        doc: Json = json.loads(audit.harness_io.read_text(path, 'load the universe'))
         for entry in [*doc['functions'].values(), *doc['methods']]:
             if not isinstance(entry.get('body_choices'), dict):
                 entry['body_choices'] = {}

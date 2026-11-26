@@ -6,8 +6,10 @@ import subprocess
 import typing
 
 import audit.errors
+import audit.harness_io
 
 __all__ = [
+    'append_text',
     'ensure_dir',
     'read_text',
     'run_command',
@@ -17,12 +19,13 @@ __all__ = [
 ]
 
 
-def read_text(path: pathlib.Path, what: str) -> str:
+def read_text(path: pathlib.Path, what: str, errors: str = 'strict') -> str:
     """Read a UTF-8 text file.
 
     Args:
         path: The file to read.
         what: What the harness was doing, for the error message.
+        errors: How to treat undecodable bytes, as for ``str.decode``.
 
     Returns:
         The file's text.
@@ -31,7 +34,7 @@ def read_text(path: pathlib.Path, what: str) -> str:
         audit.errors.HarnessError: the file cannot be read.
     """
     try:
-        return path.read_text(encoding='utf-8')
+        return path.read_text(encoding='utf-8', errors=errors)
     except OSError as e:
         raise audit.errors.HarnessError(f'cannot read {path} ({what}): {type(e).__name__}') from e
 
@@ -49,6 +52,24 @@ def write_text(path: pathlib.Path, text: str, what: str) -> None:
     """
     try:
         path.write_text(text, encoding='utf-8')
+    except OSError as e:
+        raise audit.errors.HarnessError(f'cannot write {path} ({what}): {type(e).__name__}') from e
+
+
+def append_text(path: pathlib.Path, text: str, what: str) -> None:
+    """Append UTF-8 text to a file, creating it if need be.
+
+    Args:
+        path: The file to append to.
+        text: The text to append.
+        what: What the harness was doing, for the error message.
+
+    Raises:
+        audit.errors.HarnessError: the file cannot be written.
+    """
+    try:
+        with path.open('a', encoding='utf-8') as handle:
+            handle.write(text)
     except OSError as e:
         raise audit.errors.HarnessError(f'cannot write {path} ({what}): {type(e).__name__}') from e
 
