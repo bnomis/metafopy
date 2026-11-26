@@ -907,6 +907,22 @@ args = { yi = "yi", vi = "vi", mods = "~ perm", scale = "~ lat", method = "ML", 
 check = "test_derived.ls_fit"
 covers = ["ls.fit.ML.log"]
 
+# Permutation 18 of the exact permutest above with link = "identity" (agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md):
+# R metafor 5.2-1 stops at its default start (ll -12.62494606, z 0.2490); the higher maximum on the face tau2_{lat=0} = 0 (ll -11.42937466) is the
+# estimate the paper defines. `perm` is the permuted `lat` of the location part; the scale part keeps `lat`. The reference fit leaves Z alpha >= 0 by
+# formulas.IDENTITY_SLACK (tau2 = -1e-10 on the face), which raises its ll by 1.5e-8 over the exact face maximum metafopy reports, so the case
+# states the log-likelihood tolerance 1e-8 (relative).
+[[case]]
+id = "ls.fit.ML.identity.bcglat.permuted18"
+kind = "derived"
+function = "rma_uni"
+data = { tpos = [4, 6, 3, 62, 33, 180, 8, 505, 29, 17, 186, 5, 27], tneg = [119, 300, 228, 13536, 5036, 1361, 2537, 87886, 7470, 1699, 50448, 2493, 16886], cpos = [11, 29, 11, 248, 47, 372, 10, 499, 45, 65, 141, 3, 29], cneg = [128, 274, 209, 12619, 5761, 1079, 619, 87892, 7232, 1600, 27197, 2338, 17825], lat = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1], perm = [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1] }
+setup = { escalc = { measure = "RR", ai = "tpos", bi = "tneg", ci = "cpos", di = "cneg" } }
+args = { yi = "yi", vi = "vi", mods = "~ perm", scale = "~ lat", method = "ML", link = "identity", test = "z" }
+tolerance = 1e-8
+check = "test_derived.ls_fit"
+covers = ["ls.fit.ML.identity"]
+
 [[case]]
 id = "ls.permutest.scale.exact.ML.z.bcglat"
 kind = "derived"
