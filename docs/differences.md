@@ -600,8 +600,8 @@ with the higher log-likelihood, when the gain is more than `1e-6` and the end po
 standardised scale matrix whose smallest eigenvalue is positive and more than `1e-5` of the largest). A ridge end point, where a scale coefficient
 runs off to minus infinity, is never taken. The restart runs only when the link is `'log'`, `control={'restarts': True}` (the default),
 every scale coefficient is free (no fixed coefficient, so no `profile()` or `confint()` refit of a scale coefficient), `alpha_min` and
-`alpha_max` are infinite, `optbeta` is off, no weights are given, and the scale model has a column that is not constant. It is not done
-for the identity link. The refits of `permutest()`, `vif(sim=True)` and `profile()` of the location part run through the same fit, so they
+`alpha_max` are infinite, `optbeta` is off, no weights are given, and the scale model has a column that is not constant. The identity link
+restarts in its own way, described under [Location-scale fits with link="identity"](#location-scale-fits-with-linkidentity). The refits of `permutest()`, `vif(sim=True)` and `profile()` of the location part run through the same fit, so they
 restart too.
 
 In `permutest(exact=True)` of `mods = ~ lat`, `scale = ~ lat` on `dat.bcg`, the refit at permutation 433 (below, `perm` is the permuted
@@ -1970,6 +1970,18 @@ relative difference of 6.5e-4, and metafopy's log-likelihood is the higher (-7.1
 `ls.fit.{ML,REML}.identity.{bd,bcg}`, `property.ls.fit.{ML,REML}.identity.{bd,bcg}` and `property.ls.links.{ML,REML}.bd`. `confint()`,
 `profile()`, `permutest()` and `vif()` refit through the same fit, so their identity-link refits are polished too. The fit is not polished with
 `optbeta=True`.
+
+The identity-link likelihood can also have its maximum on a face where `tau2_i = 0` for some rows, which metafor's single start does not
+always reach. After the polish, metafopy polishes again from derived starts (one on each face `z_i' alpha = 0` that is feasible on every row,
+and one reflection of each scale slope when the scale model has a constant column) and keeps the end point with the higher log-likelihood,
+when the gain is more than `1e-6` and the information projected on the face where the maximum lies is positive definite. No optimiser
+runs for these starts: the barrier optimiser needs an interior start and drifts off a face maximum. The restart runs under the same
+conditions as the log link's: `control={'restarts': True}` (the default), every scale coefficient free, `optbeta` off, no weights, and a scale
+model with a column that is not constant. On the `ls.permutest.location.exact.ML.z.bcglat` data (`dat.bcg` `lat` as the location moderator and
+the scale moderator), the refit at permutation 18 of the exact `permutest` ends at a log-likelihood of -12.6249 in R, with a `z` of 0.2490 for
+the permuted moderator, and at -11.4294, with a `z` of -3.5966, here (checked 2026-11-26). The correctness case is
+`ls.fit.ML.identity.bcglat.permuted18`. `control={'restarts': False}` gives R's single start, polished; the restart leaves out fixed
+coefficients (`profile()` and `confint()` of a scale coefficient), `optbeta=True` and weights.
 
 *Why:* the maximum-likelihood estimate of Viechtbauer and Lopez-Lopez (2022, equations 7 to 9) is the maximiser of the log-likelihood, not a
 point within the optimiser's tolerance of it, and the correctness cases check the fit against an independent maximiser of the analytic

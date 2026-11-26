@@ -32,7 +32,7 @@ one Task 4 extends.
 
 ## Task 1: Starting checks and the baselines
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Implementation, Tests and records (the scoped audit); Cost
@@ -41,25 +41,25 @@ one Task 4 extends.
 
 **Subtasks:**
 
-- [ ] Check that no new name exists yet: `grep -rnwE 'identity_restart_starts|is_face_maximum|identity_restart_fit' src/metafopy` prints
+- [x] Check that no new name exists yet: `grep -rnwE 'identity_restart_starts|is_face_maximum|identity_restart_fit' src/metafopy` prints
       nothing; otherwise stop as `blocked`, naming the hit
-- [ ] Check that `LSControl.restarts`, `RESTART_GAIN`, `RESTART_RATIO` and `is_regular_maximum` exist in `src/metafopy/models/` (the log-link
+- [x] Check that `LSControl.restarts`, `RESTART_GAIN`, `RESTART_RATIO` and `is_regular_maximum` exist in `src/metafopy/models/` (the log-link
       spec's work); otherwise stop as `blocked`
-- [ ] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
-- [ ] Record, at the task's starting commit, with `link='identity'`: for permutations 18, 68, 679 and 914, metafopy's log-likelihood, the
+- [x] Create `measurements.md` beside the spec with a dated section for this task, inside `doc-counts` accept markers
+- [x] Record, at the task's starting commit, with `link='identity'`: for permutations 18, 68, 679 and 914, metafopy's log-likelihood, the
       `tau2` of each `lat` group and the location z from `rma_uni`, and the log-likelihood from `formulas.ls_reference_fit`; the log-likelihood of
       every one of the 1287 permutation fits, saved as JSON outside the repository (in the session scratchpad), with its path in
       `measurements.md`; the median time of 20 identity fits of permutation 18 and the time of one loop over the 1287 permutation fits
-- [ ] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
+- [x] Run the scoped audit on the unchanged code, `bin/metafor-audit.sh --only '*/ls_*'` (in the background; it is slow), and record the run
       directory and its count of unaccepted differences
 
 **Acceptance Criteria:**
 
-- [ ] `measurements.md` holds every baseline above, dated, with the commit; the four permutations' log-likelihoods match R's above to 1e-6
+- [x] `measurements.md` holds every baseline above, dated, with the commit; the four permutations' log-likelihoods match R's above to 1e-6
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 
@@ -71,7 +71,7 @@ one Task 4 extends.
 
 ## Task 2: The starts and the face guard
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API (`identity_restart_starts`, `is_face_maximum`); Implementation, The starts
@@ -80,26 +80,26 @@ one Task 4 extends.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_rma_ls_restarts.py`: on a binary `Z` with an intercept, `identity_restart_starts` gives the two `tau2_g = 0`
+- [x] Add tests to `src/tests/test_rma_ls_restarts.py`: on a binary `Z` with an intercept, `identity_restart_starts` gives the two `tau2_g = 0`
       starts (the other group's `tau2` unchanged) and the reflection that swaps the two `tau2`; on a continuous `Z` every start returned has
       `Z a >= 0`; a start's near-zero entries are exactly `0.0` (no `-0.` residue that makes `Z a` negative); `is_face_maximum` is true at a face
       maximum (permutation 18's, reached by `rma_ls_opt.polish_identity` from its `tau2_{lat=0} = 0` start, ll `-11.42937466`) and false on a
       face whose projected information is singular. Run them on the code before this task: they must fail on the missing names
-- [ ] Add `identity_restart_starts` and `is_face_maximum` to `src/metafopy/models/rma_ls_fit.py` with the spec's signatures and docstrings: the
+- [x] Add `identity_restart_starts` and `is_face_maximum` to `src/metafopy/models/rma_ls_fit.py` with the spec's signatures and docstrings: the
       projection `a = alpha - G r (r' alpha) / (r' G r)` with `G = pinv(Z'Z)` per distinct non-zero row, the zeroing below
       `1e-12 * max(1, max|a|)`, the intercept top-up within `ACTIVE_TOL * max(1, max|Z a|)`, the reflection about each non-constant column's
       midrange when `Z` has a constant column, and the active rows within `rma_ls_opt.ACTIVE_TOL` of zero relative to the largest `z_i' alpha`
-- [ ] Link the paper (Viechtbauer and Lopez-Lopez 2022, doi:10.1002/jrsm.1562) and the R source of the identity fit in the docstrings
+- [x] Link the paper (Viechtbauer and Lopez-Lopez 2022, doi:10.1002/jrsm.1562) and the R source of the identity fit in the docstrings
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass and failed before the change; nothing calls the new functions yet, so `pytest src/tests/test_rma_ls.py` is unchanged
+- [x] The new tests pass and failed before the change; nothing calls the new functions yet, so `pytest src/tests/test_rma_ls.py` is unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
-- [ ] `pytest src/tests/test_rma_ls_restarts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/tests/test_rma_ls_restarts.py` passes
+- [x] `pytest src/tests/test_rma_ls_restarts.py` passes
 
 **Notes:**
 
@@ -112,7 +112,7 @@ one Task 4 extends.
 
 ## Task 3: The restart in `fit_rma_ls`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API (`identity_restart_fit`, `LSControl.restarts`); Implementation, When it runs and The restart; Error handling; Settings;
@@ -123,33 +123,33 @@ maximum on its face.
 
 **Subtasks:**
 
-- [ ] Add tests to `src/tests/test_rma_ls_restarts.py`: on permutation 18 with `link='identity'`, `rma_uni` reaches ll `-11.42937466` (to 1e-6)
+- [x] Add tests to `src/tests/test_rma_ls_restarts.py`: on permutation 18 with `link='identity'`, `rma_uni` reaches ll `-11.42937466` (to 1e-6)
       with the `tau2` of `lat = 0` equal to 0, and with `control={'restarts': False}` ll `-12.62494606` and location z `0.2490`; a
       `restarts=False` identity fit equals the fit of the code before this task on a case of `src/tests/test_rma_ls.py`. Run them before the change:
       the first must fail
-- [ ] Add `identity_restart_fit` to `src/metafopy/models/rma_ls_fit.py` as the spec gives it: each start through `polish_identity` with the fit's
+- [x] Add `identity_restart_fit` to `src/metafopy/models/rma_ls_fit.py` as the spec gives it: each start through `polish_identity` with the fit's
       own `loglik`, `ls_score` and `ls_information` and every coefficient free, no optimiser; skip a start that raises `EstimationError` or
       `numpy.linalg.LinAlgError` or ends non-finite; keep the best end point only when it beats `par_opt` by more than `RESTART_GAIN` and
       `is_face_maximum` holds there
-- [ ] Call it in `fit_rma_ls` right after the existing `polish_identity` of the end point, under exactly the spec's conditions (identity link,
+- [x] Call it in `fit_rma_ls` right after the existing `polish_identity` of the end point, under exactly the spec's conditions (identity link,
       `con.restarts`, no `optbeta`, no user weights, `alpha_arg` all NaN, a non-constant column of `Z`), before the Hessian
-- [ ] Update the docstring of `LSControl.restarts` in `src/metafopy/models/rma_ls_result.py` to say it covers both links
-- [ ] Record in `measurements.md`: the four permutations' new ll, `tau2` and z; over the 1287 permutation fits, the count whose ll changed by more
+- [x] Update the docstring of `LSControl.restarts` in `src/metafopy/models/rma_ls_result.py` to say it covers both links
+- [x] Record in `measurements.md`: the four permutations' new ll, `tau2` and z; over the 1287 permutation fits, the count whose ll changed by more
       than 1e-6 against Task 1's JSON (85 expected from the prototype), and that none went down; the median time of 20 identity fits of
       permutation 18 and of the 1287-fit loop, against Task 1's
-- [ ] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` and
+- [x] Run `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` and
       `pytest src/tests/correctness/test_derived.py -k "ls."` (slow included): no test may change its result, or stop as `blocked` naming it
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and the first failed before the change; no permutation fit ends below its Task 1 value; every listed test and
+- [x] The new tests pass, and the first failed before the change; no permutation fit ends below its Task 1 value; every listed test and
       location-scale correctness case keeps its result
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_result.py src/tests/test_rma_ls_restarts.py` passes
-- [ ] `pytest src/tests/test_rma_ls_restarts.py src/tests/test_rma_ls.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/models/rma_ls_fit.py src/metafopy/models/rma_ls_result.py src/tests/test_rma_ls_restarts.py` passes
+- [x] `pytest src/tests/test_rma_ls_restarts.py src/tests/test_rma_ls.py` passes
 
 **Notes:**
 
@@ -161,7 +161,7 @@ maximum on its face.
 
 ## Task 4: The correctness case and the R fixture
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Implementation, Tests and records (the correctness case)
@@ -171,37 +171,40 @@ port of metafor's single start.
 
 **Subtasks:**
 
-- [ ] Add a correctness case `ls.fit.ML.identity.bcglat.permuted18` to `src/tests/correctness/cases/location_scale.toml`, beside
+- [x] Add a correctness case `ls.fit.ML.identity.bcglat.permuted18` to `src/tests/correctness/cases/location_scale.toml`, beside
       `ls.fit.ML.log.bcglat.permuted433` and in its shape (the permuted `lat` as the data column `perm`, `mods = "~ perm"`, `scale = "~ lat"`,
       `link = "identity"`), with a comment naming this spec and R's ll at its default start, checked by `test_derived.ls_fit` against
       `ls_reference_fit`
-- [ ] Add `out$bcg_perm18_identity` to `src/tests/r/generate_location_scale.R`, beside `out$bcg_perm433`, with a comment naming this spec;
+- [x] Add `out$bcg_perm18_identity` to `src/tests/r/generate_location_scale.R`, beside `out$bcg_perm433`, with a comment naming this spec;
       regenerate `src/tests/reference/phase5/location_scale.json`; check with `git diff` that no other entry of the fixture changed, or stop as
       `blocked`
-- [ ] Add `'bcg_perm18_identity'` to the R-parity fits of `src/tests/test_rma_ls.py` with `link='identity'` and `control={'restarts': False}`
+- [x] Add `'bcg_perm18_identity'` to the R-parity fits of `src/tests/test_rma_ls.py` with `link='identity'` and `control={'restarts': False}`
       (ll `-12.62494606`, z `0.2490` on 2026-11-26)
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_rma_ls.py src/tests/correctness/test_derived.py -k "ls."` passes, the new case and the new parity test included
+- [x] `pytest src/tests/test_rma_ls.py src/tests/correctness/test_derived.py -k "ls."` passes, the new case and the new parity test included
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_rma_ls.py` passes
-- [ ] The pytest command of the acceptance criterion passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_rma_ls.py` passes
+- [x] The pytest command of the acceptance criterion passes
 
 **Notes:**
 
 - Depends on Task 3
 - Find the permuted vector of permutation 18 with `formulas.distinct_label_orders`, as Task 1 does, and write it into both the case and the R
   script literally
+- The R regeneration moved optimiser noise (about 1e-9) in other fixture entries, so only the new `bcg_perm18_identity` entry was spliced into
+  the committed JSON (no other line changed). The reference fit leaves `Z alpha >= 0` by `formulas.IDENTITY_SLACK`, which raises its ll by
+  1.5e-8: the case states `tolerance = 1e-8`, which `test_derived.ls_fit` now uses for the log-likelihood when a case gives one.
 
 ---
 
 ## Task 5: Documentation and the scoped audit
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation, Tests and records (docs and audit); Settings
@@ -211,23 +214,23 @@ accounts for every difference the restart causes.
 
 **Subtasks:**
 
-- [ ] Add to `docs/differences.md`, under "Location-scale fits with link="identity"": the restart, when it runs, the bcglat permutation 18
+- [x] Add to `docs/differences.md`, under "Location-scale fits with link="identity"": the restart, when it runs, the bcglat permutation 18
       example with R's and metafopy's log-likelihoods, `control={'restarts': False}`, and what is left out (fixed coefficients, `optbeta`,
       weights); update the log-link entry under "Optimiser stop points" where it says the identity link is left out
-- [ ] Update every other mention that `restarts` covers the log link only (`grep -rn "restarts" docs src/metafopy`)
-- [ ] Run `bin/metafor-audit.sh --only '*/ls_*'` again and compare with Task 1's run: each new difference is a restarted identity fit (check its
+- [x] Update every other mention that `restarts` covers the log link only (`grep -rn "restarts" docs src/metafopy`)
+- [x] Run `bin/metafor-audit.sh --only '*/ls_*'` again and compare with Task 1's run: each new difference is a restarted identity fit (check its
       log-likelihood is higher than R's); record each in `src/audit/data/known.toml` with this spec as its reason. A new difference of any other
       kind stops the task as `blocked`
-- [ ] Record both runs' directories and counts in `measurements.md`
+- [x] Record both runs' directories and counts in `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] The scoped audit has no unaccepted difference; `pytest src/tests/test_docs_examples.py` passes
+- [x] The scoped audit has no unaccepted difference; `pytest src/tests/test_docs_examples.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 
@@ -238,7 +241,7 @@ accounts for every difference the restart causes.
 
 ## Task 6: The full local check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** the whole spec
@@ -248,27 +251,27 @@ to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included)
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run `pytest src/tests/correctness/test_derived.py -k "ls."` (slow cases included)
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1/final-tests.log`
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Move the `TODO.md` item "Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`" to the end of `DONE.md`:
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Move the `TODO.md` item "Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`" to the end of `DONE.md`:
       append its heading and body unchanged, then `Done: <date> - agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md,
       agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md.`, and remove it from `TODO.md`
 
 **Acceptance Criteria:**
 
-- [ ] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
+- [x] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy src/metafopy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy src/metafopy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

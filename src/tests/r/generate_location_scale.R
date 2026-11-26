@@ -351,6 +351,13 @@ bcp$lat <- c(1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1)
 bcp$perm <- c(0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0)
 out$bcg_perm433 <- fit(rma(yi, vi, mods = ~ perm, scale = ~ lat, data = bcp, method = "ML"))
 
+# Permutation 18 with link = "identity" (agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md): metafor stops at its
+# default start (ll -12.62494606), below the maximum on the face tau2_{lat=0} = 0 that metafopy's restart reaches.
+bcq <- bc
+bcq$lat <- c(1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1)
+bcq$perm <- c(0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1)
+out$bcg_perm18_identity <- fit(rma(yi, vi, mods = ~ perm, scale = ~ lat, data = bcq, link = "identity", method = "ML"))
+
 # exact permutation tests on a small data set (6 studies of dat.bangertdrowns2004 for which the scale model is identified)
 bd6 <- bdc[29:34, ]
 out$bd6_data <- frame_cols(bd6[, c("author", "year", "ni", "ni100", "meta", "imag", "subject", "yi", "vi")])

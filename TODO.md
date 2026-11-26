@@ -4,26 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`
-
-<!-- doc-counts: accept-start found on 2026-11-25 - a dated record, not a claim about the present -->
-Found on 2026-11-25 at `9bb0947` while prototyping `agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md` (macOS arm64): on the data of
-`ls.permutest.location.exact.ML.z.bcglat` fitted with `link='identity'`, 83 of the 1287 permutations of the location model have a higher maximum
-than metafopy's single-start fit reaches, most of them on the face `tau2 = 0` of one `lat` group (a valid boundary estimate under this link). No
-start kind tried (slope reflection, a start just inside that face, a start mapped from the log-link fit) recovered more than 12 of the 83.
-<!-- doc-counts: accept-end -->
-
-Cause: the identity-link fit (`fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py`, then `rma_ls_opt.polish_identity`) starts once, from
-`start_alpha`, as metafor does; the log-link restarts of the spec above leave this link out (approved choice, 2026-11-25).
-
-Fix direction: design starts for the identity link (one per group with that group's `tau2` near zero is untested) and a guard on the active face
-(the information on the face, as `formulas.ls_face_basis` in `src/tests/correctness/formulas.py` builds it); measure before writing a spec. Do after
-the log-link spec ships, so its `restarts` setting and tests are in place.
-
-Note 2026-11-25: the log-link restarts in `fit_rma_ls` and `control['restarts']` are in place (spec `agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md`); this item's identity-link fix can now build on them.
-
-Spec: agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md; tasks: agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md.
-
 ## Auditor rev 133ca2c reports unaccepted hits under three new rules
 
 <!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->

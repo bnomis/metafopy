@@ -1,7 +1,7 @@
 # Identity-link location-scale fits reach the higher maximum
 
 **Version:** 1.1
-**Status:** approved
+**Status:** implemented
 **Date:** 2026-11-26
 **Review:** `agents/reviews/identity-link-location-scale-fits-reach-the-higher-maximum-spec.md` (page https://claude.ai/artifact/BKmKMVHKKBrZjvFvSJMWhS); answered 2026-11-26: approved, with every choice under "Choices made, not asked".
 

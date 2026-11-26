@@ -340,6 +340,7 @@ def test_selmodel_fit_names_the_case_when_the_optimiser_does_not_converge() -> N
     case = next(param.values[0] for param in correctness.cases.case_params('derived') if param.values[0].id == 'selmodel.stepfun.bangertdrowns2004')
     result = correctness.cases.run_case(case)
     with pytest.raises(AssertionError, match=r'selmodel\.stepfun\.bangertdrowns2004: the optimiser did not converge: .+'):
+        # auditme: accept[discarded-tuple-return] the call is expected to raise, so there is no result to use
         selmodel_maximum(case, result, maxiter=1)
 
 
@@ -1052,7 +1053,9 @@ def ls_fit(case: correctness.cases.Case, result: typing.Any) -> None:
     ls_agree(case, 'beta', result.beta, reference['beta'], LS_RELATIVE)
     ls_agree(case, 'vb', result.vb, reference['vb'], LS_RELATIVE)
     ls_agree(case, 'tau2', result.tau2, reference['tau2'], LS_RELATIVE)
-    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), reference['ll'], LS_LOGLIK)
+    # a case on a face of the identity link states its own tolerance: the reference leaves Z alpha >= 0 by formulas.IDENTITY_SLACK, which raises its ll
+    tolerance = LS_LOGLIK if case.tolerance is None else case.tolerance
+    ls_agree(case, 'logLik', float(result.logLik(REML=case.args['method'] == 'REML')), reference['ll'], tolerance)
 
 
 def ls_optbeta(case: correctness.cases.Case, result: typing.Any) -> None:

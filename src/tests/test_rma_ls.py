@@ -85,6 +85,14 @@ def bcg_perm() -> pandas.DataFrame:
     return d
 
 
+def bcg_perm18() -> pandas.DataFrame:
+    """``dat.bcg`` with ``lat`` and its permutation 18 of the bcglat exact permutest (``perm``), as ``generate_location_scale.R`` builds them."""
+    d = bcg()
+    d['lat'] = [1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1]
+    d['perm'] = [0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1]
+    return d
+
+
 def bd6() -> pandas.DataFrame:
     return frame('bd6_data')
 
@@ -150,6 +158,8 @@ FITS: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
         # R stops at a lower local maximum here than the restarts reach (spec location-scale-fits-reach-the-higher-maximum), so the port of
         # metafor's single start is checked with restarts=False; test_rma_ls_restarts.py and a correctness case check the restart
         'bcg_perm433': lambda: ls(bcg_perm(), '~ perm', '~ lat', method='ML', control={'restarts': False}),
+        # likewise for link='identity' (spec identity-link-location-scale-fits-reach-the-higher-maximum): R stops at its default start, below the face maximum
+        'bcg_perm18_identity': lambda: ls(bcg_perm18(), '~ perm', '~ lat', link='identity', method='ML', control={'restarts': False}),
         'bd6_exact': lambda: ls(bd6(), '~ ni100', '~ ni100'),
         'mo_int': lambda: ls(mo()),
         'mo_quality': lambda: ls(mo(), '~ quality', '~ quality', method='ML'),
@@ -170,6 +180,9 @@ LOOSE_FIT = {'bcg_ablat', 'bcg_ablat_t'}
 # IDENTITY_FIT for the rest. A fit whose scale model puts tau^2_i near zero shifts most (bd_identity_ni).
 IDENTITY_FITS = {'bcg_year_identity', 'bd_identity', 'bd_identity_ml', 'bd_identity_ni', 'bd_int_identity'}
 IDENTITY_FIT = 5e-2
+# restarts=False identity fits: the port of metafor's single start, which stops short of the maximum like the fits above but is no maximum itself
+IDENTITY_SINGLE_START = {'bcg_perm18_identity'}
+STOPS_SHORT = IDENTITY_FITS | IDENTITY_SINGLE_START
 IDENTITY_FIT_STATS = 1e-3  # the log-likelihood of the criterion that was not maximised moves with alpha
 # column names that come from formulaic's rendering of I() terms or from an unnamed matrix, not from the algorithm
 UNNAMED = {'bcg_year_identity', 'bd_matrix', 'bd_poly'}
@@ -179,26 +192,26 @@ UNNAMED = {'bcg_year_identity', 'bd_matrix', 'bd_poly'}
 def test_fit(name: str) -> None:
     ref = REF[name]
     res = FITS[name]()
-    OPT = 1e-3 if name in LOOSE_FIT else IDENTITY_FIT if name in IDENTITY_FITS else OPT_DEFAULT
+    OPT = 1e-3 if name in LOOSE_FIT else IDENTITY_FIT if name in STOPS_SHORT else OPT_DEFAULT
     refutil.close(res.beta, ref['beta'], f'{name} beta', rtol=OPT, atol=1e-7)
     refutil.close(res.alpha, ref['alpha'], f'{name} alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.se, ref['se'], f'{name} se', rtol=OPT, atol=1e-7)
     refutil.close(res.vb.ravel(), flat(ref['vb']), f'{name} vb', rtol=OPT, atol=1e-8)
     refutil.close(res.va.ravel(), flat(ref['va']), f'{name} va', rtol=OPT, atol=1e-6)
     # a tau^2_i on the boundary is R's barrier value (about 1e-8), here 0
-    refutil.close(res.tau2, ref['tau2'], f'{name} tau2', rtol=OPT, atol=1e-7 if name in IDENTITY_FITS else 1e-8)
+    refutil.close(res.tau2, ref['tau2'], f'{name} tau2', rtol=OPT, atol=1e-7 if name in STOPS_SHORT else 1e-8)
     refutil.close(res.pval, ref['pval'], f'{name} pval', rtol=OPT, atol=1e-7)
     refutil.close(res.ci_lb, ref['ci_lb'], f'{name} ci_lb', rtol=OPT, atol=1e-6)
     refutil.close(res.ci_ub, ref['ci_ub'], f'{name} ci_ub', rtol=OPT, atol=1e-6)
-    closed = IDENTITY_FIT_STATS if name in IDENTITY_FITS else CLOSED
+    closed = IDENTITY_FIT_STATS if name in STOPS_SHORT else CLOSED
     refutil.close(res.fit_stats_ml.as_tuple(), ref['fit_ml'], f'{name} fit ML', rtol=closed, atol=1e-6)
     refutil.close(res.fit_stats_reml.as_tuple(), ref['fit_reml'], f'{name} fit REML', rtol=closed, atol=1e-6)
     refutil.close(res.QE, ref['QE'], f'{name} QE', rtol=1e-8)
     refutil.close(res.QM, ref['QM'], f'{name} QM', rtol=OPT, atol=1e-7)
     refutil.close(res.QMp, ref['QMp'], f'{name} QMp', rtol=OPT, atol=1e-7)
     refutil.close(res.vt, ref['vt'], f'{name} vt', rtol=1e-8)
-    refutil.close(res.I2, ref['I2'], f'{name} I2', rtol=OPT, atol=1e-4 if name in IDENTITY_FITS else 1e-6)
-    refutil.close(res.H2, ref['H2'], f'{name} H2', rtol=OPT, atol=1e-4 if name in IDENTITY_FITS else 1e-6)
+    refutil.close(res.I2, ref['I2'], f'{name} I2', rtol=OPT, atol=1e-4 if name in STOPS_SHORT else 1e-6)
+    refutil.close(res.H2, ref['H2'], f'{name} H2', rtol=OPT, atol=1e-4 if name in STOPS_SHORT else 1e-6)
     refutil.close(res.se_alpha, ref['se_alpha'], f'{name} se_alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.zval_alpha, ref['zval_alpha'], f'{name} zval_alpha', rtol=OPT, atol=1e-6)
     refutil.close(res.pval_alpha, ref['pval_alpha'], f'{name} pval_alpha', rtol=OPT, atol=1e-6)
