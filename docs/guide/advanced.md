@@ -47,7 +47,7 @@ there is evidence for selection at all.
 
 The `type` can be a parametric function (`'beta'`, `'halfnorm'`, `'negexp'`, `'logistic'`, `'power'`, `'negexppow'`, `'trunc'`, `'truncest'`, and
 the variants `'halfnorm1'`, `'halfnorm2'`, `'negexp1'`, `'negexp2'`, `'logistic1'`, `'logistic2'`, `'power1'`, `'power2'`) or a
-step function (`'stepfun'`). Step functions need the cut points of the p-value, given as `steps`:
+step function (`'stepfun'` or the constrained `'stepcon'`). Step functions need the cut points of the p-value, given as `steps`:
 
 ```python
 print(selmodel(res, type='stepfun', steps=[0.025, 0.10, 0.50, 1]))

@@ -130,7 +130,7 @@ pages.
 
 ## Task 4: User-guide claims and lists, and the README
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Source Reference:** F1 (Doc5): the claims and lists; F7 (Doc3)
@@ -140,24 +140,24 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] Correct each Doc5 claim against the code, changing the page, never the code:
+- [x] Correct each Doc5 claim against the code, changing the page, never the code:
       `docs/guide/binary.md:115` (`blup` and `ranef` raise on an `rma_glmm` result), `docs/differences-notes.md:61` (`emmprep` of
       `rma_mh`/`rma_peto` fits), `:67` (`rma_mv`'s ported optimisers), `:161` (`forest(clim=)` on cumulative results), `:191`
       (`rma(cutoff=)`), `docs/from-r.md:103` (`escalc` returns an `EscalcFrame`), `docs/reference/methods.md:3` (`hettest`, `vcov` and
       `coef_summary` are plain functions)
-- [ ] For each list a finding says reads as complete but is not (`README.md:39`, `docs/guide/advanced.md:49`, `docs/guide/emmeans.md:61`,
+- [x] For each list a finding says reads as complete but is not (`README.md:39`, `docs/guide/advanced.md:49`, `docs/guide/emmeans.md:61`,
       `docs/guide/plots.md:28`, `:37`, `:122`, `:139`, `docs/index.md:12`), complete it or mark it as examples ("for example", "such as")
-- [ ] Rewrite the example at `README.md:13` with full module paths (`import numpy`, `import metafopy`), as the guides write it
+- [x] Rewrite the example at `README.md:13` with full module paths (`import numpy`, `import metafopy`), as the guides write it
 
 **Acceptance Criteria:**
 
-- [ ] Each claim matches the code, each partial list says it is partial, and the README example uses full module paths
+- [x] Each claim matches the code, each partial list says it is partial, and the README example uses full module paths
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
-- [ ] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
+- [x] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
 
 **Notes:**
 

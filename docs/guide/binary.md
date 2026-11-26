@@ -114,7 +114,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ```
 
-`rma_glmm` accepts moderators (`mods='~ ablat'`). `predict`, `blup` and `ranef` work on its result.
+`rma_glmm` accepts moderators (`mods='~ ablat'`). Of `predict`, `blup` and `ranef`, only `predict` works on its result; `blup` and `ranef` raise, as metafor has no such method for `rma.glmm` models.
 Mixed-model fits can differ slightly from R, because lme4 stops at a looser optimiser tolerance; see
 [Differences from metafor](../differences.md).
 

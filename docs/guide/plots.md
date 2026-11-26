@@ -32,9 +32,9 @@ matplotlib.pyplot.savefig('forest.png', dpi=150)
 ![Forest plot of the BCG data with study information, from the gallery](../images/gallery/py/forest.png)
 
 `atransf` transforms the axis labels (here to risk ratios) while the plot stays on the log scale, and `transf` transforms the
-estimates themselves. Other common arguments are:
+estimates themselves. The call shows two of `forest`'s keywords; other common arguments are:
 
-- `order`: `'obs'` sorts by effect size, `'prec'` by precision, or give your own values.
+- `order`: for example `'obs'` sorts by effect size and `'prec'` by precision (`'est'`, `'yi'`, `'vi'`, `'fit'`, `'resid'`, `'rstandard'`, `'abs.resid'` and `'abs.rstandard'` also work), or give your own values.
 - `ilab`, `ilab_lab`, `ilab_xpos`: columns of study information shown next to the plot.
 - `addpred=True`: add the prediction interval to the summary.
 - `showweights=True`: show the weights.
@@ -51,6 +51,8 @@ from metafopy import forest
 forest(res, atransf=numpy.exp, order='obs', addpred=True, xlab='Risk ratio')
 matplotlib.pyplot.savefig('forest-sorted.png')
 ```
+
+This call shows some of `forest`'s keywords, not all.
 
 ## Funnel plot
 
@@ -125,6 +127,8 @@ forest_chart.save('forest.html')
 funnel_chart.save('funnel.html')
 ```
 
+The `forest_chart` call shows some of its keywords; it also takes `order`, `width` and the `chart_data` keywords (`slab`, `href`, `groups`, `group_fits`, `level`).
+
 | Function | Chart |
 |----------|-------|
 | `forest_chart` | Row per study with a square sized by weight, then the pooled estimate as a diamond with its prediction interval; `groups` and `group_fits` add a pooled row per subgroup, and `href` links each study |
@@ -136,5 +140,5 @@ links them to other charts.
 
 ## Styling
 
-Fonts and sizes are matplotlib's. `fonts` takes the family names metafor uses (`'sans'`, `'serif'`, `'mono'`), and `cex`,
+Fonts and sizes are matplotlib's. `fonts` takes the family names metafor uses (for example `'sans'`, `'serif'`, `'mono'`; `'Helvetica'`, `'Times'`, `'Courier'` and the other PostScript names map to matplotlib families, and any other name goes to matplotlib as it is), and `cex`,
 `cex_lab`, `cex_axis` scale the text as in R. For anything else, pass your own `ax=` and use matplotlib on it.

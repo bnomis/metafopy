@@ -219,9 +219,9 @@ print(vif(rma('yi', 'vi', mods='~ ablat + year', data=dat)))
 
 ```
 
-`vif` also takes `rma_mv`, location-scale and `selmodel` fits with moderators. The options are those of metafor: `btt` (and `att`
+`vif` also takes `rma_mv`, location-scale and `selmodel` fits with moderators. The options include those of metafor: `btt` (and `att`
 for the scale part), `table=True` for the coefficient table, `intercept=True` to include the intercept, `fixed=True` to match a
-string `btt` literally, and, except for `selmodel` fits, `reestimate=True` and `sim`.
+string `btt` literally, and, except for `selmodel` fits, `reestimate=True` and `sim`. There are more, such as `progbar`, `seed`, `parallel`, `ncpus`, `cl`, `digits`, `joinb`, `joina` and `LB`.
 
 ## Best linear unbiased predictions
 
