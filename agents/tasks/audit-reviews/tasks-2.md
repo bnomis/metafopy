@@ -295,7 +295,7 @@ conventions, so that I am not misled.
 
 ## Task 9: Names, an alias and three small fixes
 
-**Status:** todo
+**Status:** done
 **Priority:** low
 **Complexity:** small
 **Source Reference:** F8 (S2), F9 (S4), F13 (A8, A9, Sec2)
@@ -304,24 +304,24 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] Rename the lower-snake module-level hypothesis strategies to UPPER_SNAKE in `test_name_matching_properties.py`,
+- [x] Rename the lower-snake module-level hypothesis strategies to UPPER_SNAKE in `test_name_matching_properties.py`,
       `test_formula_rewriting_properties.py`, `test_labelled_print.py`, `test_print.py`, `test_tukey.py`, `test_optim.py`,
       `test_audit3_misc.py`, `test_farebrother.py`, `test_rtet.py` and `test_sel_lik.py` (all in `src/tests/`), with every use
-- [ ] In `src/tests/test_name_matching_properties.py:40`, drop `st = hypothesis.strategies` and write `hypothesis.strategies.` in full
-- [ ] In `src/tests/test_harness_compare.py:372`, pass `universe=` to `audit.steps.Context(...)` instead of setting it afterwards
-- [ ] In `src/tests/auditsnippets.py`, make `load_snippet` load only: move the `require_pinned_versions` call to its callers, or rename it to
+- [x] In `src/tests/test_name_matching_properties.py:40`, drop `st = hypothesis.strategies` and write `hypothesis.strategies.` in full
+- [x] In `src/tests/test_harness_compare.py:372`, pass `universe=` to `audit.steps.Context(...)` instead of setting it afterwards
+- [x] In `src/tests/auditsnippets.py`, make `load_snippet` load only: move the `require_pinned_versions` call to its callers, or rename it to
       say it checks the pin, whichever touches fewer files
-- [ ] In `src/audit/cli.py`, reject a `--timeout` that is not positive: write the failing test first (in the test file of `audit.cli`), then
+- [x] In `src/audit/cli.py`, reject a `--timeout` that is not positive: write the failing test first (in the test file of `audit.cli`), then
       raise `audit.errors.HarnessError` naming the value
 
 **Acceptance Criteria:**
 
-- [ ] Every renamed test still runs; a zero or negative `--timeout` fails with `HarnessError`
+- [x] Every renamed test still runs; a zero or negative `--timeout` fails with `HarnessError`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest` on each test file the task edits, and on `src/tests/test_auditsnippets.py` and the test file of `audit.cli`, passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest` on each test file the task edits, and on `src/tests/test_auditsnippets.py` and the test file of `audit.cli`, passes
 
 ---
 

@@ -178,11 +178,11 @@ def test_addpoly_explicit_rows_of_prediction(escalc_frame: pandas.DataFrame) -> 
     matplotlib.pyplot.close(fig)
 
 
-fused_modes = hypothesis.strategies.booleans()
+FUSED_MODES = hypothesis.strategies.booleans()
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e3), ratio=hypothesis.strategies.floats(min_value=0.25, max_value=4.0), fused=fused_modes)
+@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e3), ratio=hypothesis.strategies.floats(min_value=0.25, max_value=4.0), fused=FUSED_MODES)
 def test_bd0_property_non_negative_and_matches_naive_away_from_np(x: float, ratio: float, fused: bool) -> None:
     """Candidate ``src/metafopy/core/dbinom.py::bd0``: non-negative, and equal to ``x log(x/np) + np - x`` when x is not close to np."""
     np = x / ratio
@@ -194,7 +194,7 @@ def test_bd0_property_non_negative_and_matches_naive_away_from_np(x: float, rati
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e6), fused=fused_modes)
+@hypothesis.given(x=rstrategies.finite_floats(1e-3, 1e6), fused=FUSED_MODES)
 def test_bd0_property_zero_at_x_equal_np(x: float, fused: bool) -> None:
     """Candidate ``src/metafopy/core/dbinom.py::bd0``: ``bd0(x, x)`` is 0."""
     assert metafopy.core.dbinom.bd0(x, x, fused) == 0.0
@@ -207,7 +207,7 @@ def test_bd0_property_zero_at_x_equal_np(x: float, fused: bool) -> None:
         hypothesis.strategies.sampled_from([0.0, 1.0]),
         hypothesis.strategies.floats(min_value=1e-100, max_value=1.0, exclude_max=True),
     ),
-    fused=fused_modes,
+    fused=FUSED_MODES,
     data=hypothesis.strategies.data(),
 )
 def test_dbinom_raw_property_matches_scipy_and_is_a_probability(n: int, p: float, fused: bool, data: hypothesis.strategies.DataObject) -> None:
@@ -222,7 +222,7 @@ def test_dbinom_raw_property_matches_scipy_and_is_a_probability(n: int, p: float
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(n=hypothesis.strategies.integers(min_value=0, max_value=100), p=rstrategies.probabilities(open_interval=False), fused=fused_modes)
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=0, max_value=100), p=rstrategies.probabilities(open_interval=False), fused=FUSED_MODES)
 def test_dbinom_raw_property_pmf_sums_to_one(n: int, p: float, fused: bool) -> None:
     """Candidate ``src/metafopy/core/dbinom.py::dbinom_raw``: the pmf sums to 1 over x = 0..n."""
     total = math.fsum(metafopy.core.dbinom.dbinom_raw(x, n, p, 1.0 - p, fused) for x in range(n + 1))
@@ -230,7 +230,7 @@ def test_dbinom_raw_property_pmf_sums_to_one(n: int, p: float, fused: bool) -> N
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(-0.9, 10.0), y=hypothesis.strategies.integers(min_value=0, max_value=60), fused=fused_modes)
+@hypothesis.given(x=rstrategies.finite_floats(-0.9, 10.0), y=hypothesis.strategies.integers(min_value=0, max_value=60), fused=FUSED_MODES)
 def test_pow1p_property_matches_direct_power(x: float, y: int, fused: bool) -> None:
     """Candidate ``src/metafopy/core/dbinom.py::pow1p``: ``(1 + x) ** y`` for a non-negative integer ``y``."""
     assert metafopy.core.dbinom.pow1p(x, float(y), fused) == pytest.approx((1.0 + x) ** y, rel=1e-8, abs=1e-300)

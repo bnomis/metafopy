@@ -37,21 +37,22 @@ import metafopy.models.sel_opt
 import metafopy.models.sel_spec
 
 SETTINGS = hypothesis.settings(max_examples=100, deadline=None)
-st = hypothesis.strategies
-COLLIDING_LABELS = st.sampled_from(['a', 'a.1', 'a.2', 'b'])
-TEST_NAMES = st.sampled_from(['lrt', 'score', 'wald', 'adn', 'adx2', 'ksn', 'ksx2'])
+COLLIDING_LABELS = hypothesis.strategies.sampled_from(['a', 'a.1', 'a.2', 'b'])
+TEST_NAMES = hypothesis.strategies.sampled_from(['lrt', 'score', 'wald', 'adn', 'adx2', 'ksn', 'ksx2'])
 
-small_text = st.text(alphabet='abc', max_size=6)
-small_words = st.text(alphabet='abcd', min_size=1, max_size=6)
-unique_words = st.lists(small_words, min_size=1, max_size=6, unique=True)
-ascii_text = st.text(alphabet=st.characters(codec='ascii'), max_size=12)
+SMALL_TEXT = hypothesis.strategies.text(alphabet='abc', max_size=6)
+SMALL_WORDS = hypothesis.strategies.text(alphabet='abcd', min_size=1, max_size=6)
+UNIQUE_WORDS = hypothesis.strategies.lists(SMALL_WORDS, min_size=1, max_size=6, unique=True)
+ASCII_TEXT = hypothesis.strategies.text(alphabet=hypothesis.strategies.characters(codec='ascii'), max_size=12)
 R_IDENTIFIER = re.compile(r'(?:[A-Za-z]|\.(?![0-9]))[A-Za-z0-9._]*|\.')
 
 
-def prefixes(options: list[str]) -> st.SearchStrategy[tuple[str, str]]:
+def prefixes(options: list[str]) -> hypothesis.strategies.SearchStrategy[tuple[str, str]]:
     """A (option, non-empty prefix of it) pair."""
-    return st.sampled_from(options).flatmap(
-        lambda option: st.tuples(st.just(option), st.integers(min_value=1, max_value=len(option))).map(lambda t: (t[0], t[0][: t[1]]))
+    return hypothesis.strategies.sampled_from(options).flatmap(
+        lambda option: hypothesis.strategies.tuples(hypothesis.strategies.just(option), hypothesis.strategies.integers(min_value=1, max_value=len(option))).map(
+            lambda t: (t[0], t[0][: t[1]])
+        )
     )
 
 
@@ -59,8 +60,8 @@ def prefixes(options: list[str]) -> st.SearchStrategy[tuple[str, str]]:
 
 
 @SETTINGS
-@hypothesis.given(data=st.data())
-def test_match_adjust_prefixes(data: st.DataObject) -> None:
+@hypothesis.given(data=hypothesis.strategies.data())
+def test_match_adjust_prefixes(data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/core/padjust.py::match_adjust: booleans map to bonferroni and none, a method returns itself, a unique prefix its method."""
     methods = list(metafopy.core.padjust.P_ADJUST_METHODS)
     assert metafopy.core.padjust.match_adjust(True) == 'bonferroni'
@@ -78,7 +79,7 @@ def test_match_adjust_prefixes(data: st.DataObject) -> None:
 
 
 @SETTINGS
-@hypothesis.given(text=ascii_text)
+@hypothesis.given(text=ASCII_TEXT)
 def test_match_adjust_arbitrary_text(text: str) -> None:
     """src/metafopy/core/padjust.py::match_adjust: a string either gives a method it is a prefix of or raises InputError."""
     methods = metafopy.core.padjust.P_ADJUST_METHODS
@@ -96,7 +97,7 @@ def test_match_adjust_arbitrary_text(text: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(table=st.lists(small_text, max_size=6), x=small_text)
+@hypothesis.given(table=hypothesis.strategies.lists(SMALL_TEXT, max_size=6), x=SMALL_TEXT)
 def test_charmatch_agrees_with_naive_oracle(table: list[str], x: str) -> None:
     """src/metafopy/effects/datatools.py::charmatch: an exact member gives its index, a unique prefix its match, otherwise None."""
     result = metafopy.effects.datatools.charmatch(x, table)
@@ -111,7 +112,7 @@ def test_charmatch_agrees_with_naive_oracle(table: list[str], x: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(names=st.lists(ascii_text, max_size=8), unique=st.booleans())
+@hypothesis.given(names=hypothesis.strategies.lists(ASCII_TEXT, max_size=8), unique=hypothesis.strategies.booleans())
 def test_make_names_gives_valid_names(names: list[str], unique: bool) -> None:
     """src/metafopy/effects/datatools.py::make_names: valid R identifiers, idempotent, and distinct for unique=True.
 
@@ -130,8 +131,9 @@ def test_make_names_gives_valid_names(names: list[str], unique: bool) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    x=st.floats(min_value=-1e12, max_value=1e12, allow_nan=False) | st.sampled_from([float('nan'), float('inf'), float('-inf')]),
-    digits=st.integers(min_value=0, max_value=12),
+    x=hypothesis.strategies.floats(min_value=-1e12, max_value=1e12, allow_nan=False)
+    | hypothesis.strategies.sampled_from([float('nan'), float('inf'), float('-inf')]),
+    digits=hypothesis.strategies.integers(min_value=0, max_value=12),
 )
 def test_r_round_error_bound(x: float, digits: int) -> None:
     """src/metafopy/effects/datatools.py::r_round: idempotent, NaN and infinities pass through, and the error is at most half a unit."""
@@ -146,7 +148,10 @@ def test_r_round_error_bound(x: float, digits: int) -> None:
 
 
 @SETTINGS
-@hypothesis.given(x=st.lists(st.none() | st.text(alphabet='ab', max_size=5), max_size=8), minlen=st.none() | st.integers(min_value=0, max_value=6))
+@hypothesis.given(
+    x=hypothesis.strategies.lists(hypothesis.strategies.none() | hypothesis.strategies.text(alphabet='ab', max_size=5), max_size=8),
+    minlen=hypothesis.strategies.none() | hypothesis.strategies.integers(min_value=0, max_value=6),
+)
 def test_shorten_names_cuts_to_a_common_length(x: list[str | None], minlen: int | None) -> None:
     """src/metafopy/effects/datatools.py::shorten_names: None stays None, one common cut length, distinct inputs stay distinct."""
     out = metafopy.effects.datatools.shorten_names(x, minlen)
@@ -164,7 +169,7 @@ def test_shorten_names_cuts_to_a_common_length(x: list[str | None], minlen: int 
 
 
 @SETTINGS
-@hypothesis.given(n=st.integers(min_value=1, max_value=10**6), kind=st.sampled_from(['S1', 'S2', 'S3']))
+@hypothesis.given(n=hypothesis.strategies.integers(min_value=1, max_value=10**6), kind=hypothesis.strategies.sampled_from(['S1', 'S2', 'S3']))
 def test_sum_stat_index_ranks(n: int, kind: str) -> None:
     """src/metafopy/effects/fivenum_estimators.py::sum_stat_index: ranks are non-decreasing, in [1, n], and three or five in number."""
     ranks = metafopy.effects.fivenum_estimators.sum_stat_index(n, kind)
@@ -181,7 +186,7 @@ def test_sum_stat_index_ranks(n: int, kind: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(labels=st.lists(COLLIDING_LABELS, max_size=8))
+@hypothesis.given(labels=hypothesis.strategies.lists(COLLIDING_LABELS, max_size=8))
 def test_make_unique_dot1_is_unique(labels: list[str]) -> None:
     """src/metafopy/effects/measures.py::make_unique_dot1: same length and no duplicates, also when labels collide with generated ones."""
     out = metafopy.effects.measures.make_unique_dot1(labels)
@@ -190,7 +195,7 @@ def test_make_unique_dot1_is_unique(labels: list[str]) -> None:
 
 
 @SETTINGS
-@hypothesis.given(labels=st.lists(small_text, max_size=10))
+@hypothesis.given(labels=hypothesis.strategies.lists(SMALL_TEXT, max_size=10))
 def test_make_unique_dot1_keeps_singletons(labels: list[str]) -> None:
     """src/metafopy/effects/measures.py::make_unique_dot1: a label occurring once is unchanged (labels without dots, so none collide)."""
     out = metafopy.effects.measures.make_unique_dot1(labels)
@@ -200,7 +205,7 @@ def test_make_unique_dot1_keeps_singletons(labels: list[str]) -> None:
 
 
 @SETTINGS
-@hypothesis.given(labels=st.lists(small_text, max_size=10))
+@hypothesis.given(labels=hypothesis.strategies.lists(SMALL_TEXT, max_size=10))
 def test_unique_labels_suffix_repeats(labels: list[str]) -> None:
     """src/metafopy/interactive/forest.py::unique_labels: length kept, first occurrence unchanged, the k-th repeat is 'label (k)'."""
     out = metafopy.interactive.forest.unique_labels(labels)
@@ -211,7 +216,7 @@ def test_unique_labels_suffix_repeats(labels: list[str]) -> None:
 
 
 @SETTINGS
-@hypothesis.given(labels=st.lists(small_text, max_size=10))
+@hypothesis.given(labels=hypothesis.strategies.lists(SMALL_TEXT, max_size=10))
 def test_make_unique_has_no_duplicates(labels: list[str]) -> None:
     """src/metafopy/metadata.py::make_unique: same length and no duplicates."""
     out = metafopy.metadata.make_unique(labels)
@@ -236,7 +241,7 @@ def test_make_unique_equals_r_make_unique(labels: list[str], expected: list[str]
 
 
 @SETTINGS
-@hypothesis.given(labels=st.lists(COLLIDING_LABELS, max_size=8))
+@hypothesis.given(labels=hypothesis.strategies.lists(COLLIDING_LABELS, max_size=8))
 def test_make_unique_keeps_first_occurrences(labels: list[str]) -> None:
     """src/metafopy/metadata.py::make_unique: the first occurrence of every label is unchanged (R's make.unique, ``?make.unique``)."""
     out = metafopy.metadata.make_unique(labels)
@@ -255,19 +260,19 @@ def test_make_names_unique_orders_changed_names_last() -> None:
 
 
 @SETTINGS
-@hypothesis.given(data=st.data())
-def test_check_test_prefixes(data: st.DataObject) -> None:
+@hypothesis.given(data=hypothesis.strategies.data())
+def test_check_test_prefixes(data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/anova.py::check_test: None gives LRT, a non-empty prefix of LRT or Wald gives it, anything else raises."""
     assert metafopy.methods.anova.check_test(None) == 'LRT'
     choice, prefix = data.draw(prefixes(['LRT', 'Wald']))
     assert metafopy.methods.anova.check_test(prefix) == choice
-    other = data.draw(st.text(alphabet='LRTWald', max_size=5).filter(lambda t: not (t and ('LRT'.startswith(t) or 'Wald'.startswith(t)))))
+    other = data.draw(hypothesis.strategies.text(alphabet='LRTWald', max_size=5).filter(lambda t: not (t and ('LRT'.startswith(t) or 'Wald'.startswith(t)))))
     with pytest.raises(metafopy.errors.ArgumentError):
         metafopy.methods.anova.check_test(other)
 
 
 @SETTINGS
-@hypothesis.given(choices=st.lists(small_words, min_size=1, max_size=6, unique=True), value=small_text)
+@hypothesis.given(choices=hypothesis.strategies.lists(SMALL_WORDS, min_size=1, max_size=6, unique=True), value=SMALL_TEXT)
 def test_match_arg(choices: list[str], value: str) -> None:
     """src/metafopy/methods/common.py::match_arg: a member returns itself, a unique non-empty prefix its choice, empty or ambiguous raises."""
     hits = [c for c in choices if value and c.startswith(value)]
@@ -284,7 +289,7 @@ def test_match_arg(choices: list[str], value: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(methods=st.lists(small_text, max_size=6, unique=True), adjust=small_text)
+@hypothesis.given(methods=hypothesis.strategies.lists(SMALL_TEXT, max_size=6, unique=True), adjust=SMALL_TEXT)
 def test_match_method_is_pmatch(methods: list[str], adjust: str) -> None:
     """src/metafopy/methods/emm_adjust.py::match_method: an exact member as is, else the only method starting with adjust, else None."""
     result = metafopy.methods.emm_adjust.match_method(adjust, methods)
@@ -298,15 +303,15 @@ def test_match_method_is_pmatch(methods: list[str], adjust: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(side=st.integers() | st.floats() | st.text(max_size=8))
+@hypothesis.given(side=hypothesis.strategies.integers() | hypothesis.strategies.floats() | hypothesis.strategies.text(max_size=8))
 def test_parse_side_is_a_tail_code(side: int | float | str) -> None:
     """src/metafopy/methods/emm_adjust.py::parse_side: any int, float or string gives -1, 0 or 1."""
     assert metafopy.methods.emm_adjust.parse_side(side) in {-1, 0, 1}
 
 
 @SETTINGS
-@hypothesis.given(data=st.data())
-def test_parse_side_unique_prefix(data: st.DataObject) -> None:
+@hypothesis.given(data=hypothesis.strategies.data())
+def test_parse_side_unique_prefix(data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/emm_adjust.py::parse_side: a unique prefix of an option maps to the same code as the full option."""
     options = [*metafopy.methods.emm_adjust.SIDE_OPTIONS, *metafopy.methods.emm_adjust.SIDE_SYMBOLS]
     option, prefix = data.draw(prefixes(options))
@@ -319,9 +324,9 @@ def test_parse_side_unique_prefix(data: st.DataObject) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    tokens=st.lists(st.sampled_from('abcdefgh'), min_size=1, max_size=8),
-    variables=st.lists(st.sampled_from('abcdefghij'), max_size=10, unique=True),
-    separator=st.sampled_from([' + ', ' * ', ':']),
+    tokens=hypothesis.strategies.lists(hypothesis.strategies.sampled_from('abcdefgh'), min_size=1, max_size=8),
+    variables=hypothesis.strategies.lists(hypothesis.strategies.sampled_from('abcdefghij'), max_size=10, unique=True),
+    separator=hypothesis.strategies.sampled_from([' + ', ' * ', ':']),
 )
 def test_appearance_orders_by_first_position(tokens: list[str], variables: list[str], separator: str) -> None:
     """src/metafopy/methods/emm_grid.py::appearance: a permutation of variables ordered by first position, absent ones last."""
@@ -333,19 +338,21 @@ def test_appearance_orders_by_first_position(tokens: list[str], variables: list[
 
 
 @SETTINGS
-@hypothesis.given(variables=st.lists(rstrategies.r_identifiers(), min_size=1, max_size=4, unique=True), data=st.data())
-def test_factor_id(variables: list[str], data: st.DataObject) -> None:
+@hypothesis.given(variables=hypothesis.strategies.lists(rstrategies.r_identifiers(), min_size=1, max_size=4, unique=True), data=hypothesis.strategies.data())
+def test_factor_id(variables: list[str], data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/emm_nesting.py::factor_id: v, C(v) and C( v, x) give v, and any other expression returns itself stripped."""
-    var = data.draw(st.sampled_from(variables))
+    var = data.draw(hypothesis.strategies.sampled_from(variables))
     for expr in (var, f'C({var})', f'C( {var}, x)', f'  C( {var} )  '):
         assert metafopy.methods.emm_nesting.factor_id(expr, variables) == var
-    other = data.draw(st.text(alphabet='abxyz()+ ', min_size=1, max_size=8)).replace('C(', 'D(')
+    other = data.draw(hypothesis.strategies.text(alphabet='abxyz()+ ', min_size=1, max_size=8)).replace('C(', 'D(')
     hypothesis.assume(other.strip() not in variables)
     assert metafopy.methods.emm_nesting.factor_id(other, variables) == other.strip()
 
 
 @SETTINGS
-@hypothesis.given(sets=st.lists(st.lists(st.sampled_from('abcde'), max_size=4, unique=True), max_size=5))
+@hypothesis.given(
+    sets=hypothesis.strategies.lists(hypothesis.strategies.lists(hypothesis.strategies.sampled_from('abcde'), max_size=4, unique=True), max_size=5)
+)
 def test_strip_supersets(sets: list[list[str]]) -> None:
     """src/metafopy/methods/emm_nesting.py::strip_supersets: inside the union of the sets and containing every smallest set."""
     out = metafopy.methods.emm_nesting.strip_supersets([list(s) for s in sets])
@@ -361,8 +368,8 @@ def test_strip_supersets(sets: list[list[str]]) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    terms=st.lists(st.sampled_from(['a', 'b', 'c', 'a:b', 'a:c', 'b:c', 'a:b:c']), min_size=1, max_size=6, unique=True),
-    intercept=st.booleans(),
+    terms=hypothesis.strategies.lists(hypothesis.strategies.sampled_from(['a', 'b', 'c', 'a:b', 'a:c', 'b:c', 'a:b:c']), min_size=1, max_size=6, unique=True),
+    intercept=hypothesis.strategies.booleans(),
 )
 def test_term_info_codes(terms: list[str], intercept: bool) -> None:
     """src/metafopy/methods/emm_nesting.py::term_info: codes are 1 or 2, keys are variables, main is the single-variable terms."""
@@ -384,8 +391,8 @@ def test_term_info_codes(terms: list[str], intercept: bool) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    tests=st.lists(TEST_NAMES, min_size=1, max_size=7).map(tuple),
-    boot=st.integers(min_value=-(10**6), max_value=10**6) | st.floats(min_value=-1e6, max_value=1e6),
+    tests=hypothesis.strategies.lists(TEST_NAMES, min_size=1, max_size=7).map(tuple),
+    boot=hypothesis.strategies.integers(min_value=-(10**6), max_value=10**6) | hypothesis.strategies.floats(min_value=-1e6, max_value=1e6),
 )
 def test_expand_boot_numeric(tests: tuple[str, ...], boot: float) -> None:
     """src/metafopy/methods/hettest.py::expand_boot: a numeric boot gives all True with max(1, round(boot)) iterations."""
@@ -396,12 +403,16 @@ def test_expand_boot_numeric(tests: tuple[str, ...], boot: float) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    tests=st.lists(TEST_NAMES, min_size=1, max_size=7).map(tuple),
-    data=st.data(),
+    tests=hypothesis.strategies.lists(TEST_NAMES, min_size=1, max_size=7).map(tuple),
+    data=hypothesis.strategies.data(),
 )
-def test_expand_boot_flags(tests: tuple[str, ...], data: st.DataObject) -> None:
+def test_expand_boot_flags(tests: tuple[str, ...], data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/hettest.py::expand_boot: one flag per test and goodness-of-fit tests are always True."""
-    boot = data.draw(st.booleans() | st.lists(st.booleans(), min_size=1, max_size=1) | st.lists(st.booleans(), min_size=len(tests), max_size=len(tests)))
+    boot = data.draw(
+        hypothesis.strategies.booleans()
+        | hypothesis.strategies.lists(hypothesis.strategies.booleans(), min_size=1, max_size=1)
+        | hypothesis.strategies.lists(hypothesis.strategies.booleans(), min_size=len(tests), max_size=len(tests))
+    )
     flags, _ = metafopy.methods.hettest.expand_boot(boot, tests)
     assert len(flags) == len(tests)
     for i, (test, flag) in enumerate(zip(tests, flags, strict=True)):
@@ -415,15 +426,15 @@ def test_expand_boot_flags(tests: tuple[str, ...], data: st.DataObject) -> None:
 
 
 @SETTINGS
-@hypothesis.given(names=unique_words, data=st.data())
-def test_match_columns_returns_permutation_indices(names: list[str], data: st.DataObject) -> None:
+@hypothesis.given(names=UNIQUE_WORDS, data=hypothesis.strategies.data())
+def test_match_columns_returns_permutation_indices(names: list[str], data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/matreg.py::match_columns: a permutation of the model names gives exactly that permutation's indices."""
-    colnames = data.draw(st.permutations(names))
+    colnames = data.draw(hypothesis.strategies.permutations(names))
     assert metafopy.methods.matreg.match_columns(list(colnames), names) == [names.index(c) for c in colnames]
 
 
 @SETTINGS
-@hypothesis.given(names=st.lists(small_words, max_size=5, unique=True), cols=st.lists(small_text, max_size=5))
+@hypothesis.given(names=hypothesis.strategies.lists(SMALL_WORDS, max_size=5, unique=True), cols=hypothesis.strategies.lists(SMALL_TEXT, max_size=5))
 def test_match_columns_agrees_with_match_names(names: list[str], cols: list[str]) -> None:
     """src/metafopy/methods/matreg.py::match_columns: the same result as predict.match_names, or an InputError from both."""
     try:
@@ -436,7 +447,7 @@ def test_match_columns_agrees_with_match_names(names: list[str], cols: list[str]
 
 
 @SETTINGS
-@hypothesis.given(choices=st.lists(small_text, max_size=6), name=small_text)
+@hypothesis.given(choices=hypothesis.strategies.lists(SMALL_TEXT, max_size=6), name=SMALL_TEXT)
 def test_matreg_pmatch(choices: list[str], name: str) -> None:
     """src/metafopy/methods/matreg.py::pmatch: None or an index whose choice starts with name; a member returns its own index."""
     result = metafopy.methods.matreg.pmatch(name, choices)
@@ -448,7 +459,10 @@ def test_matreg_pmatch(choices: list[str], name: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(p=st.integers(min_value=1, max_value=20), xs=st.lists(st.integers(min_value=-5, max_value=25), max_size=6))
+@hypothesis.given(
+    p=hypothesis.strategies.integers(min_value=1, max_value=20),
+    xs=hypothesis.strategies.lists(hypothesis.strategies.integers(min_value=-5, max_value=25), max_size=6),
+)
 def test_resolve_x_indices(p: int, xs: list[int]) -> None:
     """src/metafopy/methods/matreg.py::resolve_x: distinct in-range indices come back unchanged, repeated or out-of-range ones raise."""
     if len(set(xs)) != len(xs) or any(not 0 <= v < p for v in xs):
@@ -459,10 +473,10 @@ def test_resolve_x_indices(p: int, xs: list[int]) -> None:
 
 
 @SETTINGS
-@hypothesis.given(names=unique_words, data=st.data())
-def test_resolve_x_names(names: list[str], data: st.DataObject) -> None:
+@hypothesis.given(names=UNIQUE_WORDS, data=hypothesis.strategies.data())
+def test_resolve_x_names(names: list[str], data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/matreg.py::resolve_x: string inputs give positions whose names start with the given strings."""
-    picks = data.draw(st.lists(prefixes(names).map(lambda t: t[1]), min_size=1, max_size=4))
+    picks = data.draw(hypothesis.strategies.lists(prefixes(names).map(lambda t: t[1]), min_size=1, max_size=4))
     try:
         out = metafopy.methods.matreg.resolve_x(picks, names, len(names))
     except metafopy.errors.InputError:
@@ -475,7 +489,7 @@ def test_resolve_x_names(names: list[str], data: st.DataObject) -> None:
 
 
 @SETTINGS
-@hypothesis.given(p=st.integers(min_value=1, max_value=20), y=st.integers(min_value=-5, max_value=25))
+@hypothesis.given(p=hypothesis.strategies.integers(min_value=1, max_value=20), y=hypothesis.strategies.integers(min_value=-5, max_value=25))
 def test_resolve_y_index(p: int, y: int) -> None:
     """src/metafopy/methods/matreg.py::resolve_y: an integer in [0, p-1] is returned unchanged, any other integer raises."""
     if 0 <= y <= p - 1:
@@ -486,7 +500,7 @@ def test_resolve_y_index(p: int, y: int) -> None:
 
 
 @SETTINGS
-@hypothesis.given(names=unique_words, y=small_text)
+@hypothesis.given(names=UNIQUE_WORDS, y=SMALL_TEXT)
 def test_resolve_y_name(names: list[str], y: str) -> None:
     """src/metafopy/methods/matreg.py::resolve_y: a string gives a position whose name starts with it, or raises InputError."""
     try:
@@ -498,7 +512,7 @@ def test_resolve_y_name(names: list[str], y: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(name=small_text, target=small_text)
+@hypothesis.given(name=SMALL_TEXT, target=SMALL_TEXT)
 def test_subsequence_distance(name: str, target: str) -> None:
     """src/metafopy/methods/matreg.py::subsequence_distance: finite exactly for a subsequence, then len(target) - len(name); zero on itself."""
     distance = metafopy.methods.matreg.subsequence_distance(name, target)
@@ -510,7 +524,7 @@ def test_subsequence_distance(name: str, target: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(short=st.text(alphabet='abc', max_size=4), long=st.text(alphabet='abc', max_size=8))
+@hypothesis.given(short=hypothesis.strategies.text(alphabet='abc', max_size=4), long=hypothesis.strategies.text(alphabet='abc', max_size=8))
 def test_is_subsequence_agrees_with_brute_force_deletion(short: str, long: str) -> None:
     """src/metafopy/methods/predict.py::is_subsequence: agrees with deleting characters from long, and a short that deletes down to it."""
     expected = any(''.join(kept) == short for kept in itertools.combinations(long, len(short)))
@@ -519,7 +533,12 @@ def test_is_subsequence_agrees_with_brute_force_deletion(short: str, long: str) 
 
 
 @SETTINGS
-@hypothesis.given(short=small_text, inserts=st.lists(st.tuples(st.integers(min_value=0, max_value=10), st.sampled_from('abcxyz')), max_size=5))
+@hypothesis.given(
+    short=SMALL_TEXT,
+    inserts=hypothesis.strategies.lists(
+        hypothesis.strategies.tuples(hypothesis.strategies.integers(min_value=0, max_value=10), hypothesis.strategies.sampled_from('abcxyz')), max_size=5
+    ),
+)
 def test_is_subsequence_after_insertions(short: str, inserts: list[tuple[int, str]]) -> None:
     """src/metafopy/methods/predict.py::is_subsequence: true for any string with characters inserted into short."""
     long = short
@@ -529,10 +548,10 @@ def test_is_subsequence_after_insertions(short: str, inserts: list[tuple[int, st
 
 
 @SETTINGS
-@hypothesis.given(labels=unique_words, k_new=st.integers(min_value=0, max_value=6), data=st.data())
-def test_level_indices_from_labels(labels: list[str], k_new: int, data: st.DataObject) -> None:
+@hypothesis.given(labels=UNIQUE_WORDS, k_new=hypothesis.strategies.integers(min_value=0, max_value=6), data=hypothesis.strategies.data())
+def test_level_indices_from_labels(labels: list[str], k_new: int, data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/predict.py::level_indices: labels map back to their level, and the length is k_new or InputError."""
-    levels = data.draw(st.lists(st.sampled_from(labels), min_size=1, max_size=6))
+    levels = data.draw(hypothesis.strategies.lists(hypothesis.strategies.sampled_from(labels), min_size=1, max_size=6))
     if len(levels) in (1, k_new):
         out = metafopy.methods.predict.level_indices(levels, labels, k_new, 'level')
         assert len(out) == k_new
@@ -548,7 +567,9 @@ def test_level_indices_from_labels(labels: list[str], k_new: int, data: st.DataO
 
 @SETTINGS
 @hypothesis.given(
-    labels=unique_words, k_new=st.integers(min_value=0, max_value=6), levels=st.lists(st.integers(min_value=-2, max_value=8), min_size=1, max_size=6)
+    labels=UNIQUE_WORDS,
+    k_new=hypothesis.strategies.integers(min_value=0, max_value=6),
+    levels=hypothesis.strategies.lists(hypothesis.strategies.integers(min_value=-2, max_value=8), min_size=1, max_size=6),
 )
 def test_level_indices_from_integers(labels: list[str], k_new: int, levels: list[int]) -> None:
     """src/metafopy/methods/predict.py::level_indices: 0-based integer levels are returned as they are, out of range ones raise."""
@@ -560,10 +581,10 @@ def test_level_indices_from_integers(labels: list[str], k_new: int, levels: list
 
 
 @SETTINGS
-@hypothesis.given(coef_names=unique_words, data=st.data())
-def test_match_names_permutation(coef_names: list[str], data: st.DataObject) -> None:
+@hypothesis.given(coef_names=UNIQUE_WORDS, data=hypothesis.strategies.data())
+def test_match_names_permutation(coef_names: list[str], data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/methods/predict.py::match_names: for a permutation of coef_names, coef_names[pos[i]] == names[i] and pos permutes."""
-    names = list(data.draw(st.permutations(coef_names)))
+    names = list(data.draw(hypothesis.strategies.permutations(coef_names)))
     pos = metafopy.methods.predict.match_names(names, coef_names)
     assert [coef_names[p] for p in pos] == names
     assert sorted(pos) == list(range(len(coef_names)))
@@ -571,9 +592,9 @@ def test_match_names_permutation(coef_names: list[str], data: st.DataObject) -> 
 
 @SETTINGS
 @hypothesis.given(
-    predtype=st.none() | prefixes(list(metafopy.methods.predict.PREDTYPES)).map(lambda t: t[1]),
-    pi_type=st.none() | st.text(alphabet='defaultsimpleriley', max_size=8),
-    case=st.sampled_from([str.lower, str.upper, str.title]),
+    predtype=hypothesis.strategies.none() | prefixes(list(metafopy.methods.predict.PREDTYPES)).map(lambda t: t[1]),
+    pi_type=hypothesis.strategies.none() | hypothesis.strategies.text(alphabet='defaultsimpleriley', max_size=8),
+    case=hypothesis.strategies.sampled_from([str.lower, str.upper, str.title]),
 )
 def test_resolve_predtype(predtype: str | None, pi_type: str | None, case: type[str]) -> None:
     """src/metafopy/methods/predict.py::resolve_predtype: a PREDTYPES member, predtype wins over pi_type, and the result is a fixed point."""
@@ -594,10 +615,10 @@ def test_resolve_predtype(predtype: str | None, pi_type: str | None, case: type[
 
 @SETTINGS
 @hypothesis.given(
-    vcov=st.none() | st.sampled_from(metafopy.core.clubsandwich.CR_TYPES),
-    coef_test=st.none() | st.sampled_from(metafopy.methods.robust.COEF_TESTS),
-    conf_test=st.none() | st.sampled_from(metafopy.methods.robust.CONF_TESTS),
-    wald_test=st.none() | st.sampled_from(metafopy.core.clubsandwich.WALD_TESTS),
+    vcov=hypothesis.strategies.none() | hypothesis.strategies.sampled_from(metafopy.core.clubsandwich.CR_TYPES),
+    coef_test=hypothesis.strategies.none() | hypothesis.strategies.sampled_from(metafopy.methods.robust.COEF_TESTS),
+    conf_test=hypothesis.strategies.none() | hypothesis.strategies.sampled_from(metafopy.methods.robust.CONF_TESTS),
+    wald_test=hypothesis.strategies.none() | hypothesis.strategies.sampled_from(metafopy.core.clubsandwich.WALD_TESTS),
 )
 def test_check_options_fixed_point(vcov: str | None, coef_test: str | None, conf_test: str | None, wald_test: str | None) -> None:
     """src/metafopy/methods/robust.py::check_options: allowed values give allowed outputs, and feeding the outputs back changes nothing."""
@@ -613,11 +634,11 @@ def test_check_options_fixed_point(vcov: str | None, coef_test: str | None, conf
 
 @SETTINGS
 @hypothesis.given(
-    measure=st.sampled_from([*metafopy.models.rma_glmm.SUPPORTED, *metafopy.models.rma_glmm.EXPERIMENTAL]),
-    model=st.none() | st.sampled_from(metafopy.models.rma_glmm.MODELS),
-    method=st.sampled_from(metafopy.models.rma_glmm.METHODS),
-    coding=st.sampled_from([0.5, 1, 0]),
-    test=st.sampled_from(['z', 't']),
+    measure=hypothesis.strategies.sampled_from([*metafopy.models.rma_glmm.SUPPORTED, *metafopy.models.rma_glmm.EXPERIMENTAL]),
+    model=hypothesis.strategies.none() | hypothesis.strategies.sampled_from(metafopy.models.rma_glmm.MODELS),
+    method=hypothesis.strategies.sampled_from(metafopy.models.rma_glmm.METHODS),
+    coding=hypothesis.strategies.sampled_from([0.5, 1, 0]),
+    test=hypothesis.strategies.sampled_from(['z', 't']),
 )
 def test_glmm_check_arguments(measure: str, model: str | None, method: str, coding: float, test: str) -> None:
     """src/metafopy/models/rma_glmm.py::check_arguments: the model is a MODELS member and CM.AL never survives for IRR."""
@@ -634,7 +655,12 @@ def test_glmm_check_arguments(measure: str, model: str | None, method: str, codi
 
 
 @SETTINGS
-@hypothesis.given(value=st.booleans() | st.integers(min_value=-5, max_value=8) | st.sampled_from(metafopy.models.rma_mv.RSCALES) | st.text(max_size=5))
+@hypothesis.given(
+    value=hypothesis.strategies.booleans()
+    | hypothesis.strategies.integers(min_value=-5, max_value=8)
+    | hypothesis.strategies.sampled_from(metafopy.models.rma_mv.RSCALES)
+    | hypothesis.strategies.text(max_size=5)
+)
 def test_resolve_rscale(value: bool | int | str) -> None:
     """src/metafopy/models/rma_mv.py::resolve_rscale: booleans and integers 0 to 3 give a name, other integers raise, a name maps to itself."""
     if (isinstance(value, int) and not isinstance(value, bool) and not 0 <= value <= 3) or (
@@ -652,10 +678,10 @@ def test_resolve_rscale(value: bool | int | str) -> None:
 
 @SETTINGS
 @hypothesis.given(
-    optimizer=st.sampled_from(metafopy.models.sel_opt.OPTIMIZERS),
-    optmethod=st.sampled_from(metafopy.models.sel_opt.OPTMETHODS),
-    type_=st.sampled_from(metafopy.models.sel_spec.TYPE_OPTIONS),
-    ncpus=st.integers(min_value=1, max_value=4),
+    optimizer=hypothesis.strategies.sampled_from(metafopy.models.sel_opt.OPTIMIZERS),
+    optmethod=hypothesis.strategies.sampled_from(metafopy.models.sel_opt.OPTMETHODS),
+    type_=hypothesis.strategies.sampled_from(metafopy.models.sel_spec.TYPE_OPTIONS),
+    ncpus=hypothesis.strategies.integers(min_value=1, max_value=4),
 )
 def test_choose_optimizer(optimizer: str, optmethod: str, type_: str, ncpus: int) -> None:
     """src/metafopy/models/sel_opt.py::choose_optimizer: a known optimiser, constrained for stepcon, never constrOptim.nl otherwise."""
@@ -671,7 +697,7 @@ def test_choose_optimizer(optimizer: str, optmethod: str, type_: str, ncpus: int
 
 
 @SETTINGS
-@hypothesis.given(options=st.lists(small_words, min_size=1, max_size=6, unique=True), value=small_text)
+@hypothesis.given(options=hypothesis.strategies.lists(SMALL_WORDS, min_size=1, max_size=6, unique=True), value=SMALL_TEXT)
 def test_partial_match(options: list[str], value: str) -> None:
     """src/metafopy/models/sel_opt.py::partial_match: an option matches itself, a unique prefix gives its option, and the result is a fixed point."""
     hits = [o for o in options if o.startswith(value)]
@@ -689,12 +715,16 @@ def test_partial_match(options: list[str], value: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(data=st.data())
-def test_match_type_first_literal_match(data: st.DataObject) -> None:
+@hypothesis.given(data=hypothesis.strategies.data())
+def test_match_type_first_literal_match(data: hypothesis.strategies.DataObject) -> None:
     """src/metafopy/models/sel_spec.py::match_type: always a TYPE_OPTIONS member, the first option a literal pattern matches."""
     options = metafopy.models.sel_spec.TYPE_OPTIONS
     pattern = data.draw(
-        st.sampled_from(options).flatmap(lambda o: st.tuples(st.integers(0, len(o)), st.integers(0, len(o))).map(lambda ij: o[min(ij) : max(ij)]))
+        hypothesis.strategies.sampled_from(options).flatmap(
+            lambda o: hypothesis.strategies.tuples(hypothesis.strategies.integers(0, len(o)), hypothesis.strategies.integers(0, len(o))).map(
+                lambda ij: o[min(ij) : max(ij)]
+            )
+        )
     )
     expected = next((o for o in options if pattern in o), None)
     if expected is None:
@@ -703,7 +733,7 @@ def test_match_type_first_literal_match(data: st.DataObject) -> None:
     else:
         assert metafopy.models.sel_spec.match_type(re.escape(pattern)) == expected
         assert metafopy.models.sel_spec.match_type(expected) == next(o for o in options if expected in o)
-    text = data.draw(st.text(alphabet='abcdefghnopqrstuwx12', max_size=6))
+    text = data.draw(hypothesis.strategies.text(alphabet='abcdefghnopqrstuwx12', max_size=6))
     try:
         assert metafopy.models.sel_spec.match_type(re.escape(text)) in options
     except metafopy.errors.InputError:

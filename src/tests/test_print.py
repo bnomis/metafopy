@@ -36,15 +36,15 @@ def test_fmt_table() -> None:
     assert out.splitlines() == ['         estimate      se', 'intrcpt   -0.7145  0.1798']
 
 
-digits_values = hypothesis.strategies.integers(min_value=0, max_value=8)
-cell_text = hypothesis.strategies.text(alphabet='abcdefgh0123456789.-', min_size=1, max_size=9)
-name_text = hypothesis.strategies.text(alphabet='abcxyz', min_size=1, max_size=5)
+DIGITS_VALUES = hypothesis.strategies.integers(min_value=0, max_value=8)
+CELL_TEXT = hypothesis.strategies.text(alphabet='abcdefgh0123456789.-', min_size=1, max_size=9)
+NAME_TEXT = hypothesis.strategies.text(alphabet='abcxyz', min_size=1, max_size=5)
 
 Table = tuple[list[str], list[list[str]], list[str]]
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(-1e6, 1e6), digits=digits_values)
+@hypothesis.given(x=rstrategies.finite_floats(-1e6, 1e6), digits=DIGITS_VALUES)
 def test_fmt_num_is_within_half_a_unit_and_never_negative_zero(x: float, digits: int) -> None:
     """Candidate ``src/metafopy/printing.py::fmt_num``."""
     out = metafopy.printing.fmt_num(x, digits)
@@ -64,7 +64,7 @@ def test_fmt_pval_is_the_cutoff_form_exactly_below_the_threshold(p: float, digit
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(-1e-3, 1e-3), digits=digits_values, thresh=hypothesis.strategies.floats(min_value=1e-12, max_value=1e-3))
+@hypothesis.given(x=rstrategies.finite_floats(-1e-3, 1e-3), digits=DIGITS_VALUES, thresh=hypothesis.strategies.floats(min_value=1e-12, max_value=1e-3))
 def test_zero_below_is_zero_exactly_below_the_threshold(x: float, digits: int, thresh: float) -> None:
     """Candidate ``src/metafopy/printing.py::zero_below``."""
     out = metafopy.printing.zero_below(x, digits, thresh)
@@ -103,8 +103,8 @@ def test_fmt_df_scalar_parses_back_and_integers_have_no_point(x: float) -> None:
 @hypothesis.given(data=hypothesis.strategies.data(), n=hypothesis.strategies.integers(min_value=1, max_value=6))
 def test_fmt_named_vector_lines_and_columns_share_one_width(data: hypothesis.strategies.DataObject, n: int) -> None:
     """Candidate ``src/metafopy/printing.py::fmt_named_vector``."""
-    names = data.draw(hypothesis.strategies.lists(cell_text, min_size=n, max_size=n))
-    values = data.draw(hypothesis.strategies.lists(cell_text, min_size=n, max_size=n))
+    names = data.draw(hypothesis.strategies.lists(CELL_TEXT, min_size=n, max_size=n))
+    values = data.draw(hypothesis.strategies.lists(CELL_TEXT, min_size=n, max_size=n))
     first, second = metafopy.printing.fmt_named_vector(names, values).split('\n')
     width = max(len(s) for s in [*names, *values])
     assert len(first) == len(second) == n * width + 2 * (n - 1)
@@ -113,7 +113,7 @@ def test_fmt_named_vector_lines_and_columns_share_one_width(data: hypothesis.str
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(names=hypothesis.strategies.lists(name_text, min_size=1, max_size=120))
+@hypothesis.given(names=hypothesis.strategies.lists(NAME_TEXT, min_size=1, max_size=120))
 def test_number_rows_has_equal_prefixes_and_recovers_names(names: list[str]) -> None:
     """Candidate ``src/metafopy/printing.py::number_rows``."""
     out = metafopy.printing.number_rows(names)
@@ -123,12 +123,12 @@ def test_number_rows_has_equal_prefixes_and_recovers_names(names: list[str]) -> 
 
 
 @hypothesis.strategies.composite
-def tables(draw: hypothesis.strategies.DrawFn) -> Table:
+def TABLES(draw: hypothesis.strategies.DrawFn) -> Table:
     ncol = draw(hypothesis.strategies.integers(min_value=1, max_value=8))
     nrow = draw(hypothesis.strategies.integers(min_value=1, max_value=5))
-    header = draw(hypothesis.strategies.lists(cell_text, min_size=ncol, max_size=ncol))
-    rows = [draw(hypothesis.strategies.lists(cell_text, min_size=ncol, max_size=ncol)) for _ in range(nrow)]
-    names = draw(hypothesis.strategies.lists(name_text, min_size=nrow, max_size=nrow))
+    header = draw(hypothesis.strategies.lists(CELL_TEXT, min_size=ncol, max_size=ncol))
+    rows = [draw(hypothesis.strategies.lists(CELL_TEXT, min_size=ncol, max_size=ncol)) for _ in range(nrow)]
+    names = draw(hypothesis.strategies.lists(NAME_TEXT, min_size=nrow, max_size=nrow))
     return header, rows, names
 
 
@@ -147,7 +147,7 @@ def check_blocks(blocks: list[list[str]], header: list[str], rows: list[list[str
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(table=tables(), width=hypothesis.strategies.integers(min_value=30, max_value=100))
+@hypothesis.given(table=TABLES(), width=hypothesis.strategies.integers(min_value=30, max_value=100))
 def test_fmt_wrapped_table_keeps_every_cell_once_and_fits(table: Table, width: int) -> None:
     """Candidate ``src/metafopy/printing.py::fmt_wrapped_table``."""
     header, rows, names = table
@@ -158,7 +158,7 @@ def test_fmt_wrapped_table_keeps_every_cell_once_and_fits(table: Table, width: i
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(table=tables(), width=hypothesis.strategies.one_of(hypothesis.strategies.none(), hypothesis.strategies.integers(min_value=30, max_value=100)))
+@hypothesis.given(table=TABLES(), width=hypothesis.strategies.one_of(hypothesis.strategies.none(), hypothesis.strategies.integers(min_value=30, max_value=100)))
 def test_fmt_table_keeps_every_cell_once_in_column_order(table: Table, width: int | None) -> None:
     """Candidate ``src/metafopy/printing.py::fmt_table``."""
     header, rows, names = table

@@ -60,13 +60,13 @@ def test_bfgs_analytic_gradient_and_parscale() -> None:
     assert numpy.allclose(res.par, [3.0, 0.01], atol=1e-5)
 
 
-limits = rstrategies.finite_floats(-6.0, 6.0)
-correlations = rstrategies.finite_floats(-0.95, 0.95)
+LIMITS = rstrategies.finite_floats(-6.0, 6.0)
+CORRELATIONS = rstrategies.finite_floats(-0.95, 0.95)
 BVN_SLACK = 4 * math.ulp(1.0)
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(h=limits, k=limits, r=correlations)
+@hypothesis.given(h=LIMITS, k=LIMITS, r=CORRELATIONS)
 def test_bvnu_property_symmetric_bounded_and_matches_scipy(h: float, k: float, r: float) -> None:
     """Candidate ``src/metafopy/core/bvn.py::bvnu``: symmetric in (h, k), in [0, 1], and the scipy bivariate normal upper orthant probability."""
     value = metafopy.core.bvn.bvnu(h, k, r)
@@ -77,7 +77,7 @@ def test_bvnu_property_symmetric_bounded_and_matches_scipy(h: float, k: float, r
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(h=limits, k=limits)
+@hypothesis.given(h=LIMITS, k=LIMITS)
 def test_bvnu_property_independent_at_zero_correlation(h: float, k: float) -> None:
     """Candidate ``src/metafopy/core/bvn.py::bvnu``: at r = 0 the probability is ``phi(-h) * phi(-k)``."""
     expected = float(scipy.stats.norm.sf(h) * scipy.stats.norm.sf(k))
@@ -85,18 +85,18 @@ def test_bvnu_property_independent_at_zero_correlation(h: float, k: float) -> No
 
 
 @hypothesis.strategies.composite
-def boxes(draw: hypothesis.strategies.DrawFn) -> tuple[tuple[float, float], tuple[float, float]]:
-    """A box ``(lower, upper)`` whose limits may be infinite."""
+def BOXES(draw: hypothesis.strategies.DrawFn) -> tuple[tuple[float, float], tuple[float, float]]:
+    """A box ``(lower, upper)`` whose LIMITS may be infinite."""
     result = []
     for _ in range(2):
-        a = draw(hypothesis.strategies.one_of(limits, hypothesis.strategies.just(-math.inf)))
-        b = draw(hypothesis.strategies.one_of(limits, hypothesis.strategies.just(math.inf)))
+        a = draw(hypothesis.strategies.one_of(LIMITS, hypothesis.strategies.just(-math.inf)))
+        b = draw(hypothesis.strategies.one_of(LIMITS, hypothesis.strategies.just(math.inf)))
         result.append((min(a, b), max(a, b)))
     return (result[0][0], result[1][0]), (result[0][1], result[1][1])
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(box=boxes(), r=correlations)
+@hypothesis.given(box=BOXES(), r=CORRELATIONS)
 def test_bvn_rect_property_bounded_and_symmetric_under_swapping_coordinates(box: tuple[tuple[float, float], tuple[float, float]], r: float) -> None:
     """Candidate ``src/metafopy/core/bvn.py::bvn_rect``: in [0, 1] and unchanged when both coordinates are swapped."""
     (l1, l2), (u1, u2) = box
@@ -106,7 +106,7 @@ def test_bvn_rect_property_bounded_and_symmetric_under_swapping_coordinates(box:
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(box=boxes(), r=correlations)
+@hypothesis.given(box=BOXES(), r=CORRELATIONS)
 def test_bvn_rect_property_monotone_in_the_box(box: tuple[tuple[float, float], tuple[float, float]], r: float) -> None:
     """Candidate ``src/metafopy/core/bvn.py::bvn_rect``: a box that contains another has no smaller probability; the whole plane has 1."""
     (l1, l2), (u1, u2) = box

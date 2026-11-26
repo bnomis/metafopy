@@ -6,6 +6,7 @@ import sys
 import time
 
 import audit.config
+import audit.errors
 import audit.recall
 import audit.report
 import audit.steps
@@ -102,6 +103,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help='List the steps and exit',
     )
     args = parser.parse_args(argv)
+    if args.timeout <= 0:
+        raise audit.errors.HarnessError(f'--timeout must be positive, not {args.timeout}')
     if args.recall not in (None, 'all'):
         known = audit.recall.Corpus.load().audits
         if not all(n.isdecimal() and int(n) in known for n in args.recall.split(',')):
