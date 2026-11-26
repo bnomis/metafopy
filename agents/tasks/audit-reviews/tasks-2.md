@@ -230,7 +230,7 @@ conventions, so that I am not misled.
 
 ## Task 7: A quadratic lookup and two repeated computations
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** F10 (P1), F11 (P3)
@@ -239,21 +239,21 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] `src/metafopy/effects/reshape.py:734` and `:738` (`to_wide`): build `{study: rank}` once from the sorted unique studies and look each
+- [x] `src/metafopy/effects/reshape.py:734` and `:738` (`to_wide`): build `{study: rank}` once from the sorted unique studies and look each
       row up in it, instead of `ustudy.index(s)`
-- [ ] `src/metafopy/methods/emm_adjust.py:239` (`critical_values`): compute the `mvt` critical value once per distinct `(level, df,
+- [x] `src/metafopy/methods/emm_adjust.py:239` (`critical_values`): compute the `mvt` critical value once per distinct `(level, df,
       correlation block)` within a family. Each call seeds its integrator with `MVT_SEED`, so reusing a value cannot change it; confirm
       with the existing `mvt` tests
-- [ ] `src/audit/generate.py:205` (`generate`): compute `universe.draws(generic)` once per generic, outside the loop over subjects
+- [x] `src/audit/generate.py:205` (`generate`): compute `universe.draws(generic)` once per generic, outside the loop over subjects
 
 **Acceptance Criteria:**
 
-- [ ] The existing tests of `to_wide`, the emmeans adjustments and `generate` pass unchanged
+- [x] The existing tests of `to_wide`, the emmeans adjustments and `generate` pass unchanged
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_reshape.py src/tests/test_emmeans_inference.py src/tests/test_emmeans.py` and the test file of
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_reshape.py src/tests/test_emmeans_inference.py src/tests/test_emmeans.py` and the test file of
       `audit.generate` pass (find it with `grep -rln 'audit.generate' src/tests`)
 
 **Notes:**
