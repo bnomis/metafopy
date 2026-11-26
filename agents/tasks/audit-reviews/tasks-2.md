@@ -327,7 +327,7 @@ conventions, so that I am not misled.
 
 ## Task 10: Harness I/O helpers that raise `HarnessError`
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Source Reference:** D1 (answered "wrap"), F5 (A1)
@@ -337,22 +337,22 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] Write `src/audit/harness_io.py` with small typed helpers, each catching `OSError` (and, for processes, `subprocess.SubprocessError`)
+- [x] Write `src/audit/harness_io.py` with small typed helpers, each catching `OSError` (and, for processes, `subprocess.SubprocessError`)
       and raising `audit.errors.HarnessError` from it, naming the path or the command and what the harness was doing: `read_text(path,
-      what)`, `write_text(path, text, what)`, `write_bytes(path, data, what)`, `make_dir(path, what)`, `run_command(args, what, **kwargs)`
+      what)`, `write_text(path, text, what)`, `write_bytes(path, data, what)`, `ensure_dir(path, what)`, `run_command(args, what, **kwargs)`
       returning the `subprocess.run` result, and `start_process(args, what, **kwargs)` returning the `Popen`. Docstrings with `Raises:`
-- [ ] Tests in `src/tests/test_harness_io.py`: each helper on a good path, and on a failing one (a missing directory, a missing executable)
+- [x] Tests in `src/tests/test_harness_io.py`: each helper on a good path, and on a failing one (a missing directory, a missing executable)
       raising `HarnessError` whose message names the path or command
 
 **Acceptance Criteria:**
 
-- [ ] Each helper translates its failures and passes its tests
+- [x] Each helper translates its failures and passes its tests
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/audit/harness_io.py` passes
-- [ ] `pytest src/tests/test_harness_io.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/audit/harness_io.py` passes
+- [x] `pytest src/tests/test_harness_io.py` passes
 
 **Notes:**
 
