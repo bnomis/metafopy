@@ -8,6 +8,7 @@ Every shim case agrees with R except `list_mixed`, which the shim refuses (decis
 import contextlib
 import functools
 import io
+import typing
 
 import auditsnippets
 import matplotlib.pyplot
@@ -281,7 +282,7 @@ def test_accepts_reads_the_signature_and_the_dispatched_implementation() -> None
     assert audit.rlib.accepts(functools.partial(plain_na_action, 1), 'na_action')
     assert audit.rlib.accepts(dispatched, 'na_action', 1)
     assert not audit.rlib.accepts(dispatched, 'na_action', 'text')
-    assert not audit.rlib.accepts(3, 'na_action')
+    assert not audit.rlib.accepts(typing.cast('typing.Any', 3), 'na_action')
 
 
 def test_rcall_passes_the_na_action_setting_only_to_functions_that_take_it(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -289,4 +290,4 @@ def test_rcall_passes_the_na_action_setting_only_to_functions_that_take_it(monke
     monkeypatch.setattr(audit.rlib, 'SETTINGS', {'na.action': 'na.exclude'})
     monkeypatch.setattr(audit.pycall, 'resolve_function', lambda name, first: plain_na_action)
     monkeypatch.setattr(audit.pycall, 'check_arguments', lambda f, names: None)
-    assert audit.rlib.rcall({}, 'somefn', 1) == 'exclude'
+    assert audit.rlib.rcall(typing.cast('typing.Any', {}), 'somefn', 1) == 'exclude'

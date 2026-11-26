@@ -444,7 +444,7 @@ exports.
 
 ## Task 13: The full check, the summary and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Source Reference:** all; auditme step 8b
@@ -453,26 +453,26 @@ exports.
 
 **Subtasks:**
 
-- [ ] Run `direnv exec /Users/simonb/src/metafopy auditor check . > <scratch>/audit.jsonl`. Every hit must be accepted; an unaccepted hit
+- [x] Run `direnv exec /Users/simonb/src/metafopy auditor check . > <scratch>/audit.jsonl`. Every hit must be accepted; an unaccepted hit
       this list introduced is fixed here
-- [ ] In `agents/audit-reviews/summary.md`, move every group this list fixed (F1-F13) from "Unresolved findings" to "Recently resolved" with
+- [x] In `agents/audit-reviews/summary.md`, move every group this list fixed (F1-F13) from "Unresolved findings" to "Recently resolved" with
       "Resolved in: tasks-2 (date)"
-- [ ] Mark each task above `done` only if its commit is on the branch
-- [ ] Run the final tests from the worktree and save their whole output for the merge gate:
+- [x] Mark each task above `done` only if its commit is on the branch
+- [x] Run the final tests from the worktree and save their whole output for the merge gate:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/audit-reviews/tasks-2 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/audit-reviews/tasks-2/final-tests.log`
 
 **Acceptance Criteria:**
 
-- [ ] `summary.md` lists each fixed group as resolved, and the final run passes
+- [x] `summary.md` lists each fixed group as resolved, and the final run passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `direnv exec /Users/simonb/src/metafopy pre-commit run --all-files` passes
-- [ ] `direnv exec /Users/simonb/src/metafopy pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy` passes
-- [ ] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
-- [ ] The final test run above passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `direnv exec /Users/simonb/src/metafopy pre-commit run --all-files` passes
+- [x] `direnv exec /Users/simonb/src/metafopy pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy` passes
+- [x] `/Users/simonb/src/metafopy/.venv/bin/mkdocs build --strict` passes
+- [x] The final test run above passes
 
 **Notes:**
 
