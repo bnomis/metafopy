@@ -54,3 +54,20 @@ Time: median of 20 identity fits of permutation 18, 202.6 ms (Task 1: 80.9 ms); 
 Tests: `pytest src/tests/test_rma_ls.py src/tests/test_ls_vif.py src/tests/test_audit8_crashes.py` 213 passed; `pytest
 src/tests/correctness/test_derived.py -k "ls."` 198 passed, 1 xfailed (the xfail is the recorded 2026-11-20 difference). No result changed.
 <!-- doc-counts: accept-end -->
+
+<!-- doc-counts: accept-start measured on 2026-11-26 - a dated record, not a claim about the present -->
+## Task 5: the scoped audit after the change
+
+Measured on 2026-11-26 at commit `0dd99a9` with Task 5's documentation uncommitted: `bin/metafor-audit.sh --only '*/ls_*'` with
+`METAFOPY_AUDIT_RLIB=/Users/simonb/src/metafopy/.audit/Rlib`, run directory `.audit/runs/20261126-114715` in the worktree (ignored by git);
+the options step took 1056 s. Compared with Task 1's run, `.audit/runs/20261126-104210` (commit `8cd2ba6`):
+
+| Run | Unaccepted differences | Matched known | Below threshold, not listed | Cases (matrix / options / construct) |
+|---|---|---|---|---|
+| Task 1 (before) | 0 | 14647 | 9896 | 280 / 3076 / 848 |
+| Task 5 (after) | 0 | 14646 | 9896 | 280 / 3076 / 848 |
+
+No restarted identity fit appears as a new difference, so `src/audit/data/known.toml` is unchanged. The one known finding that did not recur is
+`options/permutest/ls_bcg/exact=true` (`r-killed`: R passing the harness's 4 GiB memory limit, the recorded 2026-11-18 difference), which is
+R's memory use, not a fit, and unrelated to the restart.
+<!-- doc-counts: accept-end -->

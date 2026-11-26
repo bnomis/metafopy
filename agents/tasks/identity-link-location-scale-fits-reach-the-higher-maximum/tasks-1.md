@@ -204,7 +204,7 @@ port of metafor's single start.
 
 ## Task 5: Documentation and the scoped audit
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** medium
 **Spec Reference:** Implementation, Tests and records (docs and audit); Settings
@@ -214,23 +214,23 @@ accounts for every difference the restart causes.
 
 **Subtasks:**
 
-- [ ] Add to `docs/differences.md`, under "Location-scale fits with link="identity"": the restart, when it runs, the bcglat permutation 18
+- [x] Add to `docs/differences.md`, under "Location-scale fits with link="identity"": the restart, when it runs, the bcglat permutation 18
       example with R's and metafopy's log-likelihoods, `control={'restarts': False}`, and what is left out (fixed coefficients, `optbeta`,
       weights); update the log-link entry under "Optimiser stop points" where it says the identity link is left out
-- [ ] Update every other mention that `restarts` covers the log link only (`grep -rn "restarts" docs src/metafopy`)
-- [ ] Run `bin/metafor-audit.sh --only '*/ls_*'` again and compare with Task 1's run: each new difference is a restarted identity fit (check its
+- [x] Update every other mention that `restarts` covers the log link only (`grep -rn "restarts" docs src/metafopy`)
+- [x] Run `bin/metafor-audit.sh --only '*/ls_*'` again and compare with Task 1's run: each new difference is a restarted identity fit (check its
       log-likelihood is higher than R's); record each in `src/audit/data/known.toml` with this spec as its reason. A new difference of any other
       kind stops the task as `blocked`
-- [ ] Record both runs' directories and counts in `measurements.md`
+- [x] Record both runs' directories and counts in `measurements.md`
 
 **Acceptance Criteria:**
 
-- [ ] The scoped audit has no unaccepted difference; `pytest src/tests/test_docs_examples.py` passes
+- [x] The scoped audit has no unaccepted difference; `pytest src/tests/test_docs_examples.py` passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py src/tests/test_harness_accounts.py` passes
 
 **Notes:**
 
