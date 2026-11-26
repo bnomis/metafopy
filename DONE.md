@@ -1924,3 +1924,32 @@ Spec: `agents/specs/location-scale-fits-stable-across-platforms/spec.md`; tasks:
 Note 2026-11-24: the task list is done and the branch passes the full local run on macOS arm64 (log in the main checkout's `ralpher-logs/location-scale-fits-stable-across-platforms/tasks-1/final-tests.log`). This item moves to `DONE.md` once the CI run of the merge commit is green on every runner; check with `gh run list --branch main --limit 3` and `gh run view <id> --log-failed`.
 
 Done: 2026-11-24 - agents/specs/location-scale-fits-stable-across-platforms/spec.md, agents/tasks/location-scale-fits-stable-across-platforms/tasks-1.md (merged 611b1d2), and the identity-polish fix a90e402 for the Windows failure that merge exposed; CI run 45483912859 at 6f6e536 green on ubuntu, macOS and Windows. ls.permutest.location.exact.ML.z.bcglat stays a strict-xfail mismatch, pending the item "Location-scale fits can stop at a lower local maximum than the test reference".
+
+## Location-scale fits can stop at a lower local maximum than the test reference
+
+<!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
+Found on 2026-11-24 while measuring `ls.permutest.location.exact.ML.z.bcglat` on macOS arm64 at `282a6b9`
+(`agents/specs/location-scale-fits-stable-across-platforms/measurements.md`). On 8 of the 1210 regular permutations (indices 68, 264, 433, 651,
+805, 979, 1110, 1278 in `distinct_label_orders` order) metafopy's `z` differs from the test reference's by more than 1e-4. On permutation 68
+metafopy and R both stop at log-likelihood `-12.58248229` (alpha `[-0.778, -0.951]`); the test's reference fit reaches the higher
+`-12.57323737` (alpha `[-3.042, 2.526]`). Permutations 264 and 433 likewise.
+<!-- doc-counts: accept-end -->
+
+Cause: unconfirmed. The likelihood has at least two local maxima on these permutations; metafopy and R share the lower one, the reference
+fit, which starts elsewhere, reaches the higher.
+
+Fix direction: decide which maximum metafopy should report (the higher one is the better fit, but R's is the lower), compare R's behaviour on
+the eight permutations, and if metafopy should search more starts, write a spec first. Filed apart from
+`agents/specs/location-scale-fits-stable-across-platforms/spec.md`, whose decision D3 checks the exact permutation cases against widened
+bounds only.
+
+Note 2026-11-24: permutation 433 alone puts metafopy one over the reference bound of `ls.permutest.location.exact.ML.z.bcglat`, now a
+strict-xfail mismatch naming this item; remove its `status = "mismatch"` once this item is fixed.
+
+Note 2026-11-25: at `9bb0947` the reference fit agrees with metafopy on six of the eight permutations and reaches the higher maximum only on 433
+and 1278; on all eight a second, higher interior maximum exists (a 15-start sweep). The operator chose that metafopy reports the higher maximum.
+
+Spec: agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (approved 2026-11-25); tasks:
+agents/tasks/location-scale-fits-reach-the-higher-maximum/tasks-1.md.
+
+Done: 2026-11-25 - agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md, agents/tasks/location-scale-fits-reach-the-higher-maximum/tasks-1.md.

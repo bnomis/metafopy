@@ -4,33 +4,6 @@ Open work only, in implementation order, nearest first. Finished items move to
 `DONE.md` unchanged. See the shared `todo-add` and `todo-review` skills for
 the shape of an item.
 
-## Location-scale fits can stop at a lower local maximum than the test reference
-
-<!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
-Found on 2026-11-24 while measuring `ls.permutest.location.exact.ML.z.bcglat` on macOS arm64 at `282a6b9`
-(`agents/specs/location-scale-fits-stable-across-platforms/measurements.md`). On 8 of the 1210 regular permutations (indices 68, 264, 433, 651,
-805, 979, 1110, 1278 in `distinct_label_orders` order) metafopy's `z` differs from the test reference's by more than 1e-4. On permutation 68
-metafopy and R both stop at log-likelihood `-12.58248229` (alpha `[-0.778, -0.951]`); the test's reference fit reaches the higher
-`-12.57323737` (alpha `[-3.042, 2.526]`). Permutations 264 and 433 likewise.
-<!-- doc-counts: accept-end -->
-
-Cause: unconfirmed. The likelihood has at least two local maxima on these permutations; metafopy and R share the lower one, the reference
-fit, which starts elsewhere, reaches the higher.
-
-Fix direction: decide which maximum metafopy should report (the higher one is the better fit, but R's is the lower), compare R's behaviour on
-the eight permutations, and if metafopy should search more starts, write a spec first. Filed apart from
-`agents/specs/location-scale-fits-stable-across-platforms/spec.md`, whose decision D3 checks the exact permutation cases against widened
-bounds only.
-
-Note 2026-11-24: permutation 433 alone puts metafopy one over the reference bound of `ls.permutest.location.exact.ML.z.bcglat`, now a
-strict-xfail mismatch naming this item; remove its `status = "mismatch"` once this item is fixed.
-
-Note 2026-11-25: at `9bb0947` the reference fit agrees with metafopy on six of the eight permutations and reaches the higher maximum only on 433
-and 1278; on all eight a second, higher interior maximum exists (a 15-start sweep). The operator chose that metafopy reports the higher maximum.
-
-Spec: agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md (approved 2026-11-25); tasks:
-agents/tasks/location-scale-fits-reach-the-higher-maximum/tasks-1.md.
-
 ## Identity-link location-scale fits can stop below a higher maximum on the face `tau2 = 0`
 
 <!-- doc-counts: accept-start found on 2026-11-25 - a dated record, not a claim about the present -->
@@ -46,6 +19,8 @@ Cause: the identity-link fit (`fit_rma_ls` in `src/metafopy/models/rma_ls_fit.py
 Fix direction: design starts for the identity link (one per group with that group's `tau2` near zero is untested) and a guard on the active face
 (the information on the face, as `formulas.ls_face_basis` in `src/tests/correctness/formulas.py` builds it); measure before writing a spec. Do after
 the log-link spec ships, so its `restarts` setting and tests are in place.
+
+Note 2026-11-25: the log-link restarts in `fit_rma_ls` and `control['restarts']` are in place (spec `agents/specs/location-scale-fits-reach-the-higher-maximum/spec.md`); this item's identity-link fix can now build on them.
 
 ## Auditor rev 133ca2c reports unaccepted hits under three new rules
 

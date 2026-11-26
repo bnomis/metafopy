@@ -23,6 +23,26 @@ def bangert() -> metafopy.RMALSResult:
     return res
 
 
+@pytest.fixture(scope='module')
+def bangert_single_start() -> metafopy.RMALSResult:
+    """The same model with restarts off: R_SIM are metafor's single-start permuted refits, and a restart changes some of them.
+
+    See the spec location-scale-fits-reach-the-higher-maximum.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        res = metafopy.rma(
+            yi='yi',
+            vi='vi',
+            mods='~ I(ni/100) + meta',
+            scale='~ I(ni/100) + imag',
+            data=metafopy.datasets.load('dat.bangertdrowns2004'),
+            control={'restarts': False},
+        )
+    assert isinstance(res, metafopy.RMALSResult)
+    return res
+
+
 def lines(out: typing.Any) -> list[str]:
     assert isinstance(out, metafopy.methods.ls_vif.LSVIFResult)
     return [line.rstrip() for line in str(out).splitlines()]
@@ -60,15 +80,15 @@ R_SIM = {
 
 
 @pytest.mark.parametrize('how', ['seed', 'stream'])
-def test_sim_permutes_the_data_variables_as_r(bangert: metafopy.RMALSResult, how: str) -> None:
+def test_sim_permutes_the_data_variables_as_r(bangert_single_start: metafopy.RMALSResult, how: str) -> None:
     """metafor's ``.compvifsim`` permutes the variables of the data a formula uses and rebuilds the model matrix (``I(ni/100)`` keeps its
     transformation), and without ``seed`` continues the global stream; audit cases ``options/vif/ls_*/sim=true``."""
     out: typing.Any  # vif() is typed by its rma_uni overload
     if how == 'seed':
-        out = metafopy.vif(bangert, sim=50, seed=42, progbar=False)
+        out = metafopy.vif(bangert_single_start, sim=50, seed=42, progbar=False)
     else:
         metafopy.set_seed(1234)
-        out = metafopy.vif(bangert, sim=50, progbar=False)
+        out = metafopy.vif(bangert_single_start, sim=50, progbar=False)
     assert isinstance(out, metafopy.methods.ls_vif.LSVIFResult)
     for part, (prop, first) in R_SIM[how].items():
         res = getattr(out, part)
