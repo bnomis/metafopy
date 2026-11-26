@@ -1975,3 +1975,30 @@ Note 2026-11-25: the log-link restarts in `fit_rma_ls` and `control['restarts']`
 Spec: agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md; tasks: agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md.
 
 Done: 2026-11-26 - agents/specs/identity-link-location-scale-fits-reach-the-higher-maximum/spec.md, agents/tasks/identity-link-location-scale-fits-reach-the-higher-maximum/tasks-1.md.
+
+## Auditor rev 133ca2c reports unaccepted hits under three new rules
+
+<!-- doc-counts: accept-start found on 2026-11-24 - a dated record, not a claim about the present -->
+Found on 2026-11-24 when the auditor hooks' `rev` in `.pre-commit-config.yaml` was moved from `3e232368c42ae4147aa8607ac73570adfc3f786f` to
+`133ca2c819d32fbc369ff921c1eba491ab36e222` (commit `d35c7a7`): the pre-push hook `auditme-all` refused the push of `main` with 29 unaccepted hits,
+all under rules the earlier rev does not have. The bump was reverted so the CI fix could be pushed (operator choice, 2026-11-24).
+
+- `discarded-tuple-return` (a returned tuple is thrown away): `src/metafopy/plot/gosh.py:280`, `:282`, `:295`, `src/metafopy/plot/infl.py:111`,
+  `:266`, `src/metafopy/plot/llplot.py:278`, `src/metafopy/plot/profile.py:83`, `src/metafopy/plot/radial.py:194`, `src/metafopy/plot/rma.py:77`,
+  `:90`, `src/metafopy/plot/selmodel.py:230` (each discards `metafopy.plot.plain.plain_plot`'s tuple), `src/tests/correctness/test_derived.py:343`,
+  `src/tests/test_glmm_extras.py:141`;
+- `assert-never-missing` (an `if/elif` chain on a string ends in a fall-through `else`, not `typing.assert_never`): `src/audit/pycall.py:88`,
+  `src/metafopy/bias/fsn.py:96`, `src/metafopy/core/padjust.py:69`, `src/metafopy/effects/measures.py:1999`, `src/metafopy/methods/anova.py:195`,
+  `src/metafopy/methods/emm_adjust.py:223`, `:308`, `src/metafopy/methods/emm_contrasts.py:221`, `src/metafopy/models/mv_structs.py:538`,
+  `src/metafopy/models/tau2.py:353`, `src/metafopy/plot/forest.py:1238`, `src/metafopy/plot/labbe.py:356`, `src/metafopy/plot/rutils.py:339`;
+- `pure-name-has-side-effect` (a query-like name with a side effect): `src/audit/steps.py:98`, `src/metafopy/core/rng.py:267`,
+  `src/tests/auditsnippets.py:44`.
+<!-- doc-counts: accept-end -->
+
+Cause: the new rules are stricter than the code was written to; each hit is either a real cleanup or a site to accept with a reason.
+
+Fix direction: move the rev to `133ca2c` again on a branch, then fix or accept each hit (`# auditme: accept[<rule>] <reason>`); an
+`assert-never-missing` fix that changes which input raises changes behaviour, so check each chain's `else` before replacing it. Push only when
+`pre-commit run auditme-all --hook-stage manual --all-files` passes.
+
+Done: 2026-11-26 - branch chore/auditor-2107437: the auditor hooks moved to rev `2107437` (0.3.0), with `language_version: python3.14` on both hooks (the rev runs them as `language: python`) and CI fetching the public rules repository `bnomis/auditor-rules` at `f0ccb9a` into `AUDITOR_RULES_PATH`. At that rev 28 hits remained (`src/tests/correctness/test_derived.py:343` no longer fired): each `discarded-tuple-return` names its discard with `_ =`; each `assert-never-missing` chain is accepted with a scoped reason, since every subject is a plain `str` and each trailing `else` is a real arm or the domain error for unknown input; `check_versions` in `src/tests/auditsnippets.py` became `require_pinned_versions`, and `check_r` and `get_rng` are accepted.

@@ -27,6 +27,13 @@ jobs:
       # the audit checker needs ruff and python3 on PATH, and pre-commit to run its hooks
       - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - run: uv tool install pre-commit
+      # the checker loads its rules from AUDITOR_RULES_PATH; pin the public rules repository to the commit the local .envrc's copy is at, so CI and
+      # the local hooks run the same rules. Cloned outside the workspace so the audit never reads it as part of this project.
+      - name: Fetch the audit rules
+        run: |
+          git clone --quiet https://github.com/bnomis/auditor-rules "$RUNNER_TEMP/auditor-rules"
+          git -C "$RUNNER_TEMP/auditor-rules" checkout --quiet f0ccb9adae7c25179aead8cea60cc12fd261dabd
+          echo "AUDITOR_RULES_PATH=$RUNNER_TEMP/auditor-rules" >> "$GITHUB_ENV"
 
       - name: Audit the whole tree
         run: pre-commit run auditme-all --hook-stage manual --all-files
