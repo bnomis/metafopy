@@ -6,6 +6,7 @@ Every shim case agrees with R except `list_mixed`, which the shim refuses (decis
 """
 
 import contextlib
+import functools
 import io
 
 import auditsnippets
@@ -15,6 +16,7 @@ import pandas
 import pytest
 
 import audit.errors
+import audit.pycall
 import audit.rlib
 
 
@@ -246,3 +248,45 @@ def test_par_old_values_and_no_settings(monkeypatch: pytest.MonkeyPatch) -> None
     assert usr.shape == (4,)
     assert usr[0] < 0 < 1 < usr[1]
     assert usr[2] < 2 < 3 < usr[3]
+
+
+def test_shift_index_counts_from_zero_and_keeps_names() -> None:
+    """rlib.py shift_index: a scalar, a vector and a list shift from 1 to 0; a name, a bool and None stay."""
+    assert audit.rlib.shift_index(3) == 2
+    assert audit.rlib.shift_index(numpy.array([1.0, 4.0])) == [0, 3]
+    assert audit.rlib.shift_index([2, [3, 'a']]) == [1, [2, 'a']]
+    assert audit.rlib.shift_index('tau2') == 'tau2'
+    assert audit.rlib.shift_index(True) is True
+    assert audit.rlib.shift_index(None) is None
+
+
+def plain_na_action(x: object, na_action: str = 'omit') -> str:
+    return na_action
+
+
+@functools.singledispatch
+def dispatched(x: object) -> None:
+    return None
+
+
+@dispatched.register
+def dispatched_int(x: int, na_action: str = 'omit') -> None:
+    return None
+
+
+def test_accepts_reads_the_signature_and_the_dispatched_implementation() -> None:
+    """rlib.py accepts: a plain function, a partial, a singledispatch function (decided by the type of the first argument) and a non-callable."""
+    assert audit.rlib.accepts(plain_na_action, 'na_action')
+    assert not audit.rlib.accepts(plain_na_action, 'nothere')
+    assert audit.rlib.accepts(functools.partial(plain_na_action, 1), 'na_action')
+    assert audit.rlib.accepts(dispatched, 'na_action', 1)
+    assert not audit.rlib.accepts(dispatched, 'na_action', 'text')
+    assert not audit.rlib.accepts(3, 'na_action')
+
+
+def test_rcall_passes_the_na_action_setting_only_to_functions_that_take_it(monkeypatch: pytest.MonkeyPatch) -> None:
+    """rcall reads ``options(na.action=...)`` (SETTINGS) and passes it as ``na_action`` when the function accepts it."""
+    monkeypatch.setattr(audit.rlib, 'SETTINGS', {'na.action': 'na.exclude'})
+    monkeypatch.setattr(audit.pycall, 'resolve_function', lambda name, first: plain_na_action)
+    monkeypatch.setattr(audit.pycall, 'check_arguments', lambda f, names: None)
+    assert audit.rlib.rcall({}, 'somefn', 1) == 'exclude'

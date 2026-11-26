@@ -196,7 +196,7 @@ conventions, so that I am not misled.
 
 ## Task 6: Direct tests for six functions
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Source Reference:** F4 (T1)
@@ -205,22 +205,22 @@ conventions, so that I am not misled.
 
 **Subtasks:**
 
-- [ ] `src/audit/pycall.py::shift_index`: a `resolve_value`/`run_call` test with a `'$idx'` tag (a list, a bool, an int or float, another
+- [x] `src/audit/pycall.py::shift_index`: a `resolve_value`/`run_call` test with a `'$idx'` tag (a list, a bool, an int or float, another
       value), in `src/tests/test_harness_pycall.py` or the file that already tests `pycall`
-- [ ] `src/audit/rlib.py::accepts` and `::shift_index`: tests through `rcall` with `options(na.action=...)` set, and of shifting an R index
+- [x] `src/audit/rlib.py::accepts` and `::shift_index`: tests through `rcall` with `options(na.action=...)` set, and of shifting an R index
       from 1 to 0 (a scalar, a vector, a list, a name, `None`), in the file that tests `rlib`
-- [ ] `ConfintList.__init__` and `ConfintResult.summary` (`src/metafopy/methods/confint.py`), and `RMAResult.hat_matrix`
+- [x] `ConfintList.__init__` and `ConfintResult.summary` (`src/metafopy/methods/confint.py`), and `RMAResult.hat_matrix`
       (`src/metafopy/models/rma_uni.py`, weighted and `weighted=False`), in their modules' own test files, each value checked against R or
       an existing reference fixture
 
 **Acceptance Criteria:**
 
-- [ ] Each test calls its function directly and passes
+- [x] Each test calls its function directly and passes
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest` on each test file the task writes or edits passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest` on each test file the task writes or edits passes
 
 **Notes:**
 
