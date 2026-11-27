@@ -28,7 +28,7 @@ Fix direction: make the column names and interaction order follow R's `model.mat
 on the same terms), find why R keeps the 81-character table on one line, then drop the skips that pass and record any difference that remains in
 `docs/differences.md`. Check the `QM` digit against R before treating it as a tolerance.
 
-Spec: agents/specs/coefficient-names-and-print-tests-follow-r/spec.md; tasks: not yet written.
+Spec: agents/specs/coefficient-names-and-print-tests-follow-r/spec.md; tasks: agents/tasks/coefficient-names-and-print-tests-follow-r/tasks-1.md.
 
 ## A two-factor interaction with neither main effect gets other columns than in R
 
