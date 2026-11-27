@@ -249,7 +249,7 @@ metafor.
 
 ## Task 7: The user guide sentence
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Documentation
@@ -258,17 +258,17 @@ metafor.
 
 **Subtasks:**
 
-- [ ] Add one sentence to `docs/guide/models.md` where it describes `mods` (the paragraph beginning "Moderators are given as a formula in
+- [x] Add one sentence to `docs/guide/models.md` where it describes `mods` (the paragraph beginning "Moderators are given as a formula in
       `mods`"): a formula whose matrix is rank-deficient is fitted as in metafor, with the redundant columns dropped and a warning
-- [ ] `docs/differences.md` is not changed
+- [x] `docs/differences.md` is not changed
 
 **Acceptance Criteria:**
 
-- [ ] The sentence is in `docs/guide/models.md` and names no count
+- [x] The sentence is in `docs/guide/models.md` and names no count
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
 
 **Notes:**
 

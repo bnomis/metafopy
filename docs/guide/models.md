@@ -111,6 +111,8 @@ Moderators are given as a formula in `mods`, evaluated on `data` with [formulaic
 (R-style syntax: `'~ ablat + year'`, `'~ C(alloc)'`, `'~ ablat * year'`).
 As in R, `factor()`, `relevel(x, ref)` and `scale()` (which skips missing values) can be used in the formula, as can functions defined in the
 calling code (they are looked up where `rma` is called). The same goes for the `scale` formula of location-scale models.
+A formula whose design matrix is rank-deficient, such as `'~ f:g'`, is fitted as in metafor: the redundant columns are dropped and a warning
+is raised.
 
 ```python
 res = rma('yi', 'vi', mods='~ ablat + year', data=dat)
