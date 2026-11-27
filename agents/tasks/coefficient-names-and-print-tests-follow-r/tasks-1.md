@@ -98,7 +98,7 @@ names written by hand.
 
 ## Task 3: Interaction terms order their variables as R does
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API; Implementation; Error handling; Tests (R names oracle, `r_term_order`); Output changes
@@ -108,30 +108,30 @@ fit with its R counterpart by name.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/test_formula_names.py`: for every entry of `src/tests/reference/formula_names.json`, `design_matrix`'s names equal R's
+- [x] Write `src/tests/test_formula_names.py`: for every entry of `src/tests/reference/formula_names.json`, `design_matrix`'s names equal R's
       (with `(Intercept)` read as `intrcpt`) and its matrix equals R's column for column (exact, or `numpy.testing.assert_allclose` at
       `rtol=1e-15`); run it and see the entries written against first-appearance order fail
-- [ ] Add direct tests of `r_term_order` to `src/tests/test_formula.py`: no interaction comes back unchanged; `0 +` and `- 1` survive; a
+- [x] Add direct tests of `r_term_order` to `src/tests/test_formula.py`: no interaction comes back unchanged; `0 +` and `- 1` survive; a
       three-way interaction is reordered; `I(year - 1985)` is found; a factor missing from the text raises `metafopy.errors.InternalError`
-- [ ] Add `r_term_order(rhs: str) -> str` to `src/metafopy/formula.py` with the spec's docstring (not in `__all__`), as the spec's
+- [x] Add `r_term_order(rhs: str) -> str` to `src/metafopy/formula.py` with the spec's docstring (not in `__all__`), as the spec's
       Implementation 1-2 describe: formulaic's parsed terms, each interaction's factors ordered by first position in `r_tokens(rhs)`,
       rebuilt with the original intercept and the parsed term order, and returned unchanged when there is no interaction
-- [ ] Call it in `design_matrix` before `r_power`
-- [ ] Say in `r_column_name`'s docstring that `C(x)` names its columns like a plain factor, by the operator's decision of 2026-11-27, and
+- [x] Call it in `design_matrix` before `r_power`
+- [x] Say in `r_column_name`'s docstring that `C(x)` names its columns like a plain factor, by the operator's decision of 2026-11-27, and
       that R names them `C(x)level`
-- [ ] Run `pytest src/tests/test_rma_mv.py -k "test_fit and ber_un_mods"` with `ber_un_mods` taken out of `NAMES_DIFFER` for the run only:
+- [x] Run `pytest src/tests/test_rma_mv.py -k "test_fit and ber_un_mods"` with `ber_un_mods` taken out of `NAMES_DIFFER` for the run only:
       its `coef_names` now equal R's; put `NAMES_DIFFER` back (Task 4 changes it)
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_formula_names.py` passes; it failed before the rule
-- [ ] No other test in the Definition of Done changes its result
+- [x] `pytest src/tests/test_formula_names.py` passes; it failed before the rule
+- [x] No other test in the Definition of Done changes its result
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/formula.py src/tests/test_formula.py src/tests/test_formula_names.py` passes
-- [ ] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py src/tests/test_rma_mv.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/formula.py src/tests/test_formula.py src/tests/test_formula_names.py` passes
+- [x] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py src/tests/test_rma_mv.py`
       passes
 
 **Notes:**

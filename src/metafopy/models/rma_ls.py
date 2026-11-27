@@ -43,6 +43,7 @@ def scale_matrix(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tuple[Floa
 
     Raises:
         metafopy.errors.InputError: the formula needs data, or the matrix has the wrong number of rows.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
     """
     Z, names, z_missing = scale_matrix_parts(scale, md)
     Z = Z.copy()
@@ -58,6 +59,7 @@ def scale_matrix_parts(scale: ScaleSpec, md: metafopy.metadata.MetaData) -> tupl
 
     Raises:
         metafopy.errors.InputError: the formula needs data, or the matrix has the wrong number of rows.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
     """
     k_all = md.k_all
     if isinstance(scale, str):

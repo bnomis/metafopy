@@ -12,11 +12,13 @@ variance structures they imply are built by the model code.
 import ast
 import collections.abc
 import dataclasses
+import functools
 import inspect
 import math
 import re
 import typing
 
+import formulaic
 import formulaic.model_matrix
 import formulaic.transforms
 import numpy
@@ -46,7 +48,8 @@ def r_column_name(name: str) -> str:
 
     ``Intercept`` becomes metafor's ``intrcpt``; treatment-coded factor columns
     such as ``alloc[T.random]`` or ``C(alloc)[T.random]`` become ``allocrandom``.
-    Interaction terms are translated part by part.
+    Interaction terms are translated part by part. ``C(x)`` names its columns like a plain factor (``allocrandom``), by the operator's decision
+    of 2026-11-27; R names them ``C(alloc)random``.
     """
     if name == 'Intercept':
         return 'intrcpt'
@@ -142,6 +145,39 @@ def r_scale(x: typing.Any, center: bool | float = True, scale: bool | float = Tr
         with numpy.errstate(invalid='ignore', divide='ignore'):
             arr = arr / numpy.sqrt(float((arr[ok] ** 2).sum()) / (n - 1))
     return arr
+
+
+def r_term_order(rhs: str) -> str:
+    """The formula ``rhs`` with the variables of each interaction term in the order R's ``terms.formula`` gives them.
+
+    R lists a formula's variables in the order each first appears in the formula text, and writes every term with its variables in that order,
+    so ``~ 0 + outcome + I(year - 1985):outcome`` has the term ``outcome:I(year - 1985)``, whose columns are named ``outcomeAL:I(year - 1985)``.
+    Main-effect terms, the intercept (``0 +``, ``- 1``) and the order of the terms are left as they are.
+
+    See https://stat.ethz.ch/R-manual/R-devel/library/stats/html/terms.formula.html.
+
+    Raises:
+        metafopy.errors.InternalError: a variable of a parsed term could not be found in the formula text.
+    """
+    parsed = [(str(term), [str(factor) for factor in term.factors]) for term in formulaic.Formula(rhs)]
+    intercept = any(text == '1' for text, _ in parsed)
+    terms = [(text, factors) for text, factors in parsed if text != '1']
+    if not any(len(factors) > 1 for _, factors in terms):
+        return rhs
+    tokens = r_tokens(rhs)
+
+    def first_position(text: str, factor: str) -> int:
+        wanted = r_tokens(factor)
+        for i in range(len(tokens) - len(wanted) + 1):
+            if tokens[i : i + len(wanted)] == wanted:
+                return i
+        raise metafopy.errors.InternalError(f'variable {factor!r} of the term {text!r} is not in the formula {rhs!r}')
+
+    ordered = [sorted(factors, key=functools.partial(first_position, text)) for text, factors in terms]
+    if all(new == old for new, (_, old) in zip(ordered, terms, strict=True)):
+        return rhs
+    body = ' + '.join(':'.join(factors) for factors in ordered)
+    return body if intercept else f'0 + {body}'
 
 
 def r_power(rhs: str) -> str:
@@ -345,6 +381,7 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``r_term_order``).
     """
     rhs = formula.strip()
     if '~' in rhs:
@@ -355,7 +392,7 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         data = pandas.DataFrame(data)  # formulaic evaluates the variables of a data frame subclass (the result of escalc) differently
     context = formula_context()
     rhs, data, logical = r_logical_terms(rhs, data, context)
-    mm = formulaic.model_matrix(r_power(rhs), data, na_action='ignore', context=context)
+    mm = formulaic.model_matrix(r_power(r_term_order(rhs)), data, na_action='ignore', context=context)
     X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
         X = X[:, None]
