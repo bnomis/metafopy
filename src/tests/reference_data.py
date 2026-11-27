@@ -8,7 +8,7 @@ import typing
 REFERENCE_DIR = pathlib.Path(__file__).parent / 'reference'
 
 
-NOT_CASES = frozenset({'formula_names'})  # R model.matrix names; read by test_formula_names.py, holds no fits
+NOT_CASES = frozenset({'formula_names', 'formula_rank'})  # R model.matrix names and rank-deficient fits; read by their own tests, hold no case fits
 
 
 def case_names() -> list[str]:

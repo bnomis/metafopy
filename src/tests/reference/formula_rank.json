@@ -1,0 +1,45 @@
+{
+  "uni": {
+    "data": "data",
+    "names": ["intrcpt", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD"],
+    "beta": [0.128333333333333, -0.0672222222222224, -0.122333333333334, -0.056904761904762, -0.134047619047619, 0.221666666666667],
+    "se": [0.170782512765993, 0.226691175145591, 0.23057898140695, 0.247607600468006, 0.251897560433564, 0.210158670215308],
+    "warning": "Redundant predictors dropped from the model."
+  },
+  "mv": {
+    "data": "data",
+    "names": ["intrcpt", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD"],
+    "beta": [0.201012852104503, -0.165915819613653, -0.212258422204876, -0.24564056497347, -0.255996315114914, 0.148987147895497],
+    "se": [0.380344845873586, 0.53099105904144, 0.533214995686023, 0.542060524624913, 0.542522039727072, 0.523924626258986],
+    "warning": "Redundant predictors dropped from the model."
+  },
+  "ls": {
+    "data": "data_ls",
+    "names": ["intrcpt", "year"],
+    "beta": [-9.79530605485632, 0.00497999984273097],
+    "se": [17.3311466593074, 0.00869855933256405],
+    "warning": "Redundant predictors dropped from the scale model.",
+    "alpha_names": ["intrcpt", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD"],
+    "alpha": [-1.81334975479193, -1.89191556953389, 0.229647027606132, -0.109946578173149, -0.833229002872998, -0.549606768416052],
+    "alpha_se": [0.99090825025308, 2.58524724858934, 1.31895238591996, 1.45892317374916, 1.76927528997751, 1.73115898327109]
+  },
+  "data": {
+    "yi": [0.31, -0.12, 0.45, -0.52, 0.18, 0.77, -0.25, 0.09, -0.61, 0.38, 0.52, -0.33],
+    "vi": [0.04, 0.06, 0.05, 0.08, 0.03, 0.07, 0.05, 0.04, 0.09, 0.06, 0.03, 0.05],
+    "year": [1980, 1985, 1990, 1995, 2000, 2005, 1982, 1988, 1992, 1998, 2002, 2007],
+    "deltype": ["covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt"],
+    "outcome": ["AL", "AL", "AL", "PD", "PD", "PD", "AL", "AL", "AL", "PD", "PD", "PD"],
+    "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+  },
+  "data_ls": {
+    "yi": [0.31, -0.12, 0.45, -0.52, 0.18, 0.77, -0.25, 0.09, -0.61, 0.38, 0.52, -0.33, 0.22, 0.64, -0.41, 0.05, 0.93, -0.18, 0.27, -0.7, 0.11, 0.48, -0.05, 0.36],
+    "vi": [0.04, 0.06, 0.05, 0.08, 0.03, 0.07, 0.05, 0.04, 0.09, 0.06, 0.03, 0.05, 0.07, 0.03, 0.06, 0.05, 0.1, 0.04, 0.08, 0.06, 0.03, 0.07, 0.05, 0.09],
+    "year": [1980, 1985, 1990, 1995, 2000, 2005, 1982, 1988, 1992, 1998, 2002, 2007, 1981, 1986, 1991, 1996, 2001, 2006, 1983, 1989, 1993, 1999, 2003, 2008],
+    "deltype": ["covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt", "covert", "general", "overt"],
+    "outcome": ["AL", "AL", "AL", "PD", "PD", "PD", "AL", "AL", "AL", "PD", "PD", "PD", "AL", "AL", "AL", "PD", "PD", "PD", "AL", "AL", "AL", "PD", "PD", "PD"]
+  },
+  "meta": {
+    "R": "R version 4.6.2 (2026-10-29)",
+    "metafor": "5.2.1"
+  }
+}

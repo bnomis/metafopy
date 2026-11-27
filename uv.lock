@@ -753,6 +753,7 @@ version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "formulaic" },
+    { name = "interface-meta" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
@@ -785,6 +786,7 @@ dev = [
 requires-dist = [
     { name = "altair", marker = "extra == 'interactive'", specifier = ">=6.3" },
     { name = "formulaic", specifier = ">=1.0" },
+    { name = "interface-meta", specifier = ">=2.0" },
     { name = "matplotlib", specifier = ">=3.8" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.1" },
