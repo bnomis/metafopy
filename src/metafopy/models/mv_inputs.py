@@ -262,6 +262,7 @@ def build_x(
 
     Raises:
         metafopy.errors.InputError: the model matrix does not match the number of estimates.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
     """
     if mods is None:
         if not intercept:
@@ -305,6 +306,7 @@ def extract_random(
 
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
         metafopy.errors.NotFoundError: a variable of a formula is not found in the data.
     """
     structs = [struct] * 2 if isinstance(struct, str) else list(struct)

@@ -18,6 +18,7 @@ import metafopy.core.labelled
 import metafopy.errors
 import metafopy.methods.confint
 import metafopy.models.mv_result
+import metafopy.printing
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase4' / 'rma_mv.json').read_text(encoding='utf-8'))
 RTOL = 1e-5
@@ -109,8 +110,8 @@ CASES: collections.abc.Mapping[str, Fit] = types.MappingProxyType(
         # auditme: accept[literal-duplication] the fixture names repeat as the R script that generates them repeats them
         'ass_cs': lambda: metafopy.rma_mv('yi', 'vi', random=['~ 1 | study', '~ 1 | esid'], data=ass()),
         'ass_cs_ml': lambda: metafopy.rma_mv('yi', 'vi', random='~ 1 | study/esid', data=ass(), method='ML'),
-        'ass_mods': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass()),
-        'ass_mods_t': lambda: metafopy.rma_mv('yi', 'vi', mods='~ C(deltype) + year', random='~ 1 | study/esid', data=ass(), test='t', dfs='contain'),
+        'ass_mods': lambda: metafopy.rma_mv('yi', 'vi', mods='~ factor(deltype) + year', random='~ 1 | study/esid', data=ass()),
+        'ass_mods_t': lambda: metafopy.rma_mv('yi', 'vi', mods='~ factor(deltype) + year', random='~ 1 | study/esid', data=ass(), test='t', dfs='contain'),
         'ass_vcalc': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass()),
         'ass_vcalc_sparse': lambda: metafopy.rma_mv('yi', matrix('ass_V'), random='~ 1 | study/esid', data=ass(), sparse=True),
         'ber_un': lambda: berkey(random='~ outcome | trial', struct='UN'),
@@ -182,8 +183,15 @@ def components(res: metafopy.RMAMVResult, ref: dict[str, typing.Any], rtol: floa
 
 # Flat likelihoods: the log-likelihood agrees with R to ~1e-9 but the maximiser lands a hair away along a ridge.
 FLAT = {'kon_spexp': 2e-3, 'sim_s_and_g': 3e-2}
-PRINT_UNSTABLE = frozenset(FLAT) | {'sim_R_known', 'sim_R_cov0', 'sim_R_none', 'sim_R_sparse', 'sim_gdiag'}
-NAMES_DIFFER = frozenset({'ass_mods', 'ass_mods_t', 'ber_un_mods', 'kon_btt'})
+# ber_un_mods: on 2026-11-27 its REML log-likelihood equalled R's to 4e-12 while QM was 76.708512 against R's 76.708353, either side of the
+# rounding point 76.70845.
+PRINT_UNSTABLE = frozenset(FLAT) | {'sim_R_known', 'sim_R_cov0', 'sim_R_none', 'sim_R_sparse', 'sim_gdiag', 'ber_un_mods'}
+
+
+@pytest.fixture(autouse=True)
+def default_width(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``generate_rma_mv.R`` prints at R's default width, so the print tests of this module compare at 80, not at ``conftest.py``'s 200."""
+    monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)
 
 
 @pytest.mark.parametrize('name', sorted(CASES))
@@ -237,8 +245,7 @@ def test_structure_info(name: str) -> None:
         assert list(res.h_names) == refutil.as_list(ref['h_names'])
         vector(res.group_h.levels_k, ref['h_levels_k'], 'h_levels_k')
         vector(res.H, numpy.array(ref['H']).reshape(-1), 'H', rtol=FLAT.get(name, VC_RTOL), atol=VC_ATOL)
-    if name not in NAMES_DIFFER:
-        assert list(res.coef_names) == refutil.as_list(ref['coef_names'])
+    assert list(res.coef_names) == refutil.as_list(ref['coef_names'])
     for key, got in (('sigma2_fix', 'sigma2'), ('tau2_fix', 'tau2'), ('rho_fix', 'rho'), ('gamma2_fix', 'gamma2'), ('phi_fix', 'phi')):
         expected = ref[key]
         flags = res.vc_fix[got]
@@ -266,8 +273,6 @@ def test_derived(name: str) -> None:
 def test_print(name: str) -> None:
     if name in PRINT_UNSTABLE:
         pytest.skip('printed digits sit on a flat likelihood / boundary where the optimum differs from R in the 4th decimal')
-    if name in NAMES_DIFFER:
-        pytest.skip('coefficient labels follow the formula engine, not R')
     ref = REF[name]
     res = run(name)
     assert refutil.r_print(res.summary(showfit=False)).strip() == refutil.r_print(ref['print']).strip()

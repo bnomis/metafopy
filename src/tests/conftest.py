@@ -18,7 +18,8 @@ matplotlib.use('Agg')
 
 @pytest.fixture(autouse=True)
 def wide_console() -> collections.abc.Iterator[None]:
-    """The printouts stored from R were made at ``width = 200``; test_audit8_fields.py checks the wrapping at 80."""
+    """The generators that print wide tables set ``width = 200``, so the printouts stored from them are compared at 200; a module whose generator
+    does not sets 80 for its print tests. test_audit8_fields.py checks the wrapping at 80."""
     metafopy.printing.SETTINGS['width'] = 200
     yield
     metafopy.printing.SETTINGS['width'] = 80

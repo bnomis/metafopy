@@ -20,7 +20,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 1: Starting checks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Module location
@@ -30,33 +30,34 @@ measured state.
 
 **Subtasks:**
 
-- [ ] `grep -rnwE 'r_term_order' src/metafopy` prints nothing; otherwise stop as `blocked` naming the match
-- [ ] `src/tests/test_formula_names.py`, `src/tests/r/generate_formula_names.R` and `src/tests/reference/formula_names.json` do not exist;
+- [x] `grep -rnwE 'r_term_order' src/metafopy` prints nothing; otherwise stop as `blocked` naming the match
+- [x] `src/tests/test_formula_names.py`, `src/tests/r/generate_formula_names.R` and `src/tests/reference/formula_names.json` do not exist;
       otherwise stop as `blocked` naming the file
-- [ ] `NAMES_DIFFER` in `src/tests/test_rma_mv.py` is `{'ass_mods', 'ass_mods_t', 'ber_un_mods', 'kon_btt'}`, `ass_mods` and `ass_mods_t` write
+- [x] `NAMES_DIFFER` in `src/tests/test_rma_mv.py` is `{'ass_mods', 'ass_mods_t', 'ber_un_mods', 'kon_btt'}`, `ass_mods` and `ass_mods_t` write
       `C(deltype)`, and `src/tests/test_robust.py`'s `test_print` skips `uni_cs_btt`; otherwise stop as `blocked` naming what differs
-- [ ] Run `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py`: it passes; otherwise stop as `blocked` naming
+- [x] Run `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py`: it passes; otherwise stop as `blocked` naming
       the failures
 
 **Acceptance Criteria:**
 
-- [ ] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
+- [x] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py` passes
 
 **Notes:**
 
 - Key files: `src/metafopy/formula.py`, `src/tests/test_rma_mv.py`, `src/tests/test_robust.py`
+- Run on 2026-11-27: 438 passed, 12 skipped (4 + 7 in `test_rma_mv.py`, 1 in `test_robust.py`)
 - The commit holds only this task file's ticks and Notes
 
 ---
 
 ## Task 2: The R names oracle
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (R names oracle); External dependencies
@@ -66,25 +67,25 @@ names written by hand.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/r/generate_formula_names.R` in the style of the other generators (a header saying what it writes and its usage line,
+- [x] Write `src/tests/r/generate_formula_names.R` in the style of the other generators (a header saying what it writes and its usage line,
       `options(useFancyQuotes = FALSE)`, `library(jsonlite)`): one data frame of six rows with numeric `x`, `z` and `year`, character `deltype`
       (levels `covert`, `general`, `overt`, each present) and `outcome` (`AL`, `PD`); for each formula, `colnames(model.matrix(...))` and the
       matrix by column
-- [ ] Its formulas: `~ x`, `~ factor(deltype) + year`, `~ deltype + year`, `~ I(x^2)`, `~ x*outcome`, `~ outcome*x`, `~ x:outcome`,
+- [x] Its formulas: `~ x`, `~ factor(deltype) + year`, `~ deltype + year`, `~ I(x^2)`, `~ x*outcome`, `~ outcome*x`, `~ x:outcome`,
       `~ outcome:x`, `~ 0 + outcome + outcome:x`, `~ 0 + outcome + I(year - 1985):outcome`, `~ outcome:I(year - 1985)`, `~ x + z + z:x`,
       `~ z:x + x + z`, `~ x:z`, `~ factor(deltype):x`, `~ deltype + outcome + outcome:deltype`, `~ x + z + outcome + outcome:z:x`, `~ x - 1`
       (not `~ deltype:outcome`, which the spec leaves out)
-- [ ] Run it and write `src/tests/reference/formula_names.json`; check the names it records for `~ 0 + outcome + I(year - 1985):outcome` are
+- [x] Run it and write `src/tests/reference/formula_names.json`; check the names it records for `~ 0 + outcome + I(year - 1985):outcome` are
       `outcomeAL`, `outcomePD`, `outcomeAL:I(year - 1985)`, `outcomePD:I(year - 1985)`, as the spec measured; otherwise stop as `blocked`
 
 **Acceptance Criteria:**
 
-- [ ] The fixture holds names and a matrix for every formula above, and running the script again gives the same file
+- [x] The fixture holds names and a matrix for every formula above, and running the script again gives the same file
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The generator runs with the R command above and exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The generator runs with the R command above and exits 0
 
 **Notes:**
 
@@ -97,7 +98,7 @@ names written by hand.
 
 ## Task 3: Interaction terms order their variables as R does
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** API; Implementation; Error handling; Tests (R names oracle, `r_term_order`); Output changes
@@ -107,30 +108,30 @@ fit with its R counterpart by name.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/test_formula_names.py`: for every entry of `src/tests/reference/formula_names.json`, `design_matrix`'s names equal R's
+- [x] Write `src/tests/test_formula_names.py`: for every entry of `src/tests/reference/formula_names.json`, `design_matrix`'s names equal R's
       (with `(Intercept)` read as `intrcpt`) and its matrix equals R's column for column (exact, or `numpy.testing.assert_allclose` at
       `rtol=1e-15`); run it and see the entries written against first-appearance order fail
-- [ ] Add direct tests of `r_term_order` to `src/tests/test_formula.py`: no interaction comes back unchanged; `0 +` and `- 1` survive; a
+- [x] Add direct tests of `r_term_order` to `src/tests/test_formula.py`: no interaction comes back unchanged; `0 +` and `- 1` survive; a
       three-way interaction is reordered; `I(year - 1985)` is found; a factor missing from the text raises `metafopy.errors.InternalError`
-- [ ] Add `r_term_order(rhs: str) -> str` to `src/metafopy/formula.py` with the spec's docstring (not in `__all__`), as the spec's
+- [x] Add `r_term_order(rhs: str) -> str` to `src/metafopy/formula.py` with the spec's docstring (not in `__all__`), as the spec's
       Implementation 1-2 describe: formulaic's parsed terms, each interaction's factors ordered by first position in `r_tokens(rhs)`,
       rebuilt with the original intercept and the parsed term order, and returned unchanged when there is no interaction
-- [ ] Call it in `design_matrix` before `r_power`
-- [ ] Say in `r_column_name`'s docstring that `C(x)` names its columns like a plain factor, by the operator's decision of 2026-11-27, and
+- [x] Call it in `design_matrix` before `r_power`
+- [x] Say in `r_column_name`'s docstring that `C(x)` names its columns like a plain factor, by the operator's decision of 2026-11-27, and
       that R names them `C(x)level`
-- [ ] Run `pytest src/tests/test_rma_mv.py -k "test_fit and ber_un_mods"` with `ber_un_mods` taken out of `NAMES_DIFFER` for the run only:
+- [x] Run `pytest src/tests/test_rma_mv.py -k "test_fit and ber_un_mods"` with `ber_un_mods` taken out of `NAMES_DIFFER` for the run only:
       its `coef_names` now equal R's; put `NAMES_DIFFER` back (Task 4 changes it)
 
 **Acceptance Criteria:**
 
-- [ ] `pytest src/tests/test_formula_names.py` passes; it failed before the rule
-- [ ] No other test in the Definition of Done changes its result
+- [x] `pytest src/tests/test_formula_names.py` passes; it failed before the rule
+- [x] No other test in the Definition of Done changes its result
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/formula.py src/tests/test_formula.py src/tests/test_formula_names.py` passes
-- [ ] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py src/tests/test_rma_mv.py`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/formula.py src/tests/test_formula.py src/tests/test_formula_names.py` passes
+- [x] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py src/tests/test_rma_mv.py`
       passes
 
 **Notes:**
@@ -147,7 +148,7 @@ fit with its R counterpart by name.
 
 ## Task 4: The rma_mv and robust print tests compare like with like
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (`test_rma_mv.py`, `test_robust.py`, `conftest.py`)
@@ -156,26 +157,26 @@ fit with its R counterpart by name.
 
 **Subtasks:**
 
-- [ ] In `src/tests/test_rma_mv.py`: `ass_mods` and `ass_mods_t` write `factor(deltype)`, as `src/tests/r/generate_rma_mv.R` does
-- [ ] Remove `NAMES_DIFFER` and both its uses
-- [ ] Add `ber_un_mods` to `PRINT_UNSTABLE`, with a comment giving the measured reason: on 2026-11-27 its REML log-likelihood equalled R's to
+- [x] In `src/tests/test_rma_mv.py`: `ass_mods` and `ass_mods_t` write `factor(deltype)`, as `src/tests/r/generate_rma_mv.R` does
+- [x] Remove `NAMES_DIFFER` and both its uses
+- [x] Add `ber_un_mods` to `PRINT_UNSTABLE`, with a comment giving the measured reason: on 2026-11-27 its REML log-likelihood equalled R's to
       4e-12 while `QM` was 76.708512 against R's 76.708353, either side of the rounding point 76.70845
-- [ ] Add a module fixture that sets the print width to 80 (`monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)`), with a docstring
+- [x] Add a module fixture that sets the print width to 80 (`monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)`), with a docstring
       saying `generate_rma_mv.R` prints at R's default width
-- [ ] In `src/tests/test_robust.py`'s `test_print`, remove the `uni_cs_btt` skip
-- [ ] In `src/tests/conftest.py`, correct `wide_console`'s docstring: the generators that print wide tables set `width = 200`, and a module
+- [x] In `src/tests/test_robust.py`'s `test_print`, remove the `uni_cs_btt` skip
+- [x] In `src/tests/conftest.py`, correct `wide_console`'s docstring: the generators that print wide tables set `width = 200`, and a module
       whose generator does not sets 80 for its print tests
 
 **Acceptance Criteria:**
 
-- [ ] `test_print` runs and passes for `ass_mods`, `ass_mods_t`, `kon_btt` and `uni_cs_btt`, and `test_fit` checks `coef_names` for every case
-- [ ] Every `rma_mv` print case that passed before still passes at width 80
+- [x] `test_print` runs and passes for `ass_mods`, `ass_mods_t`, `kon_btt` and `uni_cs_btt`, and `test_fit` checks `coef_names` for every case
+- [x] Every `rma_mv` print case that passed before still passes at width 80
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_rma_mv.py src/tests/test_robust.py src/tests/conftest.py` passes
-- [ ] `pytest src/tests/test_rma_mv.py src/tests/test_robust.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_rma_mv.py src/tests/test_robust.py src/tests/conftest.py` passes
+- [x] `pytest src/tests/test_rma_mv.py src/tests/test_robust.py` passes
 
 **Notes:**
 
@@ -188,7 +189,7 @@ fit with its R counterpart by name.
 
 ## Task 5: docs/differences.md records the C() naming
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Documentation
@@ -198,21 +199,21 @@ surprise me.
 
 **Subtasks:**
 
-- [ ] Add a section "`C()` names its columns like a plain factor" under "By design" in `docs/differences.md`, after "Names and 0-based
+- [x] Add a section "`C()` names its columns like a plain factor" under "By design" in `docs/differences.md`, after "Names and 0-based
       indices", in the page's R-and-Python comparison layout: R `model.matrix(~ C(alloc), dat.bcg)` names `C(alloc)random`, metafopy
       `allocrandom`; why (in metafopy `C()` is formulaic's categorical marker, not R's contrasts setter); `factor(alloc)` and plain `alloc` name
       as R does
-- [ ] Fill each side's output by running it: R with the R command above (it needs metafor's `dat.bcg`, in the pinned library), Python through
+- [x] Fill each side's output by running it: R with the R command above (it needs metafor's `dat.bcg`, in the pinned library), Python through
       the page's own example runner
 
 **Acceptance Criteria:**
 
-- [ ] The section's outputs are the outputs the two code blocks print
+- [x] The section's outputs are the outputs the two code blocks print
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
@@ -223,7 +224,7 @@ surprise me.
 
 ## Task 6: The full local check and closing
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** the whole spec
@@ -233,28 +234,28 @@ to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/coefficient-names-and-print-tests-follow-r/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/coefficient-names-and-print-tests-follow-r/tasks-1/final-tests.log`
-- [ ] A test that hard-codes a coefficient name and now fails is fixed only when the new name is the one R gives for the same formula (an
+- [x] A test that hard-codes a coefficient name and now fails is fixed only when the new name is the one R gives for the same formula (an
       interaction written out of first-appearance order); any other failure stops the task as `blocked`, naming the test
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Move the `TODO.md` item "`rma_mv` prints some coefficient labels unlike R, and the print tests skip them for a partly stale reason" to the
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Move the `TODO.md` item "`rma_mv` prints some coefficient labels unlike R, and the print tests skip them for a partly stale reason" to the
       end of `DONE.md`: append its heading and body unchanged, then `Done: <date> - agents/specs/coefficient-names-and-print-tests-follow-r/spec.md,
       agents/tasks/coefficient-names-and-print-tests-follow-r/tasks-1.md.`, and remove it from `TODO.md`
 
 **Acceptance Criteria:**
 
-- [ ] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
+- [x] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy src/metafopy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/coefficient-names-and-print-tests-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy src/metafopy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/coefficient-names-and-print-tests-follow-r/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

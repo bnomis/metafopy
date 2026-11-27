@@ -6,6 +6,7 @@ import pytest
 import rstrategies
 
 import metafopy
+import metafopy.errors
 import metafopy.formula
 
 
@@ -99,3 +100,25 @@ def test_r_number_is_fifteen_digits_and_integers_are_plain(x: float) -> None:
     assert float(text) == float(f'{x:.15g}')
     if x == int(x) and abs(x) < 1e15:
         assert text == str(int(x))
+
+
+@pytest.mark.parametrize(
+    ('rhs', 'expected'),
+    [
+        ('x + z', 'x + z'),
+        ('x*z', 'x*z'),
+        ('x:z + z', 'x:z + z'),
+        ('z:x + x + z', 'z:x + x + z'),
+        ('0 + outcome + I(year - 1985):outcome', '0 + outcome + outcome:I(year - 1985)'),
+        ('x + z + z:x - 1', '0 + x + z + x:z'),
+        ('x + z + outcome + outcome:z:x', 'x + z + outcome + x:z:outcome'),
+    ],
+)
+def test_r_term_order(rhs: str, expected: str) -> None:
+    assert metafopy.formula.r_term_order(rhs) == expected
+
+
+def test_r_term_order_raises_for_a_missing_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(metafopy.formula, 'r_tokens', lambda text: [] if text == 'x:z' else text.split())
+    with pytest.raises(metafopy.errors.InternalError):
+        metafopy.formula.r_term_order('z:x')
