@@ -1,7 +1,9 @@
 import typing
 import warnings
 
+import formulaic
 import hypothesis
+import pandas
 import pytest
 import rstrategies
 
@@ -122,3 +124,52 @@ def test_r_term_order_raises_for_a_missing_variable(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(metafopy.formula, 'r_tokens', lambda text: [] if text == 'x:z' else text.split())
     with pytest.raises(metafopy.errors.InternalError):
         metafopy.formula.r_term_order('z:x')
+
+
+RANK_DATA = pandas.DataFrame(
+    {
+        'f': pandas.Categorical(list('abcabcabcabc')),
+        'g': pandas.Categorical(list('pqpqpqpqpqpq')),
+        'x': [1.0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        'z': [2.0, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11],
+    }
+)
+
+
+@pytest.mark.parametrize(
+    ('formula', 'expected'),
+    [
+        ('~ f:g', ('intrcpt', 'fa:gp', 'fb:gp', 'fc:gp', 'fa:gq', 'fb:gq', 'fc:gq')),
+        ('~ 0 + f + g', ('fa', 'fb', 'fc', 'gq')),
+        ('~ 0 + x + f', ('x', 'fa', 'fb', 'fc')),
+        ('~ f + g', ('intrcpt', 'fb', 'fc', 'gq')),
+        ('~ f + f:g', ('intrcpt', 'fb', 'fc', 'fa:gq', 'fb:gq', 'fc:gq')),
+    ],
+)
+def test_design_matrix_codes_factors_as_r(formula: str, expected: tuple[str, ...]) -> None:
+    _, names, _ = metafopy.formula.design_matrix(formula, RANK_DATA)
+    assert names == expected
+
+
+def scoped_terms(rhs: str, ensure_full_rank: bool = True) -> list[tuple[str, int, tuple[bool, ...]]]:
+    mm = formulaic.model_matrix(rhs, RANK_DATA, materializer=metafopy.formula.RPandasMaterializer, ensure_full_rank=ensure_full_rank)
+    assert mm.model_spec is not None
+    return [(str(s.term), len(s.scoped_terms), tuple(f.reduced for t in s.scoped_terms for f in t.factors)) for s in mm.model_spec.structure]
+
+
+def test_materializer_gives_one_scoped_term_per_formula_term() -> None:
+    assert [(name, count) for name, count, _ in scoped_terms('f:g + x')] == [('1', 1), ('x', 1), ('f:g', 1)]
+
+
+def test_materializer_codes_each_factor_by_its_margin() -> None:
+    assert scoped_terms('f:g')[1][2] == (False, False)
+    assert scoped_terms('f + f:g')[2][2] == (False, True)
+
+
+def test_materializer_keeps_a_constant_factor_as_scale() -> None:
+    terms = scoped_terms('f:I(2)')
+    assert [(name, count) for name, count, _ in terms] == [('1', 1), ('f:I(2)', 1)]
+
+
+def test_materializer_ignores_ensure_full_rank() -> None:
+    assert scoped_terms('f:g', ensure_full_rank=True) == scoped_terms('f:g', ensure_full_rank=False)

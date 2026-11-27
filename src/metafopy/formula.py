@@ -19,8 +19,12 @@ import re
 import typing
 
 import formulaic
+import formulaic.materializers
+import formulaic.materializers.types
 import formulaic.model_matrix
+import formulaic.parser.types
 import formulaic.transforms
+import interface_meta
 import numpy
 import numpy.typing
 import pandas
@@ -371,6 +375,74 @@ def formula_context() -> dict[str, typing.Any]:
     return context
 
 
+class RPandasMaterializer(formulaic.materializers.PandasMaterializer):  # type: ignore[misc]  # formulaic ships no type information
+    """formulaic's pandas materializer with R's ``model.matrix`` rule for coding the factors of each term.
+
+    In term ``k``, a factor is coded by contrasts when the term without it is empty and the formula has an intercept, or is contained in one of
+    the terms before ``k``; otherwise it is coded by indicators for every level. With no intercept, the first factor that is a main effect is
+    coded by indicators and the empty term then counts as present. Each formula term becomes one scoped term, so a term is never split to keep
+    the matrix full rank: as in R, a matrix can be rank-deficient, and the models drop the redundant columns.
+
+    See ``TermCode`` in https://github.com/wch/r-source/blob/trunk/src/library/stats/src/model.c.
+    """
+
+    # formulaic stores a materializer in the model spec by its registered name, so the subclass needs its own or the spec resolves to the base class
+    REGISTER_NAME: typing.ClassVar[str] = 'metafopy-r-pandas'
+
+    @interface_meta.override
+    def _get_scoped_terms(
+        self,
+        terms: collections.abc.Iterable[formulaic.parser.types.Term],
+        ensure_full_rank: bool = True,
+    ) -> collections.abc.Generator[tuple[formulaic.parser.types.Term, collections.abc.Iterable[formulaic.materializers.types.ScopedTerm]]]:
+        """One scoped term per term, coded by R's rule; ``ensure_full_rank`` is ignored."""
+        kinds = formulaic.parser.types.Factor.Kind
+        listed = list(terms)
+
+        def evaluated(term: formulaic.parser.types.Term) -> list[tuple[str, typing.Any]]:
+            pairs = [(str(f.expr), self.factor_cache[f.expr]) for f in term.factors]
+            return [(expr, e) for expr, e in pairs if e.values.__wrapped__ is not None]
+
+        empty_present = any(pairs and all(e.metadata.kind is kinds.CONSTANT for _, e in pairs) for pairs in map(evaluated, listed))
+        earlier: list[frozenset[str]] = []
+        for term in listed:
+            evaled = evaluated(term)
+            if not evaled:
+                yield term, []
+                continue
+            variables = frozenset(expr for expr, e in evaled if e.metadata.kind is not kinds.CONSTANT)
+            scale = functools.reduce(
+                lambda a, b: a * b,
+                [e.values for _, e in evaled if e.metadata.kind is kinds.CONSTANT],
+                1,
+            )
+            factors: list[formulaic.materializers.types.ScopedFactor] = []
+            coded_in_full = False
+            for expr, e in evaled:
+                if e.metadata.kind is kinds.CONSTANT:
+                    continue
+                rest = variables - {expr}
+                reduced = False
+                if e.metadata.kind is kinds.CATEGORICAL:
+                    reduced = empty_present if not rest else any(rest <= prior for prior in earlier)
+                    coded_in_full = coded_in_full or not reduced
+                factors.append(formulaic.materializers.types.ScopedFactor(e, reduced=reduced))
+            if not empty_present and len(variables) == 1 and coded_in_full:
+                empty_present = True
+            earlier.append(variables)
+            yield term, [formulaic.materializers.types.ScopedTerm(factors=factors, scale=scale)]
+
+
+def r_model_matrix(rhs: str, data: pandas.DataFrame, context: dict[str, typing.Any]) -> formulaic.ModelMatrix:
+    """The model matrix of the right-hand side ``rhs`` as R's ``model.matrix`` builds it: interaction variables in R's order (``r_term_order``),
+    ``^`` inside calls as a power (``r_power``), and factors coded by ``RPandasMaterializer``. Rows with missing values are kept.
+
+    Raises:
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``r_term_order``).
+    """
+    return formulaic.model_matrix(r_power(r_term_order(rhs)), data, na_action='ignore', context=context, materializer=RPandasMaterializer)
+
+
 def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.NDArray[numpy.float64], tuple[str, ...], numpy.typing.NDArray[numpy.bool_]]:
     """Build a model matrix from a one-sided formula.
 
@@ -392,7 +464,7 @@ def design_matrix(formula: str, data: pandas.DataFrame) -> tuple[numpy.typing.ND
         data = pandas.DataFrame(data)  # formulaic evaluates the variables of a data frame subclass (the result of escalc) differently
     context = formula_context()
     rhs, data, logical = r_logical_terms(rhs, data, context)
-    mm = formulaic.model_matrix(r_power(r_term_order(rhs)), data, na_action='ignore', context=context)
+    mm = r_model_matrix(rhs, data, context)
     X = numpy.array(mm.to_numpy(dtype=float), dtype=numpy.float64)
     if X.ndim == 1:
         X = X[:, None]

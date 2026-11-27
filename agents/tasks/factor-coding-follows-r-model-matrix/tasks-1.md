@@ -89,7 +89,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 3: R's coding rule in `design_matrix`
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** large
 **Spec Reference:** API; Implementation (Scoping, No intercept, One builder); Error handling; Tests (`RPandasMaterializer`)
@@ -98,29 +98,29 @@ How to run things, in every task (from the worktree root):
 
 **Subtasks:**
 
-- [ ] Write the failing tests first in `src/tests/test_formula.py`: on a frame with factors `f` (three levels), `g` (two), `h` (two) and numerics
+- [x] Write the failing tests first in `src/tests/test_formula.py`: on a frame with factors `f` (three levels), `g` (two), `h` (two) and numerics
       `x`, `z`, the column names of `design_matrix` for `~ f:g` (`intrcpt`, then all six `f`-by-`g` products, R's order), `~ 0 + f + g`
       (`fa fb fc gq` or the frame's level names), `~ 0 + x + f` (`x` then every level of `f`); one scoped term per formula term; a constant factor
       kept as the scoped term's `scale`; `ensure_full_rank=False` giving the same scoped terms
-- [ ] Add `RPandasMaterializer` to `src/metafopy/formula.py` with the docstring in the spec's API section, overriding `_get_scoped_terms` with
+- [x] Add `RPandasMaterializer` to `src/metafopy/formula.py` with the docstring in the spec's API section, overriding `_get_scoped_terms` with
       `@interface_meta.override`, by the rule in Implementation steps 1 and 2
-- [ ] Add `r_model_matrix(rhs, data, context)` with the spec's docstring: `formulaic.model_matrix(r_power(r_term_order(rhs)), data,
+- [x] Add `r_model_matrix(rhs, data, context)` with the spec's docstring: `formulaic.model_matrix(r_power(r_term_order(rhs)), data,
       na_action='ignore', context=context, materializer=RPandasMaterializer)`
-- [ ] Make `design_matrix` call `r_model_matrix` where it now calls `formulaic.model_matrix`; leave its signature, its errors and its naming as
+- [x] Make `design_matrix` call `r_model_matrix` where it now calls `formulaic.model_matrix`; leave its signature, its errors and its naming as
       they are
-- [ ] Run `src/tests/test_formula_names.py`: every existing entry still passes. A failure stops the task as `blocked`, naming the formula, since
+- [x] Run `src/tests/test_formula_names.py`: every existing entry still passes. A failure stops the task as `blocked`, naming the formula, since
       the spec says no formula outside the rank-deficient shapes changes
 
 **Acceptance Criteria:**
 
-- [ ] The new tests pass, and `design_matrix('~ deltype:outcome', ...)` on the spec's 12-row data gives R's seven columns
-- [ ] `formulaic.model_matrix(` appears in `src/metafopy/formula.py` only inside `r_model_matrix`
+- [x] The new tests pass, and `design_matrix('~ deltype:outcome', ...)` on the spec's 12-row data gives R's seven columns
+- [x] `formulaic.model_matrix(` appears in `src/metafopy/formula.py` only inside `r_model_matrix`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/formula.py src/tests/test_formula.py` passes
-- [ ] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/formula.py src/tests/test_formula.py` passes
+- [x] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_formula_rewriting_properties.py` passes
 
 **Notes:**
 
@@ -128,7 +128,7 @@ How to run things, in every task (from the worktree root):
 - The prototype measured on 2026-11-27 matched R's names and rank on all 20 formulas of the spec's Motivation; it took the evaluated factors as
   the base method does and yielded `ScopedTerm(factors=..., scale=...)` with `ScopedFactor(f, reduced=...)`
 - formulaic 1.2.2: `PandasMaterializer` from `formulaic.materializers`, `ScopedTerm` and `ScopedFactor` from `formulaic.materializers.types`,
-  `Factor.Kind` for categorical and constant factors
+  `Factor.Kind` (from `formulaic.parser.types`, with `Term`) for categorical and constant factors; `RPandasMaterializer` needs its own `REGISTER_NAME`, or formulaic resolves the model spec back to the base class
 
 ---
 
