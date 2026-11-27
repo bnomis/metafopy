@@ -57,7 +57,7 @@ measured state.
 
 ## Task 2: The R names oracle
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (R names oracle); External dependencies
@@ -67,25 +67,25 @@ names written by hand.
 
 **Subtasks:**
 
-- [ ] Write `src/tests/r/generate_formula_names.R` in the style of the other generators (a header saying what it writes and its usage line,
+- [x] Write `src/tests/r/generate_formula_names.R` in the style of the other generators (a header saying what it writes and its usage line,
       `options(useFancyQuotes = FALSE)`, `library(jsonlite)`): one data frame of six rows with numeric `x`, `z` and `year`, character `deltype`
       (levels `covert`, `general`, `overt`, each present) and `outcome` (`AL`, `PD`); for each formula, `colnames(model.matrix(...))` and the
       matrix by column
-- [ ] Its formulas: `~ x`, `~ factor(deltype) + year`, `~ deltype + year`, `~ I(x^2)`, `~ x*outcome`, `~ outcome*x`, `~ x:outcome`,
+- [x] Its formulas: `~ x`, `~ factor(deltype) + year`, `~ deltype + year`, `~ I(x^2)`, `~ x*outcome`, `~ outcome*x`, `~ x:outcome`,
       `~ outcome:x`, `~ 0 + outcome + outcome:x`, `~ 0 + outcome + I(year - 1985):outcome`, `~ outcome:I(year - 1985)`, `~ x + z + z:x`,
       `~ z:x + x + z`, `~ x:z`, `~ factor(deltype):x`, `~ deltype + outcome + outcome:deltype`, `~ x + z + outcome + outcome:z:x`, `~ x - 1`
       (not `~ deltype:outcome`, which the spec leaves out)
-- [ ] Run it and write `src/tests/reference/formula_names.json`; check the names it records for `~ 0 + outcome + I(year - 1985):outcome` are
+- [x] Run it and write `src/tests/reference/formula_names.json`; check the names it records for `~ 0 + outcome + I(year - 1985):outcome` are
       `outcomeAL`, `outcomePD`, `outcomeAL:I(year - 1985)`, `outcomePD:I(year - 1985)`, as the spec measured; otherwise stop as `blocked`
 
 **Acceptance Criteria:**
 
-- [ ] The fixture holds names and a matrix for every formula above, and running the script again gives the same file
+- [x] The fixture holds names and a matrix for every formula above, and running the script again gives the same file
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The generator runs with the R command above and exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The generator runs with the R command above and exits 0
 
 **Notes:**
 
