@@ -18,6 +18,7 @@ DATA = pandas.DataFrame(
         'year': [1980, 1985, 1990, 1995, 2000, 2005],
         'deltype': ['covert', 'general', 'overt', 'covert', 'general', 'overt'],
         'outcome': ['AL', 'PD', 'AL', 'PD', 'AL', 'PD'],
+        'arm': ['ctl', 'trt', 'trt', 'ctl', 'trt', 'ctl'],
     }
 )
 

@@ -16,6 +16,7 @@ dat <- data.frame(
   year = c(1980, 1985, 1990, 1995, 2000, 2005),
   deltype = c("covert", "general", "overt", "covert", "general", "overt"),
   outcome = c("AL", "PD", "AL", "PD", "AL", "PD"),
+  arm = c("ctl", "trt", "trt", "ctl", "trt", "ctl"),
   stringsAsFactors = FALSE
 )
 
@@ -37,7 +38,16 @@ formulas <- c(
   "~ factor(deltype):x",
   "~ deltype + outcome + outcome:deltype",
   "~ x + z + outcome + outcome:z:x",
-  "~ x - 1"
+  "~ x - 1",
+  "~ deltype:outcome",
+  "~ outcome:deltype",
+  "~ deltype:outcome:arm",
+  "~ deltype:outcome + outcome:arm",
+  "~ 0 + deltype:outcome + arm",
+  "~ 0 + deltype + outcome",
+  "~ 0 + x + deltype",
+  "~ x:deltype",
+  "~ outcome + deltype:outcome"
 )
 
 out <- list()

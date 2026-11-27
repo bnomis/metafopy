@@ -153,6 +153,113 @@
       [1.5, 2.25, 3, 4.75, 5.5, 7]
     ]
   },
+  "~ deltype:outcome": {
+    "names": ["(Intercept)", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD", "deltypeovert:outcomePD"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1]
+    ]
+  },
+  "~ outcome:deltype": {
+    "names": ["(Intercept)", "outcomeAL:deltypecovert", "outcomePD:deltypecovert", "outcomeAL:deltypegeneral", "outcomePD:deltypegeneral", "outcomeAL:deltypeovert", "outcomePD:deltypeovert"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1]
+    ]
+  },
+  "~ deltype:outcome:arm": {
+    "names": ["(Intercept)", "deltypecovert:outcomeAL:armctl", "deltypegeneral:outcomeAL:armctl", "deltypeovert:outcomeAL:armctl", "deltypecovert:outcomePD:armctl", "deltypegeneral:outcomePD:armctl", "deltypeovert:outcomePD:armctl", "deltypecovert:outcomeAL:armtrt", "deltypegeneral:outcomeAL:armtrt", "deltypeovert:outcomeAL:armtrt", "deltypecovert:outcomePD:armtrt", "deltypegeneral:outcomePD:armtrt", "deltypeovert:outcomePD:armtrt"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0]
+    ]
+  },
+  "~ deltype:outcome + outcome:arm": {
+    "names": ["(Intercept)", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD", "deltypeovert:outcomePD", "outcomeAL:armtrt", "outcomePD:armtrt"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1],
+      [0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0]
+    ]
+  },
+  "~ 0 + deltype:outcome + arm": {
+    "names": ["armctl", "armtrt", "deltypecovert:outcomeAL", "deltypegeneral:outcomeAL", "deltypeovert:outcomeAL", "deltypecovert:outcomePD", "deltypegeneral:outcomePD", "deltypeovert:outcomePD"],
+    "columns": [
+      [1, 0, 0, 1, 0, 1],
+      [0, 1, 1, 0, 1, 0],
+      [1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 1, 0, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1]
+    ]
+  },
+  "~ 0 + deltype + outcome": {
+    "names": ["deltypecovert", "deltypegeneral", "deltypeovert", "outcomePD"],
+    "columns": [
+      [1, 0, 0, 1, 0, 0],
+      [0, 1, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 1],
+      [0, 1, 0, 1, 0, 1]
+    ]
+  },
+  "~ 0 + x + deltype": {
+    "names": ["x", "deltypecovert", "deltypegeneral", "deltypeovert"],
+    "columns": [
+      [1.5, 2.25, 3, 4.75, 5.5, 7],
+      [1, 0, 0, 1, 0, 0],
+      [0, 1, 0, 0, 1, 0],
+      [0, 0, 1, 0, 0, 1]
+    ]
+  },
+  "~ x:deltype": {
+    "names": ["(Intercept)", "x:deltypecovert", "x:deltypegeneral", "x:deltypeovert"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [1.5, 0, 0, 4.75, 0, 0],
+      [0, 2.25, 0, 0, 5.5, 0],
+      [0, 0, 3, 0, 0, 7]
+    ]
+  },
+  "~ outcome + deltype:outcome": {
+    "names": ["(Intercept)", "outcomePD", "outcomeAL:deltypegeneral", "outcomePD:deltypegeneral", "outcomeAL:deltypeovert", "outcomePD:deltypeovert"],
+    "columns": [
+      [1, 1, 1, 1, 1, 1],
+      [0, 1, 0, 1, 0, 1],
+      [0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0],
+      [0, 0, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1]
+    ]
+  },
   "meta": {
     "R": "R version 4.6.2 (2026-10-29)"
   }

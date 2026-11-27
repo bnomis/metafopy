@@ -134,7 +134,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 4: Extend the R names oracle
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** Tests (R names oracle)
@@ -143,24 +143,24 @@ How to run things, in every task (from the worktree root):
 
 **Subtasks:**
 
-- [ ] Save the current `src/tests/reference/formula_names.json` to the scratch directory
-- [ ] Add a factor `arm` (two levels) to the data frame in `src/tests/r/generate_formula_names.R` and the same column to `DATA` in
+- [x] Save the current `src/tests/reference/formula_names.json` to the scratch directory
+- [x] Add a factor `arm` (two levels) to the data frame in `src/tests/r/generate_formula_names.R` and the same column to `DATA` in
       `src/tests/test_formula_names.py`
-- [ ] Add the spec's formulas: `~ deltype:outcome`, `~ outcome:deltype`, `~ deltype:outcome:arm`, `~ deltype:outcome + outcome:arm`,
+- [x] Add the spec's formulas: `~ deltype:outcome`, `~ outcome:deltype`, `~ deltype:outcome:arm`, `~ deltype:outcome + outcome:arm`,
       `~ 0 + deltype:outcome + arm`, `~ 0 + deltype + outcome`, `~ 0 + x + deltype`, `~ x:deltype`, `~ outcome + deltype:outcome`
-- [ ] Regenerate the JSON with the R command above
-- [ ] Compare the saved and new JSON on the saved file's keys: every old entry is unchanged; otherwise stop as `blocked`, naming the entry
+- [x] Regenerate the JSON with the R command above
+- [x] Compare the saved and new JSON on the saved file's keys: every old entry is unchanged; otherwise stop as `blocked`, naming the entry
 
 **Acceptance Criteria:**
 
-- [ ] `formula_names.json` holds every old entry unchanged and the nine new formulas
-- [ ] `src/tests/test_formula_names.py` passes on every entry, new ones included
+- [x] `formula_names.json` holds every old entry unchanged and the nine new formulas
+- [x] `src/tests/test_formula_names.py` passes on every entry, new ones included
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] The generator runs with the R command above and exits 0
-- [ ] `pytest src/tests/test_formula_names.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] The generator runs with the R command above and exits 0
+- [x] `pytest src/tests/test_formula_names.py` passes
 
 **Notes:**
 
