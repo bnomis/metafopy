@@ -351,7 +351,7 @@ to `DONE.md`.
 - Task 8 depends on this task for its clean full run
 - Task 8's other work is done in the worktree but uncommitted: the spec and index set to implemented, the `TODO.md` item moved to `DONE.md`, and
   `formula_rank` added to `NOT_CASES` in `src/tests/reference_data.py` (the fixture glob read `formula_rank.json` as a case with no `fits`)
-- Decided 2026-11-27 by Claude at the operator's request ("unblock task 9"), not yet reviewed: the test compares within 4 ulps and `bvnu`
+- Decided 2026-11-27 by Claude at the operator's request ("unblock task 9"), approved by the operator 2026-11-27: the test compares within 4 ulps and `bvnu`
   is unchanged. `bvnu` follows Genz's BVNU line by line, and its high-correlation branch negates only `k` when `r < 0`, so exact symmetry was
   never promised; sorting the limits would make half of all calls round differently from the source the port follows
 - Run on 2026-11-27: `pytest src/tests/test_optim.py` 9 passed on the worktree's `.hypothesis` database; `mypy src/tests/test_optim.py` clean
