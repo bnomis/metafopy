@@ -60,7 +60,7 @@ class Step:
 
 # Case gains: then: Step | None = None. run_case applies it and returns the follow-on result, which `expect` and `check` then see.
 # setup gains two keys besides `escalc`, each passed to the call as `V` (computed with numpy and pandas, never metafopy):
-#   vblocks = { cluster = "trial", columns = ["v1i", "v2i"] }  block-diagonal V, block j = the rows of cluster j, the named columns
+#   vblocks = { cluster = "trial", columns = ["v1i", "v2i"] }  block-diagonal V, block j = the rows of cluster j, its first r named columns
 #   vconst = { cluster = "studyid", vi = "vi", rho = 0.8 }      V[i, l] = rho * sqrt(vi[i] * vi[l]) within a cluster, vi on the diagonal
 
 
@@ -163,7 +163,8 @@ Olkin's chapter. Every other row is supplied by the user or read open access wit
 
 - `then` with keys other than `function` and `args`, or a `setup` with both `vblocks` and `vconst`, or either without `cluster`, raises `ValueError`
   naming the file and case id, as every malformed case does; an unknown follow-on function raises `LookupError` naming it.
-- `build_v` raises `ValueError` naming the case when a `vblocks` cluster's row count differs from the number of `columns`, or a block is not symmetric.
+- `build_v` raises `ValueError` naming the case when a `vblocks` cluster has more rows than `columns` names, or a block is not symmetric. A cluster
+  with fewer rows (a study missing an arm or an endpoint) reads the first columns (amended 2026-11-27, for Gleser and Olkin's examples).
 - `mv_fit` that does not converge (a gradient norm above `1e-6`; scipy's `success` flag is not consulted) fails the case naming the structure and the optimiser
   message; it is never compared.
 - `r/other_software_mv.R` stops unless each package version equals the one pinned at its top, and unless `tools::package_dependencies` shows that

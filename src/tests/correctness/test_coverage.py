@@ -761,14 +761,26 @@ def test_an_unknown_follow_on_function_raises_naming_it() -> None:
         correctness.cases.run_case(case)
 
 
-def test_build_v_refuses_a_block_of_the_wrong_size_or_one_not_symmetric() -> None:
+def test_vblocks_reads_the_first_columns_for_a_smaller_cluster() -> None:
+    """A cluster with fewer rows than ``columns`` names (a study missing an arm or an endpoint) takes its block from the first columns."""
+    case = one_case(VBLOCKS_CASE)
+    assert case.setup is not None
+    frame = correctness.cases.case_frame(case)
+    assert frame is not None
+    actual = correctness.cases.build_v(frame.iloc[:3], case.setup, 'inline.toml: case unit.vblocks')
+    expected = numpy.array([[0.02, 0.01, 0.0], [0.01, 0.03, 0.0], [0.0, 0.0, 0.03]])
+    numpy.testing.assert_array_equal(actual, expected)
+
+
+def test_build_v_refuses_a_block_too_large_or_one_not_symmetric() -> None:
     case = one_case(VBLOCKS_CASE)
     assert case.setup is not None
     frame = correctness.cases.case_frame(case)
     assert frame is not None
     where = 'inline.toml: case unit.vblocks'
-    with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: cluster 2\.0 has 1 rows but vblocks names 2 columns'):
-        correctness.cases.build_v(frame.iloc[:3], case.setup, where)
+    merged = frame.assign(trial=[1.0, 1.0, 1.0, 2.0])
+    with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: cluster 1\.0 has 3 rows but vblocks names 2 columns'):
+        correctness.cases.build_v(merged, case.setup, where)
     asymmetric = frame.copy()
     asymmetric.loc[1, 'v1i'] = 0.5
     with pytest.raises(ValueError, match=r'inline\.toml: case unit\.vblocks: the block of cluster 1\.0 is not symmetric'):

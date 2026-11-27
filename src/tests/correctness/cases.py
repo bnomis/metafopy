@@ -481,8 +481,9 @@ def case_frame(case: Case) -> pandas.DataFrame | None:
 def build_v(frame: pandas.DataFrame, setup: dict[str, typing.Any], where: str) -> FloatArray:
     """The ``V`` matrix a ``vblocks`` or ``vconst`` setup describes, rows in data order, computed with numpy and pandas alone.
 
-    ``vblocks`` is block-diagonal: the block of a cluster has one row per row of the cluster and one column per name in ``columns``, so that entry
-    ``[i, l]`` is ``frame[columns[l]]`` at the cluster's ``i``-th row. ``vconst`` puts ``vi`` on the diagonal and ``rho * sqrt(vi[i] * vi[l])`` between
+    ``vblocks`` is block-diagonal: the block of a cluster of ``r`` rows has one row per row of the cluster and one column per name among the first ``r``
+    of ``columns``, so that entry ``[i, l]`` is ``frame[columns[l]]`` at the cluster's ``i``-th row; a cluster with fewer rows than ``columns`` names
+    (a study missing an arm or an endpoint) leaves the other columns unread. ``vconst`` puts ``vi`` on the diagonal and ``rho * sqrt(vi[i] * vi[l])`` between
     two rows of a cluster.
     """
     spec = setup['vblocks'] if 'vblocks' in setup else setup['vconst']
@@ -492,9 +493,9 @@ def build_v(frame: pandas.DataFrame, setup: dict[str, typing.Any], where: str) -
     for label in pandas.unique(labels).tolist():
         rows = numpy.flatnonzero(labels == label)
         if 'vblocks' in setup:
-            columns = spec['columns']
-            if len(rows) != len(columns):
-                raise ValueError(f'{where}: cluster {label!r} has {len(rows)} rows but vblocks names {len(columns)} columns')
+            columns = spec['columns'][: len(rows)]
+            if len(rows) > len(spec['columns']):
+                raise ValueError(f'{where}: cluster {label!r} has {len(rows)} rows but vblocks names {len(spec["columns"])} columns')
             block = frame[columns].to_numpy(dtype=numpy.float64)[rows]
             if not numpy.allclose(block, block.T, rtol=SYMMETRY_TOLERANCE, atol=SYMMETRY_TOLERANCE):
                 raise ValueError(f'{where}: the block of cluster {label!r} is not symmetric')

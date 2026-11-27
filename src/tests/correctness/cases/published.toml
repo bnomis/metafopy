@@ -1462,7 +1462,6 @@ read = 2026-11-14
 # - Ishak et al. (2007): Table 1 reproduces for REML, but the data are wide and the multivariate rows need a hand-built V with a profiled correlation;
 #   Table 2 needs a 44-study subset the bundled data lack.
 # - Assink and Wibbelink (2016): QE and one likelihood-ratio statistic differ because the paper used unrounded data; only the fit values are written.
-# - van Houwelingen et al. (2002), Gleser and Olkin (2009): reproduce, but need inline arm-level data or chapter tables; left for Task 13.
 # - Hedges, Tipton and Johnson (2010): the Table IV robust row reproduces only with the paper's own method-of-moments weights (179 inline rows); its
 #   fixed and random effects rows cannot be reproduced from the printed synthetic effects.
 # - Tipton (2015) Table 6 and Tipton and Pustejovsky (2015) Table 1: data not available (the author's blog; the dropout-prevention data), and the
@@ -1485,6 +1484,57 @@ covers = []
 citation = "Berkey CS, Hoaglin DC, Antczak-Bouckoms A, Mosteller F, Colditz GA (1998). Meta-analysis of multiple outcomes by regression with random effects. Statistics in Medicine 17:2537-2550."
 locator = "Table II, multiple outcomes MML column (maximum marginal likelihood is ML), data of Table I; order AL then PD"
 read = 2026-11-14
+
+# van Houwelingen et al. (2002) Section 4.1: the arm-level log odds of the BCG trials (Table I counts, two rows per trial) with known within-arm
+# variances 1/x + 1/(n - x), a bivariate random effect per trial (UN), ML. The text's three-digit values are used: the SAS output's eight digits
+# exceed the optimisers' convergence (metafopy agrees to about 1e-6), and its intervals use t with 1000 df.
+[[case]]
+id = "published.vanhouwelingen2002.bivariate.ml.un"
+kind = "published"
+function = "rma_mv"
+data = { trial = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13], arm = ["exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con", "exp", "con"], xi = [4, 11, 6, 29, 3, 11, 62, 248, 33, 47, 180, 372, 8, 10, 505, 499, 29, 45, 17, 65, 186, 141, 5, 3, 27, 29], mi = [119, 128, 300, 274, 228, 209, 13536, 12619, 5036, 5761, 1361, 1079, 2537, 619, 87886, 87892, 7470, 7232, 1699, 1600, 50448, 27197, 2493, 2338, 16886, 17825] }
+setup = { escalc = { measure = "PLO", xi = "xi", mi = "mi" } }
+args = { yi = "yi", V = "vi", mods = "~ 0 + arm", random = "~ arm | trial", struct = "UN", method = "ML" }
+expect = { "beta[0]" = "-4.096", "beta[1]" = "-4.834", "tau2[0]" = "2.407", "tau2[1]" = "1.431", "rho" = "0.947" }
+covers = []
+
+[case.source]
+citation = "van Houwelingen HC, Arends LR, Stijnen T (2002). Advanced methods in meta-analysis: multivariate approach and meta-regression. Statistics in Medicine 21:589-624. doi:10.1002/sim.1040"
+locator = "Section 4.1, pp. 602-605: data of Table I (p. 594) as the arm-level rows on pp. 602-603; estimates in the text below the SAS output, p. 604; order con (not vaccinated) then exp (vaccinated)"
+read = 2026-11-27
+
+# Gleser and Olkin (2009) Section 19.2: three hypothetical studies of three therapies against a shared control (Table 19.1), studies holding two,
+# one and three of the therapies; fixed-effects GLS with the chapter's own estimated covariance matrices (equations 19.4 and p. 362) as known V.
+# A study's block takes the first of the columns c1 to c3 (nan where it has fewer effects).
+[[case]]
+id = "published.gleser2009.proportions.fe"
+kind = "published"
+function = "rma_mv"
+data = { study = [1, 1, 2, 3, 3, 3], treat = ["T1", "T2", "T1", "T1", "T2", "T3"], yi = [0.0150, 0.0025, 0.0125, 0.0350, -0.0050, 0.0250], c1 = [44494e-9, 38400e-9, 327734e-9, 73088e-9, 34688e-9, 34688e-9], c2 = [38400e-9, 47423e-9, nan, 34688e-9, 108288e-9, 34688e-9], c3 = [nan, nan, nan, 34688e-9, 34688e-9, 82188e-9] }
+setup = { vblocks = { cluster = "study", columns = ["c1", "c2", "c3"] } }
+args = { yi = "yi", mods = "~ 0 + treat", method = "FE" }
+expect = { "beta[0]" = "0.0200", "beta[1]" = "0.0043", "beta[2]" = "0.0211", "QE" = "7.191" }
+covers = []
+
+[case.source]
+citation = "Gleser LJ, Olkin I (2009). Stochastically dependent effect sizes. Chapter 19 of Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed. Russell Sage Foundation"
+locator = "Section 19.2.1, pp. 359-362: data of Tables 19.1 and 19.2, covariance matrices of equation 19.4 (units of 1e-9); estimates equation 19.6; Q of equation 19.8 restored from its printed terms 37.608 - 30.417 = 7.191 (the printed total 17.191 contradicts them)"
+read = 2026-11-27
+
+[[case]]
+id = "published.gleser2009.logodds.fe"
+kind = "published"
+function = "rma_mv"
+data = { study = [1, 1, 2, 3, 3, 3], treat = ["T1", "T2", "T1", "T1", "T2", "T3"], yi = [0.485507815781701, 0.06713930283762881, 0.30075415401913386, 0.6657482063718305, -0.06995858860691051, 0.4321333551903255], c1 = [0.036298076923076926, 0.026041666666666668, 0.1745272271588061, 0.033248873873873874, 0.007207207207207207, 0.007207207207207207], c2 = [0.026041666666666668, 0.03296807359307359, nan, 0.007207207207207207, 0.020794163728946335, 0.007207207207207207], c3 = [nan, nan, nan, 0.007207207207207207, 0.007207207207207207, 0.028259838786154574] }
+setup = { vblocks = { cluster = "study", columns = ["c1", "c2", "c3"] } }
+args = { yi = "yi", mods = "~ 0 + treat", method = "FE" }
+expect = { "beta[0]" = "0.5099", "beta[1]" = "0.0044", "beta[2]" = "0.4301", "ci_lb[0]" = "0.277", "ci_ub[0]" = "0.743" }
+covers = []
+
+[case.source]
+citation = "Gleser LJ, Olkin I (2009). Stochastically dependent effect sizes. Chapter 19 of Cooper H, Hedges LV, Valentine JC (eds), The Handbook of Research Synthesis and Meta-Analysis, 2nd ed. Russell Sage Foundation"
+locator = "Section 19.2.2, pp. 362-363: d and its covariance matrices computed from Table 19.1 by equations 19.9 to 19.11 (they round to the values printed on p. 362, which are too coarse for T2's fourth decimal); estimates and the single 95 per cent interval for T1 on p. 363. Q is left out: the printed 2.057 is 33.177 - 31.120, a difference of rounded terms (2.0563 unrounded)"
+read = 2026-11-27
 
 [[case]]
 id = "published.assink2016.overall"
