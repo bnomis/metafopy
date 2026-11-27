@@ -66,6 +66,57 @@ print(numpy.argmax(numpy.abs(rstudent(res).z)))
 </div>
 </div>
 
+### `C()` names its columns like a plain factor
+
+A factor wrapped in `C()` names its coefficients as the plain factor does: `allocrandom`, not `C(alloc)random`. Writing `factor(alloc)`
+names them as R does, and so does plain `alloc`.
+
+*Why:* in metafopy `C()` is formulaic's categorical marker, the way to say that a numeric column is a factor. In R it is the function that
+sets a factor's contrasts, and R's name keeps the call.
+
+<div class="compare" markdown>
+<div markdown>
+
+**R, metafor 5.2-1**
+
+```r
+library(metafor)
+dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
+names(coef(rma(yi, vi, mods = ~ C(alloc), data=dat)))
+names(coef(rma(yi, vi, mods = ~ factor(alloc), data=dat)))
+names(coef(rma(yi, vi, mods = ~ alloc, data=dat)))
+```
+
+```text
+[1] "intrcpt"            "C(alloc)random"     "C(alloc)systematic"
+[1] "intrcpt"                 "factor(alloc)random"    
+[3] "factor(alloc)systematic"
+[1] "intrcpt"         "allocrandom"     "allocsystematic"
+```
+
+</div>
+<div markdown>
+
+**Python, metafopy**
+
+```python
+from metafopy import datasets, escalc, rma
+
+dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
+print(rma('yi', 'vi', mods='~ C(alloc)', data=dat).coef_names)
+print(rma('yi', 'vi', mods='~ factor(alloc)', data=dat).coef_names)
+print(rma('yi', 'vi', mods='~ alloc', data=dat).coef_names)
+```
+
+```text
+('intrcpt', 'allocrandom', 'allocsystematic')
+('intrcpt', 'factor(alloc)random', 'factor(alloc)systematic')
+('intrcpt', 'allocrandom', 'allocsystematic')
+```
+
+</div>
+</div>
+
 ### Fitted models are read-only
 
 `res$field <- value` changes a fit in R and can add a field that does not exist. A fit in metafopy is a frozen dataclass: use

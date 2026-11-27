@@ -189,7 +189,7 @@ fit with its R counterpart by name.
 
 ## Task 5: docs/differences.md records the C() naming
 
-**Status:** todo
+**Status:** done
 **Priority:** medium
 **Complexity:** small
 **Spec Reference:** Documentation
@@ -199,21 +199,21 @@ surprise me.
 
 **Subtasks:**
 
-- [ ] Add a section "`C()` names its columns like a plain factor" under "By design" in `docs/differences.md`, after "Names and 0-based
+- [x] Add a section "`C()` names its columns like a plain factor" under "By design" in `docs/differences.md`, after "Names and 0-based
       indices", in the page's R-and-Python comparison layout: R `model.matrix(~ C(alloc), dat.bcg)` names `C(alloc)random`, metafopy
       `allocrandom`; why (in metafopy `C()` is formulaic's categorical marker, not R's contrasts setter); `factor(alloc)` and plain `alloc` name
       as R does
-- [ ] Fill each side's output by running it: R with the R command above (it needs metafor's `dat.bcg`, in the pinned library), Python through
+- [x] Fill each side's output by running it: R with the R command above (it needs metafor's `dat.bcg`, in the pinned library), Python through
       the page's own example runner
 
 **Acceptance Criteria:**
 
-- [ ] The section's outputs are the outputs the two code blocks print
+- [x] The section's outputs are the outputs the two code blocks print
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_docs_examples.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_docs_examples.py` passes
 
 **Notes:**
 
