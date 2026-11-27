@@ -21,7 +21,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 1: Starting checks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Module location
@@ -30,25 +30,26 @@ How to run things, in every task (from the worktree root):
 
 **Subtasks:**
 
-- [ ] `grep -rnwE 'RPandasMaterializer|r_model_matrix' src/metafopy --include='*.py'` prints nothing; otherwise stop as `blocked` naming the match
-- [ ] `src/tests/test_formula_rank.py`, `src/tests/r/generate_formula_rank.R` and `src/tests/reference/formula_rank.json` do not exist; otherwise
+- [x] `grep -rnwE 'RPandasMaterializer|r_model_matrix' src/metafopy --include='*.py'` prints nothing; otherwise stop as `blocked` naming the match
+- [x] `src/tests/test_formula_rank.py`, `src/tests/r/generate_formula_rank.R` and `src/tests/reference/formula_rank.json` do not exist; otherwise
       stop as `blocked` naming the file
-- [ ] `grep -rn 'formulaic.model_matrix(' src/metafopy --include='*.py'` prints exactly two calls, in `src/metafopy/formula.py` (`design_matrix`)
+- [x] `grep -rn 'formulaic.model_matrix(' src/metafopy --include='*.py'` prints exactly two calls, in `src/metafopy/formula.py` (`design_matrix`)
       and `src/metafopy/methods/emm_grid.py` (`reference_grid`); otherwise stop as `blocked` naming the extra or missing call
-- [ ] Run `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_emmeans_nesting.py`: it passes; otherwise stop as
+- [x] Run `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_emmeans_nesting.py`: it passes; otherwise stop as
       `blocked` naming the failures
 
 **Acceptance Criteria:**
 
-- [ ] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
+- [x] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_emmeans_nesting.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_formula.py src/tests/test_formula_names.py src/tests/test_emmeans_nesting.py` passes
 
 **Notes:**
 
+- Run on 2026-11-27: 84 passed, 0 skipped
 - Key files: `src/metafopy/formula.py`, `src/metafopy/methods/emm_grid.py`
 
 ---
