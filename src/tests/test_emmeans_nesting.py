@@ -216,3 +216,20 @@ def test_parse_nest() -> None:
     assert parse('B %in% (A * C), D %in% B') == {'B': ('A', 'C'), 'D': ('B',)}
     # auditme: accept[literal-duplication] each test case spells out its own values, as the R script that generates the fixtures does
     assert parse({'B': 'A', 'D': ['A', 'B']}) == {'B': ('A',), 'D': ('A', 'B')}
+
+
+def test_emmprep_out_of_order_interaction() -> None:
+    dat, _ = emmcheck.nested_data()
+    swapped = metafopy.rma_uni('yi', 'vi', mods='~ grp + lat:grp', data=dat)
+    ordered = metafopy.rma_uni('yi', 'vi', mods='~ grp + grp:lat', data=dat)
+    got = metafopy.emmeans(metafopy.emmprep(swapped), 'lat').summary(infer=True).frame
+    want = metafopy.emmeans(metafopy.emmprep(ordered), 'lat').summary(infer=True).frame
+    pandas.testing.assert_frame_equal(got, want)
+
+
+def test_emmprep_rank_deficient_fit_raises() -> None:
+    dat, _ = emmcheck.nested_data()
+    with pytest.warns(UserWarning, match='Redundant predictors dropped'):
+        fit = metafopy.rma_uni('yi', 'vi', mods='~ lat:grp', data=dat)
+    with pytest.raises(metafopy.errors.InputError, match='redundant predictors were dropped'):
+        metafopy.emmprep(fit)

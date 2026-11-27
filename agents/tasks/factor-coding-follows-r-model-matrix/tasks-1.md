@@ -170,7 +170,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 5: `emmprep` builds its grid through the same builder
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** API; Implementation (One builder, `emmprep` on rank-deficient fits); Tests (`emmprep` with an out-of-order interaction)
@@ -180,23 +180,23 @@ metafor.
 
 **Subtasks:**
 
-- [ ] Write the failing test in `src/tests/test_emmeans_nesting.py`: `rma_uni(mods='~ grp + lat:grp')` on its nested data; `emmprep` succeeds and
+- [x] Write the failing test in `src/tests/test_emmeans_nesting.py`: `rma_uni(mods='~ grp + lat:grp')` on its nested data; `emmprep` succeeds and
       `emmeans(grid, 'lat')` gives the same estimates as the fit written `~ grp + grp:lat`
-- [ ] Add a test that `emmprep` on a `~ f:g` fit raises metafor's "Cannot use function when some redundant predictors were dropped from the
+- [x] Add a test that `emmprep` on a `~ f:g` fit raises metafor's "Cannot use function when some redundant predictors were dropped from the
       model." (`emm_grid.py:255` on 2026-11-27)
-- [ ] In `src/metafopy/methods/emm_grid.py`, replace `reference_grid`'s `formulaic.model_matrix(...)` call with
+- [x] In `src/metafopy/methods/emm_grid.py`, replace `reference_grid`'s `formulaic.model_matrix(...)` call with
       `metafopy.formula.r_model_matrix(metafopy.formula.r_logical_formula(rhs), data, context)`; keep `spec.get_model_matrix` as it is
 
 **Acceptance Criteria:**
 
-- [ ] Both new tests pass, and every existing test in `src/tests/test_emmeans_nesting.py` still passes
-- [ ] `grep -rn 'formulaic.model_matrix(' src/metafopy --include='*.py'` prints only the call inside `r_model_matrix`
+- [x] Both new tests pass, and every existing test in `src/tests/test_emmeans_nesting.py` still passes
+- [x] `grep -rn 'formulaic.model_matrix(' src/metafopy --include='*.py'` prints only the call inside `r_model_matrix`
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/metafopy/methods/emm_grid.py src/tests/test_emmeans_nesting.py` passes
-- [ ] `pytest src/tests/test_emmeans_nesting.py src/tests/test_emmeans.py src/tests/test_emmeans_inference.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/metafopy/methods/emm_grid.py src/tests/test_emmeans_nesting.py` passes
+- [x] `pytest src/tests/test_emmeans_nesting.py src/tests/test_emmeans.py src/tests/test_emmeans_inference.py` passes
 
 **Notes:**
 

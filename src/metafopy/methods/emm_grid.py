@@ -21,7 +21,6 @@ import math
 import re
 import typing
 
-import formulaic
 import numpy
 import numpy.typing
 import pandas
@@ -365,6 +364,7 @@ def emmprep(
 
     Raises:
         metafopy.errors.ArgumentError: ``x`` is not a fitted model of a supported class.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
         metafopy.errors.InputError: the fit cannot be used (redundant predictors, no formula or data) or an argument is invalid.
         metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
 
@@ -406,7 +406,7 @@ def reference_grid(
     rhs = info.formula.split('~', 1)[1].strip() if '~' in info.formula else info.formula.strip()
     data = info.data
     context = metafopy.formula.formula_context()
-    model_matrix = formulaic.model_matrix(metafopy.formula.r_power(metafopy.formula.r_logical_formula(rhs)), data, na_action='ignore', context=context)
+    model_matrix = metafopy.formula.r_model_matrix(metafopy.formula.r_logical_formula(rhs), data, context)
     spec = model_matrix.model_spec
     required = [] if spec is None else [v for v in spec.required_variables if v in data.columns]
     variables = appearance(rhs, required)
@@ -574,6 +574,7 @@ def emmeans(
 
     Raises:
         metafopy.errors.ArgumentError: ``object`` is a fitted model of an unsupported class.
+        metafopy.errors.InternalError: an interaction's variable could not be placed in the formula text (see ``metafopy.formula.r_term_order``).
         metafopy.errors.InputError: a variable is not in the grid, the weights do not fit the averaged factors, ``type`` is not ``'link'`` or
             ``'response'``, or ``at``, ``cov_reduce`` or other ``emmprep`` keywords are given with a reference grid.
         metafopy.errors.NotSupportedError: ``tran`` is ``'+.sqrt'``.
