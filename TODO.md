@@ -21,6 +21,7 @@ Fix direction: check what metafor then does with R's rank-deficient seven column
 and names it ends with; measure before deciding whether it needs a spec. Do after the spec above ships, since both change `design_matrix`.
 
 Note 2026-11-27: the coefficient-names spec it waited for shipped in `e2438a2`; nothing blocks it now.
+Spec: `agents/specs/factor-coding-follows-r-model-matrix/spec.md`; tasks: `agents/tasks/factor-coding-follows-r-model-matrix/tasks-1.md`.
 
 ## Published `rma_mv` cases for van Houwelingen et al. (2002) and Gleser and Olkin (2009) were never written
 
