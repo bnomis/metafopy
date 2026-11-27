@@ -162,3 +162,13 @@ def test_run_call_makes_a_call_from_a_spec() -> None:
     assert audit.pycall.run_call({'fn': 'coef', 'target': {'$ref': 'fit'}}, {'fit': fit}) is not None
     with pytest.raises(audit.pycall.MissingFunctionError):
         audit.pycall.run_call({'fn': 'no.such.function.at.all'}, {})
+
+
+def test_idx_tag_shifts_an_r_index_to_zero_based() -> None:
+    """``{"$idx": ...}`` (an index written for R) reaches ``shift_index``: numbers count from 0, lists element by element, bools and other values stay."""
+    assert audit.pycall.resolve_value({'$idx': 3}, {}) == 2
+    assert audit.pycall.resolve_value({'$idx': 2.0}, {}) == 1
+    assert audit.pycall.resolve_value({'$idx': [1, 2, [4]]}, {}) == [0, 1, [3]]
+    assert audit.pycall.resolve_value({'$idx': True}, {}) is True
+    assert audit.pycall.resolve_value({'$idx': 'x'}, {}) == 'x'
+    assert audit.pycall.resolve_value({'$idx': None}, {}) is None

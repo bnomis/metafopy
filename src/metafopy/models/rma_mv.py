@@ -38,7 +38,10 @@ import metafopy.models.mv_structs
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['DFS', 'METHODS', 'RSCALES', 'TESTS', 'MVControl', 'rma_mv']
+__all__ = [
+    'MVControl',
+    'rma_mv',
+]
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
 CVVC_OPTIONS = ('varcor', 'varcov', 'transf')
@@ -1250,21 +1253,8 @@ def rma_mv(
         ll_qe = -0.5 * k * math.log(2 * math.pi) - 0.5 * fac_v.logdet
     dev_ml = -2 * (ll_ml - ll_qe) if allvipos else -2 * ll_ml
     parms_f = float(parms)
-    ml = metafopy.models.rma_uni.FitStats(
-        ll=ll_ml,
-        dev=dev_ml,
-        AIC=-2 * ll_ml + 2 * parms_f,
-        BIC=-2 * ll_ml + parms_f * math.log(k),
-        AICc=-2 * ll_ml + 2 * parms_f * max(k, parms_f + 2) / (max(k, parms_f + 2) - parms_f - 1),
-    )
-    kp = k - p_eff
-    reml_stats = metafopy.models.rma_uni.FitStats(
-        ll=ll_reml,
-        dev=-2 * ll_reml,
-        AIC=-2 * ll_reml + 2 * parms_f,
-        BIC=-2 * ll_reml + parms_f * math.log(kp) if kp > 0 else math.nan,
-        AICc=-2 * ll_reml + 2 * parms_f * max(kp, parms_f + 2) / (max(kp, parms_f + 2) - parms_f - 1),
-    )
+    ml = metafopy.models.rma_uni.fit_stats_from(ll_ml, dev_ml, parms_f, k)
+    reml_stats = metafopy.models.rma_uni.fit_stats_from(ll_reml, -2 * ll_reml, parms_f, k - p_eff)
 
     s_names_out = tuple(replace_call_notation(n) for n in sinfo.names)
     g_names_out = tuple(replace_call_notation(n) for n in group_g.names) if group_g is not None else ()

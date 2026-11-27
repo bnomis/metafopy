@@ -291,3 +291,12 @@ def test_rma_uni_pfmt_writes_the_p_value_with_its_sign(p: float, places: int) ->
     else:
         assert out.startswith('= ')
         assert abs(float(out[2:]) - p) <= 0.5 * 10.0**-places * (1 + 1e-9)
+
+
+@pytest.mark.parametrize('key', ['weights_REML', 'unweighted', 'dlit'])
+def test_hat_matrix_matches_the_hat_values_of_metafor(dat: pandas.DataFrame, key: str) -> None:
+    """``hat_matrix`` for user weights, ``weighted=False`` and inverse-variance weights: its diagonal is metafor's ``hatvalues``, and with an
+    intercept-only model every row sums to 1."""
+    hat = metafopy.rma(data=dat, **CASES[key]).hat_matrix()
+    close(numpy.diag(hat), REF[key]['hat'], f'{key}: hat')
+    numpy.testing.assert_allclose(hat.sum(axis=1), 1.0, rtol=1e-10)

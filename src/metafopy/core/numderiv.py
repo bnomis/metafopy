@@ -25,7 +25,12 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['HESSPACKS', 'deriv12', 'hessian', 'hessian_by_package', 'hessian_calculus', 'hessian_pracma']
+__all__ = [
+    'HESSPACKS',
+    'deriv12',
+    'hessian',
+    'hessian_by_package',
+]
 
 HESSPACKS = ('calculus', 'numDeriv', 'pracma')
 

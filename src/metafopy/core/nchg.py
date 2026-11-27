@@ -37,8 +37,6 @@ __all__ = [
     'DNCHG_CALCS',
     'IntegrationControl',
     'Tables',
-    'conditional_moments',
-    'fisher_log_probability',
     'fixed_information',
     'marginal_information',
     'neg_loglik',

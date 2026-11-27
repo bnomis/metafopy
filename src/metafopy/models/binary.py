@@ -26,7 +26,11 @@ import metafopy.models.rma_uni
 import metafopy.models.tables
 import metafopy.printing
 
-__all__ = ['NAN_STATS', 'FixedBinaryResult', 'format_test_line', 'positive_max']
+__all__ = [
+    'NAN_STATS',
+    'FixedBinaryResult',
+    'positive_max',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -54,22 +58,8 @@ def fit_statistics(yi: FloatArray, vi: FloatArray, fit: float, k_yi: int) -> tup
             dev_ml = -2 * ll_ml
         else:
             dev_ml = float(-2 * (ll_ml + 0.5 * numpy.sum(numpy.log(2 * math.pi * vi))))
-        big_ml = max(k, 3)
-        big_reml = max(k - 1, 3)
-        ml = metafopy.models.rma_uni.FitStats(
-            ll=ll_ml,
-            dev=dev_ml,
-            AIC=-2 * ll_ml + 2,
-            BIC=float(-2 * ll_ml + numpy.log(k)),
-            AICc=-2 * ll_ml + 2 * big_ml / (big_ml - 2),
-        )
-        reml = metafopy.models.rma_uni.FitStats(
-            ll=ll_reml,
-            dev=-2 * ll_reml,
-            AIC=-2 * ll_reml + 2,
-            BIC=float(-2 * ll_reml + numpy.log(k - 1)),
-            AICc=-2 * ll_reml + 2 * big_reml / (big_reml - 2),
-        )
+        ml = metafopy.models.rma_uni.fit_stats_from(ll_ml, dev_ml, 1, k)
+        reml = metafopy.models.rma_uni.fit_stats_from(ll_reml, -2 * ll_reml, 1, k - 1)
     return ml, reml
 
 

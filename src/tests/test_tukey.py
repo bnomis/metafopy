@@ -71,12 +71,12 @@ def test_qtukey_non_convergence_gives_nan_with_r_warnings() -> None:
 
 
 TUKEY_TOLERANCE = 1e-6
-nmeans_values = hypothesis.strategies.floats(min_value=2.0, max_value=50.0)
-tukey_df_values = hypothesis.strategies.floats(min_value=2.0, max_value=1000.0) | hypothesis.strategies.just(math.inf)
+NMEANS_VALUES = hypothesis.strategies.floats(min_value=2.0, max_value=50.0)
+TUKEY_DF_VALUES = hypothesis.strategies.floats(min_value=2.0, max_value=1000.0) | hypothesis.strategies.just(math.inf)
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(q=rstrategies.finite_floats(0.0, 20.0), nmeans=nmeans_values, df=tukey_df_values)
+@hypothesis.given(q=rstrategies.finite_floats(0.0, 20.0), nmeans=NMEANS_VALUES, df=TUKEY_DF_VALUES)
 def test_ptukey_property_bounds_monotone_and_complementary(q: float, nmeans: float, df: float) -> None:
     """Candidate ``src/metafopy/core/tukey.py::ptukey``: in [0, 1], non-decreasing in q, and the two tails sum to 1."""
     lower = metafopy.core.tukey.ptukey(q, nmeans, df)
@@ -87,7 +87,7 @@ def test_ptukey_property_bounds_monotone_and_complementary(q: float, nmeans: flo
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.99), nmeans=nmeans_values, df=tukey_df_values)
+@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.99), nmeans=NMEANS_VALUES, df=TUKEY_DF_VALUES)
 def test_qtukey_property_round_trip_through_ptukey(p: float, nmeans: float, df: float) -> None:
     """Candidate ``src/metafopy/core/tukey.py::qtukey``: ``ptukey(qtukey(p))`` is within 1e-4 of ``p`` (the stopping rule of R's ``qtukey``).
 
@@ -101,7 +101,7 @@ def test_qtukey_property_round_trip_through_ptukey(p: float, nmeans: float, df: 
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.9), nmeans=nmeans_values, df=tukey_df_values)
+@hypothesis.given(p=hypothesis.strategies.floats(min_value=0.01, max_value=0.9), nmeans=NMEANS_VALUES, df=TUKEY_DF_VALUES)
 def test_qtukey_property_non_decreasing_in_p(p: float, nmeans: float, df: float) -> None:
     """Candidate ``src/metafopy/core/tukey.py::qtukey``: a larger probability gives a quantile no smaller (probabilities 0.05 apart)."""
     with warnings.catch_warnings():

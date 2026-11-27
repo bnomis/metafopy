@@ -1,6 +1,6 @@
 # Methods for fitted models
 
-Functions that take a fitted model. Each is a single-dispatch function: the generic function chooses the implementation from the class of the fitted model, and the implementations are documented below the generic. A call with a class that has no implementation raises `metafopy.errors.ArgumentError`.
+Functions that take a fitted model. Most are single-dispatch functions: the generic function chooses the implementation from the class of the fitted model, and the implementations are documented below the generic. A call with a class that has no implementation raises `metafopy.errors.ArgumentError`. `hettest`, `vcov` and `coef_summary` are plain functions without dispatch.
 
 ## Predictions and intervals
 

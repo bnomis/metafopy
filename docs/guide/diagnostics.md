@@ -19,6 +19,7 @@ print(rstudent(res))
 ```
 
 ```text
+
      resid     se       z
 1  -0.1748 0.7788 -0.2244
 2  -0.8709 0.6896 -1.2629
@@ -49,6 +50,7 @@ print(rstudent(res))
 11  0.4185 0.6255  0.6691
 12  1.2057 0.9348  1.2898
 13  0.7602 0.6400  1.1879
+
 ```
 
 `rstandard` gives internally standardized residuals and `rstudent` externally studentized residuals (the residual of each
@@ -81,6 +83,7 @@ print(inf)
 ```
 
 ```text
+
    rstudent  dffits cook.d  cov.r tau2.del   QE.del    hat  weight    dfbs inf
 1   -0.2181 -0.0407 0.0017 1.1164   0.3362 151.5826 0.0506  5.0595 -0.0403
 2   -1.2918 -0.3436 0.1132 1.0102   0.2926 145.3176 0.0636  6.3647 -0.3459
@@ -95,6 +98,7 @@ print(inf)
 11   0.6691  0.2315 0.0581 1.1860   0.3405 151.4655 0.0993  9.9250  0.2330
 12   1.2898  0.2526 0.0634 1.0259   0.3082 150.7868 0.0382  3.8216  0.2535
 13   1.1879  0.3549 0.1228 1.0650   0.3037 149.7884 0.0840  8.4029  0.3548
+
 ```
 
 The last column, `inf`, is empty unless a study is flagged as influential (as in metafor, by the usual cutoffs). The individual diagnostics are also available as
@@ -173,6 +177,7 @@ Bootstrapping:     Yes (1000/1000 iterations)
 X^2(df = 12) = 2.8884, p = 0.9920
 
 
+
 Test for Heteroscedastic Heterogeneity
 
 Estimation method: Restricted maximum likelihood
@@ -189,6 +194,7 @@ Test type:         Kolmogorov-Smirnov test (normal)
 Bootstrapping:     Yes (199/200 iterations)
 
 statistic = 0.1624, p = 0.4472
+
 
 ```
 
@@ -207,13 +213,15 @@ print(vif(rma('yi', 'vi', mods='~ ablat + year', data=dat)))
 ```
 
 ```text
+
  ablat    year
 1.5391  1.5391
+
 ```
 
-`vif` also takes `rma_mv`, location-scale and `selmodel` fits with moderators. The options are those of metafor: `btt` (and `att`
+`vif` also takes `rma_mv`, location-scale and `selmodel` fits with moderators. The options include those of metafor: `btt` (and `att`
 for the scale part), `table=True` for the coefficient table, `intercept=True` to include the intercept, `fixed=True` to match a
-string `btt` literally, and, except for `selmodel` fits, `reestimate=True` and `sim`.
+string `btt` literally, and, except for `selmodel` fits, `reestimate=True` and `sim`. There are more, such as `progbar`, `seed`, `parallel`, `ncpus`, `cl`, `digits`, `joinb`, `joina` and `LB`.
 
 ## Best linear unbiased predictions
 

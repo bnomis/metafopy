@@ -205,8 +205,8 @@ refits stop up to 1.7e-3 from the root (ML cov.r), with it the largest differenc
 | `uni.diag.btt.bcg` | derived | the same fit | `cooks_distance(btt=[1, 2])` | `cooks_distance.btt` |
 | `uni.diag.dl.wtl` | derived | Table II inline, DL, `~ length + meta + college` | `rstudent` | `*.me` |
 | `uni.diag.reml.bcg` | derived | `dat.bcg`, REML, no mods | `rstudent` | `*.re` |
-| `uni.diag.reml.raudenbush` | derived | `dat.raudenbush1985`, REML, no mods | `rstudent` | `*.re` |
-| `uni.diag.ml.bcg.ablat` | derived | `dat.bcg`, ML, `~ ablat` | `rstudent` | `*.me` |
+| `uni.diag.reml.raudenbush` | derived | `dat.raudenbush1985`, REML, no mods | `rstudent` | none (`covers = []`; `uni.diag.reml.bcg` covers `*.re`) |
+| `uni.diag.ml.bcg.ablat` | derived | `dat.bcg`, ML, `~ ablat` | `rstudent` | none (`covers = []`) |
 | `uni.diag.ee.bcg.ablat` | derived | `dat.bcg`, EE, `~ ablat` | `rstudent` | `*.ee` |
 | `uni.diag.fixed.bcg.ablat` | derived | `dat.bcg`, `tau2 = 0.05`, `~ ablat` | `rstudent` | `*.tau2_fixed` |
 | `uni.ranef.reml.raudenbush` | derived | `dat.raudenbush1985`, REML, `test = "z"` | `ranef` | `ranef.re`, `ranef.pi.z` |

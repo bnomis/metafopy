@@ -25,13 +25,8 @@ __all__ = [
     'CR_TYPES',
     'WALD_TESTS',
     'Sandwich',
-    'WaldResult',
     'coef_df',
-    'matrix_power',
     'saddlepoint_p',
-    'saddlepoint_pval',
-    'satterthwaite_df',
-    'uniroot',
 ]
 
 FloatArray = numpy.typing.NDArray[numpy.float64]

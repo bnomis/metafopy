@@ -59,7 +59,7 @@ Several variables (`'alloc'`, `['alloc', 'year']`) give their cross-classificati
 
 `pairs` and `contrast` take the contrast families of emmeans: `pairwise`, `revpairwise`, `trt_vs_ctrl`, `trt_vs_ctrlk`, `eff`,
 `del_eff`, `consec`, `mean_chg`, `poly` and `identity`, or a dict of coefficient vectors. Each family has the default
-adjustment of emmeans (`pairwise`: Tukey, `trt_vs_ctrl`: Dunnett, `eff`: FDR, `consec`: multivariate t, `poly`: none), and
+adjustment of emmeans (for example `pairwise`: Tukey, `trt_vs_ctrl`: Dunnett, `eff`: FDR, `consec`: multivariate t, `poly`: none), and
 `summary(adjust=...)` accepts `tukey`, `dunnettx`, `sidak`, `scheffe`, `mvt` and every method of `p_adjust`. Contrasts of log
 means show as ratios, contrasts of logit means as odds ratios.
 

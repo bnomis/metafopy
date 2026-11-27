@@ -13,13 +13,18 @@ import numpy.typing
 import pandas
 import scipy.stats
 
+import metafopy.effects.summary
 import metafopy.errors
 import metafopy.methods.predict
 import metafopy.models.mv_result
 import metafopy.models.rma_uni
-import metafopy.plot.rutils
 
-__all__ = ['POOLED_COLUMNS', 'STUDY_COLUMNS', 'ChartData', 'chart_data', 'check_chart_data', 'zcrit']
+__all__ = [
+    'ChartData',
+    'chart_data',
+    'check_chart_data',
+    'zcrit',
+]
 
 type Fit = metafopy.models.rma_uni.RMAResult | metafopy.models.mv_result.RMAMVResult
 type Transf = collections.abc.Callable[[numpy.typing.ArrayLike], numpy.ndarray]
@@ -47,7 +52,7 @@ class ChartData:
 
 def zcrit(level: float | None, fit: Fit | None = None) -> float:
     """The normal critical value of a confidence ``level`` (a percentage, or 0.95), by default that of ``fit``."""
-    alpha = fit.level if level is None and fit is not None else metafopy.plot.rutils.level_to_alpha(95 if level is None else level)
+    alpha = fit.level if level is None and fit is not None else metafopy.effects.summary.level_to_alpha(95 if level is None else level)
     return float(scipy.stats.norm.isf(alpha / 2))
 
 

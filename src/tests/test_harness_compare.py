@@ -368,8 +368,8 @@ def test_generate_cases_generates_once_and_records_the_coverage(monkeypatch: pyt
     monkeypatch.setattr(audit.cases, 'load_fixtures', list)
     monkeypatch.setattr(audit.domains.Domains, 'load', classmethod(lambda cls: object()))
     monkeypatch.setattr(audit.domains.Recipes, 'load', classmethod(lambda cls: object()))
-    ctx = audit.steps.Context(work=tmp_path, jobs=1, timeout=1.0, quick=False, only=None)
-    ctx.universe = audit.universe.Universe({'fixtures': {}, 'functions': {}, 'methods': []})
+    universe = audit.universe.Universe({'fixtures': {}, 'functions': {}, 'methods': []})
+    ctx = audit.steps.Context(work=tmp_path, jobs=1, timeout=1.0, quick=False, only=None, universe=universe)
     assert audit.steps.generate_cases(ctx) is generated
     assert ctx.coverage == {'uncovered_arguments': ['f/arg'], 'unaccounted': ['g']}
     assert audit.steps.generate_cases(ctx) is generated
@@ -381,6 +381,12 @@ def test_recall_value_that_names_no_audit_is_a_usage_error(value: str) -> None:
     with pytest.raises(SystemExit) as raised:
         audit.cli.parse_args(['--recall', value])
     assert raised.value.code == 2
+
+
+@pytest.mark.parametrize('value', ['0', '-1', '-0.5'])
+def test_timeout_that_is_not_positive_is_refused(value: str) -> None:
+    with pytest.raises(audit.errors.HarnessError, match=re.escape(value)):
+        audit.cli.parse_args(['--timeout', value])
 
 
 PRINTED_DIGITS = hypothesis.strategies.integers(min_value=0, max_value=6)

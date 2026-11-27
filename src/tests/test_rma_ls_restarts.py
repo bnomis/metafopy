@@ -77,24 +77,11 @@ def test_restart_starts_of_an_intercept_only_model_is_empty() -> None:
 def test_is_regular_maximum_separates_interior_from_ridge() -> None:
     interior, ridge = permuted(433), permuted(RIDGE, restarts=False)
     for res, expected in ((interior, True), (ridge, False)):
-        problem = metafopy.models.rma_ls_fit.LSProblem(
-            yi=res.yi,
-            vi=res.vi,
-            X=res.X,
-            Z=res.Z,
-            reml=False,
-            REMLf=True,
-            link='log',
-            alpha_min=numpy.full(2, -numpy.inf),
-            alpha_max=numpy.full(2, numpy.inf),
-            tau2_min=0.0,
-            tau2_max=numpy.inf,
-            optbeta=False,
-        )
+        problem = ls_problem(res.Z, res.yi, res.vi, res.X, 'log')
         assert metafopy.models.rma_ls_fit.is_regular_maximum(problem, res.alpha) is expected
 
 
-def identity_problem(Z: numpy.ndarray, yi: numpy.ndarray, vi: numpy.ndarray, X: numpy.ndarray) -> metafopy.models.rma_ls_fit.LSProblem:
+def ls_problem(Z: numpy.ndarray, yi: numpy.ndarray, vi: numpy.ndarray, X: numpy.ndarray, link: str) -> metafopy.models.rma_ls_fit.LSProblem:
     return metafopy.models.rma_ls_fit.LSProblem(
         yi=yi,
         vi=vi,
@@ -102,7 +89,7 @@ def identity_problem(Z: numpy.ndarray, yi: numpy.ndarray, vi: numpy.ndarray, X: 
         Z=Z,
         reml=False,
         REMLf=True,
-        link='identity',
+        link=link,
         alpha_min=numpy.full(Z.shape[1], -numpy.inf),
         alpha_max=numpy.full(Z.shape[1], numpy.inf),
         tau2_min=0.0,
@@ -163,7 +150,7 @@ def test_identity_restart_start_zeros_are_exact() -> None:
 
 def test_is_face_maximum_passes_a_face_maximum() -> None:
     res = permuted_identity(18)
-    problem = identity_problem(res.Z, res.yi, res.vi, res.X)
+    problem = ls_problem(res.Z, res.yi, res.vi, res.X, 'identity')
     nan = numpy.full(2, numpy.nan)
     assert res.fit_stats.loc['ll', 'ML'] == pytest.approx(-12.62494606, abs=1e-6)
     best_ll, best = -numpy.inf, None
@@ -189,7 +176,7 @@ def test_is_face_maximum_refuses_a_singular_face() -> None:
     x = numpy.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
     Z = numpy.column_stack([numpy.ones(6), x, x])
     rng = numpy.random.default_rng(1)
-    problem = identity_problem(Z, rng.normal(size=6), numpy.full(6, 0.2), numpy.ones((6, 1)))
+    problem = ls_problem(Z, rng.normal(size=6), numpy.full(6, 0.2), numpy.ones((6, 1)), 'identity')
     assert not metafopy.models.rma_ls_fit.is_face_maximum(problem, numpy.array([0.0, 0.5, 0.5]))
 
 

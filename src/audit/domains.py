@@ -6,6 +6,7 @@ import tomllib
 import typing
 
 import audit.config
+import audit.harness_io
 
 __all__ = [
     'Domains',
@@ -30,7 +31,7 @@ class Domains:
 
     @classmethod
     def load(cls) -> Domains:
-        doc = tomllib.loads((audit.config.DATA_DIR / 'domains.toml').read_text())
+        doc = tomllib.loads(audit.harness_io.read_text(audit.config.DATA_DIR / 'domains.toml', 'load the domains'))
         return cls(
             args=doc.get('args', {}),
             skip=doc.get('skip', {}),
@@ -59,7 +60,7 @@ class Recipes:
 
     @classmethod
     def load(cls) -> Recipes:
-        return cls(tomllib.loads((audit.config.DATA_DIR / 'recipes.toml').read_text()))
+        return cls(tomllib.loads(audit.harness_io.read_text(audit.config.DATA_DIR / 'recipes.toml', 'load the recipes')))
 
     @property
     def fit_functions(self) -> list[str]:

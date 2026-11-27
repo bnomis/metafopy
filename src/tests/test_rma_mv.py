@@ -16,6 +16,7 @@ import refutil
 import metafopy
 import metafopy.core.labelled
 import metafopy.errors
+import metafopy.methods.confint
 import metafopy.models.mv_result
 
 REF: dict[str, typing.Any] = json.loads((pathlib.Path(__file__).parent / 'reference' / 'phase4' / 'rma_mv.json').read_text(encoding='utf-8'))
@@ -391,6 +392,41 @@ def test_confint_all_components() -> None:
     out = ci_model('kon').confint()
     assert isinstance(out, list)
     assert len(out) == 2
+
+
+def test_confint_list_keeps_each_component_and_prints_them_in_order() -> None:
+    """``ConfintList.__init__`` keeps the results and ``digits``; ``summary`` joins one table per component with a blank line, each holding R's
+    values (the fixtures ``ci_kon_sigma2_1`` and ``ci_kon_sigma2_2``)."""
+    parts = [ci_model('kon').confint(sigma2=0), ci_model('kon').confint(sigma2=1)]
+    out = metafopy.methods.confint.ConfintList(parts, digits=3)
+    assert list(out) == parts
+    assert out.digits == 3
+    tables = out.summary().split('\n\n')
+    assert len(tables) == 2
+    for table, key in zip(tables, ('ci_kon_sigma2_1', 'ci_kon_sigma2_2'), strict=True):
+        assert table == parts[tables.index(table)].summary(3)
+        estimate = REF[key]['random'][0][0]
+        assert f'{estimate:.3f}' in table
+    assert out.summary(digits=1) != out.summary()
+
+
+def test_confint_result_summary_prints_the_tables_with_the_search_signs() -> None:
+    """``ConfintResult.summary``: the ``fixed`` table, a blank line, then the ``random`` table; the bounds of ``random`` carry ``lb_sign`` and
+    ``ub_sign``; values are R's (``ci_kon_fixed``)."""
+    fixed = ci_model('kon').confint(fixed=True).fixed
+    assert fixed is not None
+    estimate, lb, ub = REF['ci_kon_fixed']['fixed'][0]
+    random = pandas.DataFrame([[0.5, 0.25, 1.0]], index=['sigma^2'], columns=['estimate', 'ci.lb', 'ci.ub'])
+    out = metafopy.methods.confint.ConfintResult(fixed=fixed, random=random, lb_sign='<', ub_sign='>', digits=2)
+    fixed_text, random_text = out.summary().split('\n\n')
+    assert f'{estimate:.2f}' in fixed_text
+    assert f'{lb:.2f}' in fixed_text
+    assert f'{ub:.2f}' in fixed_text
+    assert '<' not in fixed_text
+    assert fixed_text.splitlines()[0].split() == ['estimate', 'ci.lb', 'ci.ub']
+    assert random_text.splitlines()[1].split() == ['sigma^2', '0.50', '<0.25', '>1.00']
+    assert str(out) == out.summary()
+    assert out.summary(digits=3).splitlines()[-1].split()[1] == '0.500'
 
 
 def test_random_is_the_formulas_as_given() -> None:

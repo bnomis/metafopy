@@ -35,7 +35,9 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.printing
 
-__all__ = ['LSPermutestResult', 'permutest_rma_ls']
+__all__ = [
+    'LSPermutestResult',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

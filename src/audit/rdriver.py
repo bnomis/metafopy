@@ -8,10 +8,10 @@ import threading
 
 import audit.config
 import audit.errors
+import audit.harness_io
 
 __all__ = [
     'environment',
-    'limit_memory',
     'rscript_command',
     'run',
     'start',
@@ -54,9 +54,9 @@ def run(script: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
     """Run an R script to completion.
 
     Raises:
-        audit.errors.HarnessError: the script exits non-zero; the message holds R's stderr.
+        audit.errors.HarnessError: the script cannot be started, or exits non-zero; the message holds R's stderr.
     """
-    proc = subprocess.run(rscript_command(script, *args), env=environment(), capture_output=True, text=True, check=False)
+    proc = audit.harness_io.run_command(rscript_command(script, *args), f'run {script.name}', env=environment(), capture_output=True, text=True, check=False)
     if proc.returncode != 0:
         raise audit.errors.HarnessError(f'{script.name} failed:\n{proc.stderr[-3000:]}')
     return proc
@@ -67,8 +67,9 @@ def limit_memory() -> None:
 
 
 def start(script: pathlib.Path, log: pathlib.Path, *args: str) -> subprocess.Popen[bytes]:
-    return subprocess.Popen(
+    return audit.harness_io.start_process(
         rscript_command(script, *args),
+        f'start {script.name}',
         env=environment(),
         stdout=log.open('ab'),
         stderr=subprocess.STDOUT,

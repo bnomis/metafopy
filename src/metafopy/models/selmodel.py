@@ -430,6 +430,7 @@ def selmodel(
             ``prec='ninv'``, ``prec`` with ``type='stepfun'`` and ``decreasing=False``).
         metafopy.errors.EstimationError: the optimiser did not converge or the likelihood could not be integrated.
         metafopy.errors.NotSupportedError: the optimiser chosen in ``control`` has no counterpart in metafopy.
+        metafopy.errors.InternalError: the continuous-weight likelihood is evaluated for a specification with no weight function.
 
     ``type='truncest'`` differs from metafor when the truncation point is estimated. Its likelihood is a step function of the truncation point,
     with a jump down at each observed effect (a study is selected only when ``y > cut``; see ``.selmodel.ll.trunc`` in

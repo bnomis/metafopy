@@ -20,7 +20,10 @@ import metafopy.core.integrate
 import metafopy.errors
 import metafopy.models.sel_spec
 
-__all__ = ['Evaluation', 'Problem', 'negative_loglik']
+__all__ = [
+    'Problem',
+    'negative_loglik',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
@@ -185,6 +188,7 @@ def evaluate(prob: Problem, par: FloatArray, *, delta_transf: bool, tau2_transf:
     Raises:
         metafopy.errors.EstimationError: the normalising integral of a study cannot be computed.
         metafopy.errors.InputError: a step-function model has no ``steps`` value below 1.
+        metafopy.errors.InternalError: the continuous-weight likelihood (``ll_cont``) is evaluated for a specification with no weight function.
     """
     spec = prob.spec
     pX = prob.X.shape[1]

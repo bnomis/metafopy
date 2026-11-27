@@ -1,6 +1,6 @@
 """Property tests for formula parsing and the rewriting of formula and model-call text.
 
-Formulas are built from generated R names (``rstrategies.r_identifiers``), so the parts a test puts in are the parts it expects back.
+Formulas are built from generated R NAMES (``rstrategies.r_identifiers``), so the parts a test puts in are the parts it expects back.
 """
 
 import keyword
@@ -23,11 +23,11 @@ import metafopy.models.rma_uni
 import metafopy.plot.infl
 
 SETTINGS = hypothesis.settings(max_examples=100, deadline=None)
-names = rstrategies.r_identifiers()
-python_names = names.filter(lambda s: s.isidentifier() and not keyword.iskeyword(s))
-unique_names = hypothesis.strategies.lists(names, min_size=1, max_size=5, unique=True)
-signs = hypothesis.strategies.sampled_from('+-')
-lower_words = hypothesis.strategies.text(alphabet='abcdefghijklmnopqrstuvwxyz', min_size=1, max_size=20)
+NAMES = rstrategies.r_identifiers()
+python_names = NAMES.filter(lambda s: s.isidentifier() and not keyword.iskeyword(s))
+UNIQUE_NAMES = hypothesis.strategies.lists(NAMES, min_size=1, max_size=5, unique=True)
+SIGNS = hypothesis.strategies.sampled_from('+-')
+LOWER_WORDS = hypothesis.strategies.text(alphabet='abcdefghijklmnopqrstuvwxyz', min_size=1, max_size=20)
 
 
 def is_subsequence(small: str, big: str) -> bool:
@@ -39,7 +39,7 @@ def is_subsequence(small: str, big: str) -> bool:
 
 
 @SETTINGS
-@hypothesis.given(before=names, calls=hypothesis.strategies.lists(hypothesis.strategies.tuples(names, names, names), min_size=1, max_size=4))
+@hypothesis.given(before=NAMES, calls=hypothesis.strategies.lists(hypothesis.strategies.tuples(NAMES, NAMES, NAMES), min_size=1, max_size=4))
 def test_call_spans_find_each_outermost_call(before: str, calls: list[tuple[str, str, str]]) -> None:
     """formula.py::call_spans: each outermost call is one span, and a call nested in an argument adds none."""
     pieces = [f'{fn}({a}, {inner}({b}))' for fn, a, b in calls for inner in [fn]]
@@ -49,7 +49,7 @@ def test_call_spans_find_each_outermost_call(before: str, calls: list[tuple[str,
 
 
 @SETTINGS
-@hypothesis.given(parts=hypothesis.strategies.lists(names, min_size=1, max_size=6), op=hypothesis.strategies.sampled_from(['+', '*', '|', '&', '^', '-']))
+@hypothesis.given(parts=hypothesis.strategies.lists(NAMES, min_size=1, max_size=6), op=hypothesis.strategies.sampled_from(['+', '*', '|', '&', '^', '-']))
 def test_r_tokens_keep_every_non_blank_character(parts: list[str], op: str) -> None:
     """formula.py::r_tokens: the tokens, joined, are the text without blanks, and every name is one token."""
     text = f' {op} '.join(parts)
@@ -59,7 +59,7 @@ def test_r_tokens_keep_every_non_blank_character(parts: list[str], op: str) -> N
 
 
 @SETTINGS
-@hypothesis.given(left=names, right=names, op=hypothesis.strategies.sampled_from(sorted(metafopy.formula.R_SPACED)))
+@hypothesis.given(left=NAMES, right=NAMES, op=hypothesis.strategies.sampled_from(sorted(metafopy.formula.R_SPACED)))
 def test_r_deparse_spaces_binary_operators_and_is_idempotent(left: str, right: str, op: str) -> None:
     """formula.py::r_deparse: a spaced operator gets one blank each side, and deparsing its own output changes nothing."""
     text = metafopy.formula.r_deparse([left, op, right])
@@ -68,7 +68,7 @@ def test_r_deparse_spaces_binary_operators_and_is_idempotent(left: str, right: s
 
 
 @SETTINGS
-@hypothesis.given(outside=names, inside=names, fn=names, power=hypothesis.strategies.integers(2, 9))
+@hypothesis.given(outside=NAMES, inside=NAMES, fn=NAMES, power=hypothesis.strategies.integers(2, 9))
 def test_r_power_rewrites_only_inside_calls(outside: str, inside: str, fn: str, power: int) -> None:
     """formula.py::r_power: ``^`` inside a call becomes ``**``; outside it stays; a formula with no ``^`` is unchanged."""
     rhs = f'{outside}^{power} + {fn}({inside}^{power})'
@@ -93,8 +93,8 @@ def test_r_logical_calls_and_formula_rewrite_the_call_that_uses_bar(before: str,
 
 @SETTINGS
 @hypothesis.given(
-    inner=hypothesis.strategies.none() | names,
-    outer=hypothesis.strategies.lists(names, min_size=1, max_size=3, unique=True),
+    inner=hypothesis.strategies.none() | NAMES,
+    outer=hypothesis.strategies.lists(NAMES, min_size=1, max_size=3, unique=True),
 )
 def test_parse_random_returns_the_parts_it_was_built_from(inner: str | None, outer: list[str]) -> None:
     """formula.py::parse_random: ``~ inner | a/b`` gives back the inner name and the nesting, and prints back to the same formula."""
@@ -120,14 +120,14 @@ def test_parse_random_demands_a_leading_tilde(text: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(y=names, xs=hypothesis.strategies.lists(names, min_size=1, max_size=6))
+@hypothesis.given(y=NAMES, xs=hypothesis.strategies.lists(NAMES, min_size=1, max_size=6))
 def test_matreg_parse_formula_gives_outcome_and_unique_predictors_in_order(y: str, xs: list[str]) -> None:
     """matreg.py::parse_formula: the outcome, then each predictor once in order of first appearance."""
     assert metafopy.methods.matreg.parse_formula(f'{y} ~ {" + ".join(xs)}') == (y, list(dict.fromkeys(xs)))
 
 
 @SETTINGS
-@hypothesis.given(rhs=names)
+@hypothesis.given(rhs=NAMES)
 def test_matreg_parse_formula_needs_a_left_hand_side(rhs: str) -> None:
     """matreg.py::parse_formula: no outcome is an input error."""
     with pytest.raises(metafopy.errors.InputError):
@@ -135,7 +135,7 @@ def test_matreg_parse_formula_needs_a_left_hand_side(rhs: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(y=names, xs=hypothesis.strategies.lists(names, min_size=1, max_size=5), fns=hypothesis.strategies.lists(names, max_size=3))
+@hypothesis.given(y=NAMES, xs=hypothesis.strategies.lists(NAMES, min_size=1, max_size=5), fns=hypothesis.strategies.lists(NAMES, max_size=3))
 def test_formula_variables_skip_function_names_and_duplicates(y: str, xs: list[str], fns: list[str]) -> None:
     """rcalc.py::formula_variables: variables in order of appearance, once each, and no function name."""
     terms = [f'{fn}({x})' for fn, x in zip(fns, xs, strict=False)] + xs
@@ -168,7 +168,7 @@ def test_match_nfun_takes_unambiguous_prefixes_only(choice: str, keep: int) -> N
 
 
 @SETTINGS
-@hypothesis.given(terms=hypothesis.strategies.lists(hypothesis.strategies.tuples(signs, names), min_size=1, max_size=6), wrap=names)
+@hypothesis.given(terms=hypothesis.strategies.lists(hypothesis.strategies.tuples(SIGNS, NAMES), min_size=1, max_size=6), wrap=NAMES)
 def test_split_terms_splits_at_top_level_signs_only(terms: list[tuple[str, str]], wrap: str) -> None:
     """call.py::split_terms: the sign and text of each term come back; a sign inside parentheses does not split."""
     first = [('+', terms[0][1]), *terms[1:]]
@@ -179,7 +179,7 @@ def test_split_terms_splits_at_top_level_signs_only(terms: list[tuple[str, str]]
 
 
 @SETTINGS
-@hypothesis.given(old=unique_names)
+@hypothesis.given(old=UNIQUE_NAMES)
 def test_update_side_dot_is_idempotent(old: list[str]) -> None:
     """call.py::update_side: ``.`` keeps the terms, and applying it again changes nothing."""
     text = ' + '.join(old)
@@ -189,7 +189,7 @@ def test_update_side_dot_is_idempotent(old: list[str]) -> None:
 
 
 @SETTINGS
-@hypothesis.given(old=unique_names, new=names)
+@hypothesis.given(old=UNIQUE_NAMES, new=NAMES)
 def test_update_side_adds_then_drops_a_term(old: list[str], new: str) -> None:
     """call.py::update_side: ``. + t`` appends a new term, and ``. - t`` then removes it again."""
     hypothesis.assume(new not in old)
@@ -200,7 +200,7 @@ def test_update_side_adds_then_drops_a_term(old: list[str], new: str) -> None:
 
 
 @SETTINGS
-@hypothesis.given(y=names, old=unique_names, new=names)
+@hypothesis.given(y=NAMES, old=UNIQUE_NAMES, new=NAMES)
 def test_update_formula_keeps_the_outcome_and_updates_the_terms(y: str, old: list[str], new: str) -> None:
     """call.py::update_formula: ``. ~ . + t`` keeps the left-hand side and the old terms, and is idempotent."""
     hypothesis.assume(new not in old)
@@ -225,8 +225,8 @@ def test_update_formula_demands_a_tilde_in_the_update(text: str) -> None:
 @hypothesis.given(
     pieces=hypothesis.strategies.lists(
         hypothesis.strategies.one_of(
-            names,
-            hypothesis.strategies.tuples(names, names, names).map(lambda t: f'{t[0]}({t[1]}, {t[2]})'),
+            NAMES,
+            hypothesis.strategies.tuples(NAMES, NAMES, NAMES).map(lambda t: f'{t[0]}({t[1]}, {t[2]})'),
             hypothesis.strategies.text(alphabet='ab,', min_size=1, max_size=4).map(lambda s: f'"{s}"'),
         ),
         min_size=1,
@@ -242,7 +242,7 @@ def test_split_top_level_ignores_separators_in_brackets_and_quotes(pieces: list[
 
 
 @SETTINGS
-@hypothesis.given(prefix=names, nlevels=hypothesis.strategies.integers(2, 8))
+@hypothesis.given(prefix=NAMES, nlevels=hypothesis.strategies.integers(2, 8))
 def test_inner_names_number_each_lower_triangle_pair_once(prefix: str, nlevels: int) -> None:
     """mv_hessian.py::inner_names: one unique name per correlation of an ``n x n`` matrix, in column-major lower-triangle order."""
     count = nlevels * (nlevels - 1) // 2
@@ -255,7 +255,7 @@ def test_inner_names_number_each_lower_triangle_pair_once(prefix: str, nlevels: 
 
 
 @SETTINGS
-@hypothesis.given(prefix=names, count=hypothesis.strategies.integers(1, 12))
+@hypothesis.given(prefix=NAMES, count=hypothesis.strategies.integers(1, 12))
 def test_numbered_gives_the_prefix_alone_or_one_unique_name_each(prefix: str, count: int) -> None:
     """mv_hessian.py::numbered: one count gives the bare prefix; more give ``prefix.1`` to ``prefix.count``."""
     out = metafopy.models.mv_hessian.numbered(prefix, count)
@@ -298,9 +298,9 @@ def test_abbreviate_once_keeps_the_first_letter_and_a_subsequence(text: str, min
 
 
 @SETTINGS
-@hypothesis.given(words=hypothesis.strategies.lists(lower_words, min_size=1, max_size=6, unique=True), minlen=hypothesis.strategies.integers(1, 6))
+@hypothesis.given(words=hypothesis.strategies.lists(LOWER_WORDS, min_size=1, max_size=6, unique=True), minlen=hypothesis.strategies.integers(1, 6))
 def test_abbreviate_makes_unique_names_unique(words: list[str], minlen: int) -> None:
-    """mv_print.py::abbreviate: unique names give unique abbreviations, each a subsequence of its name."""
+    """mv_print.py::abbreviate: unique NAMES give unique abbreviations, each a subsequence of its name."""
     out = metafopy.models.mv_print.abbreviate(words, minlen)
     assert len(out) == len(words)
     assert len(set(out)) == len(out)
@@ -308,7 +308,7 @@ def test_abbreviate_makes_unique_names_unique(words: list[str], minlen: int) -> 
 
 
 @SETTINGS
-@hypothesis.given(x=names, ref=hypothesis.strategies.text(alphabet='abcXYZ019', max_size=5), degree=hypothesis.strategies.integers(1, 9))
+@hypothesis.given(x=NAMES, ref=hypothesis.strategies.text(alphabet='abcXYZ019', max_size=5), degree=hypothesis.strategies.integers(1, 9))
 def test_abbreviate_names_strips_the_wrappers_of_coefficient_names(x: str, ref: str, degree: int) -> None:
     """rma_uni.py::abbreviate_names: ``factor()``, ``I()``, ``relevel()`` and ``poly()`` wrappers go; a plain name stays."""
     hypothesis.assume(')' not in x)
@@ -322,7 +322,7 @@ def test_abbreviate_names_strips_the_wrappers_of_coefficient_names(x: str, ref: 
 
 
 @SETTINGS
-@hypothesis.given(a=names, b=names, fn=hypothesis.strategies.sampled_from(['interaction', 'paste', 'paste0']))
+@hypothesis.given(a=NAMES, b=NAMES, fn=hypothesis.strategies.sampled_from(['interaction', 'paste', 'paste0']))
 def test_replace_call_notation_writes_interactions_with_a_colon(a: str, b: str, fn: str) -> None:
     """rma_mv.py::replace_call_notation: ``interaction(a, b)``, ``paste(a, b)`` and ``paste0(a, b)`` become ``a:b``; a plain name stays."""
     out = metafopy.models.rma_mv.replace_call_notation(f'{fn}({a}, {b})')
@@ -332,7 +332,7 @@ def test_replace_call_notation_writes_interactions_with_a_colon(a: str, b: str, 
 
 
 @SETTINGS
-@hypothesis.given(text=lower_words, minlen=hypothesis.strategies.integers(1, 8))
+@hypothesis.given(text=LOWER_WORDS, minlen=hypothesis.strategies.integers(1, 8))
 def test_infl_abbreviate_shortens_a_lower_case_word_to_minlength(text: str, minlen: int) -> None:
     """infl.py::abbreviate: a lower-case word of at most ``minlen`` letters is kept; a longer one is cut to ``minlen`` and keeps its first letter."""
     out = metafopy.plot.infl.abbreviate(text, minlen)

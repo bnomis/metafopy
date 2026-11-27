@@ -1608,4 +1608,8 @@ def rnse(
     return rcall(env, name, *values, **named)
 
 
-__all__ = ['BASE', 'EMPTY', 'Env', 'UnsupportedError', 'rcall']
+__all__ = [
+    'EMPTY',
+    'Env',
+    'rcall',
+]

@@ -9,11 +9,11 @@ import scipy.stats
 import metafopy.core.farebrother
 
 FAREBROTHER_TOLERANCE = 1e-6
-lambdas = hypothesis.strategies.lists(hypothesis.strategies.floats(min_value=0.1, max_value=5.0), min_size=1, max_size=4)
+LAMBDAS = hypothesis.strategies.lists(hypothesis.strategies.floats(min_value=0.1, max_value=5.0), min_size=1, max_size=4)
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(q=rstrategies.finite_floats(0.01, 100.0), lam=lambdas)
+@hypothesis.given(q=rstrategies.finite_floats(0.01, 100.0), lam=LAMBDAS)
 def test_farebrother_property_bounds_and_non_increasing_in_q(q: float, lam: list[float]) -> None:
     """Candidate ``src/metafopy/core/farebrother.py::farebrother``: the upper tail is in [0, 1] and non-increasing in q."""
     tail = metafopy.core.farebrother.farebrother(q, lam).Qq

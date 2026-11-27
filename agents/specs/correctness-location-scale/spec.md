@@ -4,7 +4,7 @@
 **Status:** implemented
 **Date:** 2026-11-12
 
-Location-scale models (`rma_uni(..., scale=...)`, metafor's `rma.ls`) are today checked only against R metafor: the parity fixtures and
+Location-scale models (`rma_uni(..., scale=...)`, metafor's `rma.ls`) were, before this spec (on 2026-11-12), checked only against R metafor: the parity fixtures and
 `bin/metafor-audit.sh` prove that metafopy reproduces metafor, not that either is right. A `TODO.md` item found on 2026-11-12 ("Extend the correctness
 tests beyond the core models") records that the [correctness-tests spec](../correctness-tests/spec.md) covers only `escalc`, `rma_uni`, `rma_mh` and
 `rma_peto`, and says "Later specs extend the same harness to `rma_mv`, `rma_glmm`, `rma_ls`, the bias methods, `selmodel` and `robust`", with no such spec
@@ -23,7 +23,8 @@ are a cross-check (see Decisions).
 
 ## Module location
 
-- `src/tests/correctness/cases/location_scale.toml` - every case of this spec, with its `[[exempt]]` entries.
+- `src/tests/correctness/cases/location_scale.toml` - the cases of this spec, with its `[[exempt]]` entries; the `other` cases from glmmTMB are in
+  `src/tests/correctness/cases/location_scale_other.toml`.
 - `src/tests/correctness/formulas.py` - new location-scale functions (API below), still `numpy` and `scipy` only.
 - `src/tests/correctness/test_derived.py`, `test_properties.py`, `test_simulation.py`, `test_other_software.py` - new `check` functions, since most
   cases fit a model and then call a method on it (`confint`, `predict`, `anova`, `permutest`), which a single `function` call cannot express.
@@ -53,7 +54,7 @@ def ls_loglik(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, alph
 
 
 def ls_reference_fit(yi: FloatArray, vi: FloatArray, X: FloatArray, Z: FloatArray, link: str, method: str, maxiter: int = 2000) -> dict[str, typing.Any]:
-    """Maximise ls_loglik with scipy.optimize (BFGS from several starts, then Nelder-Mead; SLSQP with Z alpha >= 0 for the identity link).
+    """Maximise ls_loglik with scipy.optimize (BFGS from several starts, then Nelder-Mead, except that the log link polishes each BFGS end point with `ls_newton_polish` and skips Nelder-Mead; SLSQP with Z alpha >= 0 for the identity link).
 
     Returns alpha, beta, vb (eq. 10), tau2, ll and the analytic observed information of alpha (va), independent of metafopy's numerical Hessian.
     """
@@ -91,9 +92,10 @@ def ls_confint_scale(case: correctness.cases.Case, result: typing.Any) -> None:
     """confint(result, tol=1e-12) for each alpha against formulas.ls_profile_bounds."""
 ```
 
-The other `check` functions follow the same one-line pattern, one per coverage item that is not a single attribute: `ls_vcov_alpha`, `ls_qs`,
-`ls_predict_*`, `ls_anova_*`, `ls_permutest_exact` (derived); `ls_reduces_to_rma_uni`, `ls_subgroups_are_separate_fits`, `ls_score_is_zero`,
-`ls_invariance`, `ls_profile_peaks_at_estimate`, `ls_optimisers_agree` (property).
+The other `check` functions follow the same one-line pattern, one per coverage item that is not a single attribute; for example `ls_vcov_alpha`, `ls_qs`,
+`ls_predict_*`, `ls_anova_*`, `ls_permutest_exact`, `ls_confint_location` (derived); `ls_reduces_to_rma_uni`, `ls_subgroups_are_separate_fits`,
+`ls_score_is_zero`, `ls_invariance`, `ls_profile_peaks_at_estimate`, `ls_optimisers_agree`, `ls_links_agree_for_group_indicators`,
+`ls_loglik_not_below_reference` (property). Later specs add more.
 
 ## Coverage list
 

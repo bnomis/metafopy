@@ -21,7 +21,9 @@ import numpy.typing
 
 import metafopy.errors
 
-__all__ = ['BFGSResult', 'optim_bfgs']
+__all__ = [
+    'optim_bfgs',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 

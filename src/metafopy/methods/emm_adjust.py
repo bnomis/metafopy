@@ -21,7 +21,10 @@ import metafopy.core.tukey
 import metafopy.core.zeroin
 import metafopy.errors
 
-__all__ = ['Adjustment', 'Family', 'parse_side']
+__all__ = [
+    'Family',
+    'parse_side',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
@@ -215,6 +218,7 @@ def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, 
     for jj, rows in enumerate(by_rows):
         idx = list(rows)
         d = df[idx]
+        mvt_cache: dict[float, float] = {}
         if ragged:
             n_contr = max(1, int(numpy.sum(~numpy.isnan(est[idx]))))
             fam_size = (1 + math.sqrt(1 + 8 * n_contr)) / 2
@@ -237,8 +241,10 @@ def critical_values(est: FloatArray, level: float, df: FloatArray, adjust: str, 
                 case _:
                     if fam.corr is None:
                         raise metafopy.errors.InputError("The 'mvt' adjustment needs the correlations of the estimates.")
-                    sub = fam.corr[numpy.ix_(idx, idx)]
-                    value = qmvt_both(level, dfi, sub) if tail == 0 else qmvt_lower(level, dfi, sub)
+                    if dfi not in mvt_cache:
+                        sub = fam.corr[numpy.ix_(idx, idx)]
+                        mvt_cache[dfi] = qmvt_both(level, dfi, sub) if tail == 0 else qmvt_lower(level, dfi, sub)
+                    value = mvt_cache[dfi]
             cv[row] = value
     if ragged:
         size = max(len(r) for r in by_rows)

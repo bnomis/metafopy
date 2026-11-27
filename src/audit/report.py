@@ -4,11 +4,12 @@ import collections
 import json
 import pathlib
 import re
-import subprocess
 import typing
 
 import audit.cases
 import audit.config
+import audit.errors
+import audit.harness_io
 import audit.ledger
 import audit.steps
 import audit.universe
@@ -91,10 +92,11 @@ def line_of(kind: str, key: str, items: list[audit.steps.Finding], functions: li
 
 def git_head() -> str:
     try:
-        return subprocess.run(
-            ['git', 'rev-parse', '--short', 'HEAD'], cwd=audit.config.METAFOPY_SRC.parent, capture_output=True, text=True, check=True
-        ).stdout.strip()
-    except OSError, subprocess.CalledProcessError:
+        head: str = audit.harness_io.run_command(
+            ['git', 'rev-parse', '--short', 'HEAD'], 'read the git head', cwd=audit.config.METAFOPY_SRC.parent, capture_output=True, text=True, check=True
+        ).stdout
+        return head.strip()
+    except audit.errors.HarnessError:
         return 'unknown'
 
 
@@ -181,9 +183,10 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
     tail += ['## Steps', ''] + [f'- {name}: {len(o.findings)} findings; {"; ".join(o.notes)}' for name, o in outcomes.items()] + ['']
 
     path = out / 'wrong-or-missing.md'
-    path.write_text('\n'.join(lines + tail))
-    (out / 'wrong-or-missing-full.md').write_text('\n'.join(full_lines + tail))
-    (out / 'findings.json').write_text(
+    audit.harness_io.write_text(path, '\n'.join(lines + tail), 'write the report')
+    audit.harness_io.write_text(out / 'wrong-or-missing-full.md', '\n'.join(full_lines + tail), 'write the full report')
+    audit.harness_io.write_text(
+        out / 'findings.json',
         json.dumps(
             {
                 'new': [dict(vars(f)) for f in new],
@@ -194,14 +197,15 @@ def write(ctx: audit.steps.Context, outcomes: dict[str, audit.steps.Outcome], ou
                 'steps': {name: {'findings': len(o.findings), 'notes': o.notes} for name, o in outcomes.items()},
             },
             indent=1,
-        )
+        ),
+        'write the findings',
     )
     return path
 
 
 def rerender(directory: pathlib.Path, no_ledger: bool = False) -> pathlib.Path:
     """Write the report of an earlier run again from its ``findings.json`` with today's ledger (triage in seconds instead of hours)."""
-    doc: Json = json.loads((directory / 'findings.json').read_text())
+    doc: Json = json.loads(audit.harness_io.read_text(directory / 'findings.json', 'read the findings'))
     by_step: dict[str, audit.steps.Outcome] = {}
     for row in [*doc['new'], *doc['known']]:
         finding = audit.steps.Finding(row['step'], row['id'], row['kind'], row['path'], row['detail'])

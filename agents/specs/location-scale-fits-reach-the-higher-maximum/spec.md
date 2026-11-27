@@ -64,8 +64,8 @@ leaves them as R does.
 class LSControl:
     ...
     restarts: bool = True
-    """Refit a log-link model from one derived start per scale slope and keep a higher regular maximum (metafopy only; ``False`` is metafor's
-    single start)."""
+    """Refit from derived starts and keep a higher regular maximum (metafopy only; ``False`` is metafor's single start): for the log link one
+    start per scale slope; for the identity link per-face and slope-reflection starts (see ``rma_ls_result.py``)."""
 
 
 # src/metafopy/models/rma_ls_fit.py
@@ -79,8 +79,8 @@ def restart_starts(alpha: FloatArray, Z: FloatArray) -> list[FloatArray]:
 
 
 def is_regular_maximum(problem: LSProblem, alpha: FloatArray) -> bool:
-    """The analytic information ``problem.ls_information`` at ``alpha``, taken on the standardised ``Z`` (each non-constant column centred and
-    scaled, as ``formulas.ls_standardise``), is finite and has min/max eigenvalue ratio above ``RESTART_RATIO``."""
+    """The observed log-link information ``problem.log_information`` at ``alpha``, taken on the standardised ``Z`` (each column scaled, and centred
+    only where a constant column absorbs the mean, as ``formulas.ls_standardise``), is finite and has min/max eigenvalue ratio above ``RESTART_RATIO``."""
 ```
 
 `control={'restarts': False}` is accepted by `rma_uni` and is carried into every refit (`refit_ls`), so `permutest`, `profile` and the

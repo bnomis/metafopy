@@ -17,6 +17,7 @@ import pandas
 
 import audit.config
 import audit.errors
+import audit.harness_io
 import audit.valuetree
 import metafopy
 import metafopy.datasets
@@ -34,9 +35,7 @@ __all__ = [
     'match_positional',
     'option_value',
     'resolve_function',
-    'resolve_value',
     'run_call',
-    'setitem',
 ]
 
 Env = dict[str, typing.Any]
@@ -60,7 +59,7 @@ def audit_userfn(x: typing.Any) -> typing.Any:
 
 @functools.cache
 def aliases() -> dict[str, str]:
-    doc = tomllib.loads((audit.config.DATA_DIR / 'domains.toml').read_text())
+    doc = tomllib.loads(audit.harness_io.read_text(audit.config.DATA_DIR / 'domains.toml', 'load the domains'))
     out: dict[str, str] = doc.get('alias', {})
     return out
 

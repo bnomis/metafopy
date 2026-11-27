@@ -11,7 +11,7 @@ import metafopy.errors
 import metafopy.models.sel_lik
 
 NAMES = ('I', 'exp', 'log', 'plogis', 'qlogis')
-bounds = hypothesis.strategies.tuples(rstrategies.finite_floats(-100.0, 100.0), hypothesis.strategies.floats(min_value=0.1, max_value=100.0)).map(
+BOUNDS = hypothesis.strategies.tuples(rstrategies.finite_floats(-100.0, 100.0), hypothesis.strategies.floats(min_value=0.1, max_value=100.0)).map(
     lambda t: (t[0], t[0] + t[1])
 )
 
@@ -66,7 +66,7 @@ def test_exp_safe(x: float, y: float) -> None:
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(-30.0, 30.0), lb_ub=bounds)
+@hypothesis.given(x=rstrategies.finite_floats(-30.0, 30.0), lb_ub=BOUNDS)
 def test_map_delta_within_bounds(x: float, lb_ub: tuple[float, float]) -> None:
     """``map_delta``: for lb < ub the output lies within [lb, ub] (4 ulps of slack), by default and for a named map."""
     lb, ub = lb_ub
@@ -77,7 +77,7 @@ def test_map_delta_within_bounds(x: float, lb_ub: tuple[float, float]) -> None:
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(x=rstrategies.finite_floats(-10.0, 10.0), lb_ub=bounds)
+@hypothesis.given(x=rstrategies.finite_floats(-10.0, 10.0), lb_ub=BOUNDS)
 def test_map_delta_map_inverse_recover_x(x: float, lb_ub: tuple[float, float]) -> None:
     """``map_delta``: map_inverse(map_delta(x)) recovers x where the logistic map does not saturate."""
     lb, ub = lb_ub
@@ -86,7 +86,7 @@ def test_map_delta_map_inverse_recover_x(x: float, lb_ub: tuple[float, float]) -
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(frac=hypothesis.strategies.floats(min_value=1e-3, max_value=1 - 1e-3), lb_ub=bounds)
+@hypothesis.given(frac=hypothesis.strategies.floats(min_value=1e-3, max_value=1 - 1e-3), lb_ub=BOUNDS)
 def test_map_inverse_round_trip(frac: float, lb_ub: tuple[float, float]) -> None:
     """``map_inverse``: for x strictly inside (lb, ub), map_delta of the result recovers x, for the default and the named maps."""
     lb, ub = lb_ub

@@ -26,6 +26,7 @@ import audit.cases
 import audit.config
 import audit.engine
 import audit.errors
+import audit.harness_io
 import audit.pyrun
 import audit.rdriver
 import audit.rlib
@@ -34,14 +35,7 @@ import metafopy
 import metafopy.errors
 
 __all__ = [
-    'Script',
-    'list_scripts',
-    'namespace',
     'run',
-    'run_r_scripts',
-    'run_script',
-    'stream_scripts',
-    'write_scripts',
 ]
 
 Json = dict[str, typing.Any]
@@ -58,16 +52,15 @@ def fetch_source(work: pathlib.Path) -> pathlib.Path:
     """Download the pinned source of metafor (its help pages and tests are the scripts), verified against ``data/metafor-source.sha256``.
 
     Raises:
-        audit.errors.HarnessError: no mirror serves a source that matches the pinned checksum.
+        audit.errors.HarnessError: the work directory or the checksum file cannot be used, or no mirror serves a source that matches the pinned checksum.
     """
     target = work / 'source'
     done = target / 'metafor'
     if done.exists():
         return done
-    # auditme: accept[filesystem-op-without-envelope] an OSError on the run own work directory is an environment failure, reported as it is
-    target.mkdir(parents=True, exist_ok=True)
+    audit.harness_io.ensure_dir(target, 'create the source directory')
     archive = target / 'metafor.tar.gz'
-    expected = (audit.config.DATA_DIR / 'metafor-source.sha256').read_text().split()[0]
+    expected = audit.harness_io.read_text(audit.config.DATA_DIR / 'metafor-source.sha256', 'read the source checksum').split()[0]
     last: Exception | None = None
     for url in SOURCE_URLS:
         try:
@@ -77,7 +70,8 @@ def fetch_source(work: pathlib.Path) -> pathlib.Path:
             last = e
             continue
         if hashlib.sha256(data).hexdigest() == expected:
-            archive.write_bytes(data)
+            # auditme: accept[filesystem-op-without-envelope] harness_io.write_bytes translates an OSError on the work dir to HarnessError
+            audit.harness_io.write_bytes(archive, data, 'save the metafor source')
             break
         last = audit.errors.HarnessError(f'{url} does not match the pinned checksum')
     else:
@@ -181,8 +175,8 @@ def stream_scripts(r_path: pathlib.Path, scripts_path: pathlib.Path, out_path: p
     """Run the scripts in ``scripts_path`` against R's records in ``r_path``, appending to ``out_path`` a ``{"start": id}`` line before each script,
     one ``{"part": id, "findings": [...], "tally": {...}}`` line per unit and a closing ``{"id": id}`` line, flushed each time."""
     audit.config.limit_memory()
-    by_id = {s['id']: s for s in json.loads(r_path.read_text())['scripts']}
-    wanted = [entry['id'] for entry in json.loads(scripts_path.read_text())]
+    by_id = {s['id']: s for s in json.loads(audit.harness_io.read_text(r_path, 'read the R scripts results'))['scripts']}
+    wanted = [entry['id'] for entry in json.loads(audit.harness_io.read_text(scripts_path, 'read the scripts'))]
     with out_path.open('a') as out:
 
         def write(doc: Json) -> None:
@@ -218,21 +212,22 @@ def list_scripts(source: pathlib.Path, work: pathlib.Path, only: list[str] | Non
     if only:
         env['AUDIT_ONLY'] = '\x1f'.join(only)
     with log.open('wb') as handle:
-        subprocess.run(
+        audit.harness_io.run_command(
             audit.rdriver.rscript_command(audit.config.R_DIR / 'runscripts.R', 'list', str(source), str(out_path)),
+            'list the metafor scripts',
             env=env,
             stdout=handle,
             stderr=subprocess.STDOUT,
             check=False,
         )
     try:
-        return [Script(**entry) for entry in json.loads(out_path.read_text())]
-    except (OSError, ValueError, TypeError) as e:
+        return [Script(**entry) for entry in json.loads(audit.harness_io.read_text(out_path, 'read the list of scripts'))]
+    except (audit.errors.HarnessError, OSError, ValueError, TypeError) as e:
         raise audit.errors.HarnessError(f'the list of scripts could not be read ({type(e).__name__}), see {log}') from e
 
 
 def write_scripts(path: pathlib.Path, scripts: list[Script]) -> None:
-    path.write_text(json.dumps([dataclasses.asdict(s) for s in scripts]))
+    audit.harness_io.write_text(path, json.dumps([dataclasses.asdict(s) for s in scripts]), 'write the scripts')
 
 
 def run_r_scripts(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[Script], timeout: float) -> None:
@@ -253,14 +248,14 @@ def run_r_scripts(work: pathlib.Path, i: int, source: pathlib.Path, shard: list[
         if 'parts' in record:
             record['units'] = [p['unit'] for p in record.pop('parts')]
         record.setdefault('units', [])
-    (work / f'r-{i}.json').write_text(json.dumps({'scripts': results}))
+    audit.harness_io.write_text(work / f'r-{i}.json', json.dumps({'scripts': results}), 'write the R scripts results')
 
 
 def run_py_scripts(work: pathlib.Path, i: int, shard: list[Script], nse: list[str], functions: list[str], timeout: float) -> None:
     """Python side of scripts shard ``i`` through ``engine.run_shard``, in its own process so that one dying costs the rest of a script, not the
     step. Writes ``py-{i}.json`` as ``{"findings": [...], "tally": {...}}`` from the parts."""
     r_path = work / f'r-{i}.json'
-    unit_counts = {s['id']: len(s['units']) for s in json.loads(r_path.read_text())['scripts']}
+    unit_counts = {s['id']: len(s['units']) for s in json.loads(audit.harness_io.read_text(r_path, 'read the R scripts results'))['scripts']}
     log = work / f'py-{i}.log'
     launcher = audit.engine.PyLauncher(work, f'py-{i}', 'audit.scripts', log)
 
@@ -294,7 +289,7 @@ def run_py_scripts(work: pathlib.Path, i: int, shard: list[Script], nse: list[st
         else:
             findings += record.get('findings', [])
             tally.update(record.get('tally', {}))
-    (work / f'py-{i}.json').write_text(json.dumps({'findings': findings, 'tally': tally}))
+    audit.harness_io.write_text(work / f'py-{i}.json', json.dumps({'findings': findings, 'tally': tally}), 'write the Python scripts results')
 
 
 def run(
@@ -302,7 +297,7 @@ def run(
 ) -> tuple[list[Json], collections.Counter[str]]:
     source = fetch_source(audit.config.WORK)
     out = work / 'scripts'
-    out.mkdir(parents=True, exist_ok=True)
+    audit.harness_io.ensure_dir(out, 'create the scripts directory')
     n = max(1, jobs)
     shards = [s for s in audit.cases.shards(list_scripts(source, out, only), n) if s]
     with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
@@ -314,7 +309,7 @@ def run(
     findings: list[Json] = []
     tally: collections.Counter[str] = collections.Counter()
     for i in range(len(shards)):
-        doc = json.loads((out / f'py-{i}.json').read_text())
+        doc = json.loads(audit.harness_io.read_text(out / f'py-{i}.json', 'read the Python scripts results'))
         findings += doc['findings']
         tally.update(doc['tally'])
     return findings, tally
@@ -322,7 +317,7 @@ def run(
 
 if __name__ == '__main__':
     # The shard process: argv[1] is a job file holding stream_scripts's arguments and the metafor function names (an internal entry point, not a CLI).
-    job_doc = json.loads(pathlib.Path(sys.argv[1]).read_text())
+    job_doc = json.loads(audit.harness_io.read_text(pathlib.Path(sys.argv[1]), 'read the job file'))
     audit.rlib.METAFOR_FUNCTIONS.update(job_doc['functions'])
     stream_scripts(
         pathlib.Path(job_doc['r_path']),

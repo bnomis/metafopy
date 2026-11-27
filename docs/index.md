@@ -9,6 +9,7 @@ Numerical results are checked against metafor fixtures generated from R.
 ```python
 from metafopy import datasets, escalc, rma
 
+# some of escalc's keywords; see the reference for the rest
 dat = escalc(measure='RR', ai='tpos', bi='tneg', ci='cpos', di='cneg', data=datasets.load('dat.bcg'))
 print(rma('yi', 'vi', data=dat))
 ```

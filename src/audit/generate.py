@@ -184,6 +184,7 @@ def generate(
     results = [fx for fx in subjects if fx not in fits]
     generics = [g for g in universe.generics() if g not in SKIP_GENERICS]
     fit_functions = [f for f in recipes.fit_functions if f in universe.functions]
+    draws_of = {generic: universe.draws(generic) for generic in generics}
 
     for fx in subjects:
         name = fx['name']
@@ -202,7 +203,7 @@ def generate(
             method = universe.method_for(generic, classes)
             if method is None or (fx not in fits and method['class'].startswith('rma')):
                 continue
-            draws = universe.draws(generic)
+            draws = draws_of[generic]
             pre = recipes.pre(generic, name)
             for k, args in enumerate(recipes.generic_calls(generic, name)):
                 gen.cases.append(

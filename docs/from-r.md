@@ -100,7 +100,7 @@ Names that metafor writes with `.` in the middle of a word also lose it in prefi
 ## Classes and generic functions
 
 R's S3 classes (`rma.uni`, `rma.mv`, `escalc`...) become frozen dataclasses (`RMAResult`, `RMAMVResult`...) and `escalc`
-returns a plain `pandas.DataFrame` whose `attrs` carry the attributes metafor stores on the data frame. R's generic functions
+returns an `EscalcFrame`, a `pandas.DataFrame` subclass whose `attrs` carry the attributes metafor stores on the data frame. R's generic functions
 (`predict`, `confint`, `anova`, `profile`, `influence`...) are single-dispatch functions that choose the implementation from
 the class of the result. `predict(res, ...)` works as in R. The implementations for each class are documented in the
 [reference](reference/methods.md).

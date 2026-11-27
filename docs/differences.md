@@ -584,7 +584,7 @@ print(confint(res, alpha=0))
 ```
 
 ```text
-        estimate    ci.lb  ci.ub
+        estimate     ci.lb  ci.ub
 alpha.1  -3.0288 <-44.2512 0.4381
 ```
 

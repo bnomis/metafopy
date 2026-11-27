@@ -65,18 +65,18 @@ def test_sparse_vcovmat_text_prints_as_r_dgcmatrix() -> None:
     assert refutil.r_print(matrix.text()) == expected
 
 
-magnitudes = hypothesis.strategies.builds(
+MAGNITUDES = hypothesis.strategies.builds(
     lambda mantissa, exponent, negative: float(f'{"-" if negative else ""}{mantissa}e{exponent}'),
     hypothesis.strategies.integers(min_value=1, max_value=9_999_999),
     hypothesis.strategies.integers(min_value=-8, max_value=8),
     hypothesis.strategies.booleans(),
 )
-columns = hypothesis.strategies.lists(magnitudes, min_size=1, max_size=6)
-digits_counts = hypothesis.strategies.integers(min_value=1, max_value=10)
+COLUMNS = hypothesis.strategies.lists(MAGNITUDES, min_size=1, max_size=6)
+DIGITS_COUNTS = hypothesis.strategies.integers(min_value=1, max_value=10)
 
 
 @hypothesis.settings(max_examples=100, deadline=None)
-@hypothesis.given(values=columns, digits=digits_counts)
+@hypothesis.given(values=COLUMNS, digits=DIGITS_COUNTS)
 def test_decimals_keeps_the_significant_digits(values: list[float], digits: int) -> None:
     """Candidate ``src/metafopy/core/labelled.py::decimals``."""
     places = metafopy.core.labelled.decimals(values, digits)
@@ -88,8 +88,8 @@ def test_decimals_keeps_the_significant_digits(values: list[float], digits: int)
 
 @hypothesis.settings(max_examples=100, deadline=None)
 @hypothesis.given(
-    values=hypothesis.strategies.lists(magnitudes | hypothesis.strategies.sampled_from([math.nan, math.inf, -math.inf, 0.0]), min_size=0, max_size=6),
-    digits=digits_counts,
+    values=hypothesis.strategies.lists(MAGNITUDES | hypothesis.strategies.sampled_from([math.nan, math.inf, -math.inf, 0.0]), min_size=0, max_size=6),
+    digits=DIGITS_COUNTS,
 )
 def test_format_real_marks_missing_and_infinite_and_shares_decimals(values: list[float], digits: int) -> None:
     """Candidate ``src/metafopy/core/labelled.py::format_real``."""
@@ -110,7 +110,7 @@ def test_format_real_marks_missing_and_infinite_and_shares_decimals(values: list
 @hypothesis.given(
     mantissas=hypothesis.strategies.lists(hypothesis.strategies.integers(min_value=1, max_value=9_999_999), min_size=1, max_size=5),
     exponents=hypothesis.strategies.lists(hypothesis.strategies.integers(min_value=-12, max_value=12), min_size=5, max_size=5),
-    digits=digits_counts,
+    digits=DIGITS_COUNTS,
 )
 def test_scientific_places_is_unchanged_by_a_power_of_ten(mantissas: list[int], exponents: list[int], digits: int) -> None:
     """Candidate ``src/metafopy/core/labelled.py::scientific_places``."""

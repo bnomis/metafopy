@@ -11,19 +11,17 @@ import typing
 
 import audit.cases
 import audit.config
+import audit.errors
+import audit.harness_io
 import audit.rdriver
 
 __all__ = [
-    'Json',
     'PyLauncher',
     'Stop',
     'py_stop',
     'r_stop_reason',
-    'read_outcomes',
-    'resident_bytes',
     'run_cases',
     'run_shard',
-    'watch',
 ]
 
 Json = dict[str, typing.Any]
@@ -46,7 +44,7 @@ def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None, list
     parts: dict[str, list[Json]] = {}
     if not path.exists():
         return done, None, []
-    for line in path.read_text(errors='replace').splitlines():
+    for line in audit.harness_io.read_text(path, 'read the runner output', errors='replace').splitlines():
         if not line.strip():
             continue
         try:
@@ -68,8 +66,8 @@ def read_outcomes(path: pathlib.Path) -> tuple[dict[str, Json], str | None, list
 def resident_bytes(pid: int) -> int | None:
     """The resident size of process ``pid`` in bytes (``ps -o rss= -p <pid>`` reports KiB), or None when the process has gone or ``ps`` is missing."""
     try:
-        done = subprocess.run(['ps', '-o', 'rss=', '-p', str(pid)], capture_output=True, text=True, check=False)
-    except OSError:
+        done = audit.harness_io.run_command(['ps', '-o', 'rss=', '-p', str(pid)], 'read a process size', capture_output=True, text=True, check=False)
+    except audit.errors.HarnessError:
         return None
     text = done.stdout.strip()
     if done.returncode != 0 or not text.isdigit():
@@ -160,7 +158,7 @@ def run_r_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard: 
         return {'id': case_id, 'status': 'error', 'error': r_stop_reason(stop, timeout, 'case'), 'warnings': []}
 
     results = run_shard(work, f'r-{i}', shard, timeout, start, dead, audit.cases.write_cases)
-    (work / f'r-{i}.json').write_text(json.dumps({'results': results}))
+    audit.harness_io.write_text(work / f'r-{i}.json', json.dumps({'results': results}), 'write the R results')
 
 
 def py_stop(stop: Stop, timeout: float, returncode: int | None, log: pathlib.Path, unit: str) -> tuple[str, str]:
@@ -182,9 +180,11 @@ class PyLauncher:
         self.last: subprocess.Popen[bytes] | None = None
 
     def start(self, job: Json) -> subprocess.Popen[bytes]:
-        self.job_path.write_text(json.dumps(job))
+        audit.harness_io.write_text(self.job_path, json.dumps(job), 'write the job file')
         with self.log.open('ab') as handle:
-            self.last = subprocess.Popen([sys.executable, '-m', self.module, str(self.job_path)], stdout=handle, stderr=subprocess.STDOUT)
+            self.last = audit.harness_io.start_process(
+                [sys.executable, '-m', self.module, str(self.job_path)], 'start the Python runner', stdout=handle, stderr=subprocess.STDOUT
+            )
         return self.last
 
     def returncode(self) -> int | None:
@@ -195,7 +195,7 @@ def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard:
     """Python side of shard ``i``, run in its own process so that one dying costs a case, not the step; writes ``py-{i}.json`` as
     ``{"results": [...]}`` in shard order."""
     r_path = work / f'r-{i}.json'
-    r_by_id = {r['id']: r for r in json.loads(r_path.read_text())['results']}
+    r_by_id = {r['id']: r for r in json.loads(audit.harness_io.read_text(r_path, 'read the R results'))['results']}
     log = work / f'py-{i}.log'
     launcher = PyLauncher(work, f'py-{i}', 'audit.pyrun', log)
 
@@ -219,14 +219,14 @@ def run_py_shard(work: pathlib.Path, i: int, fixtures_path: pathlib.Path, shard:
         }
 
     results = run_shard(work, f'py-{i}', shard, timeout, start, dead, audit.cases.write_cases)
-    (work / f'py-{i}.json').write_text(json.dumps({'results': results}))
+    audit.harness_io.write_text(work / f'py-{i}.json', json.dumps({'results': results}), 'write the Python results')
 
 
 def run_cases(cases: list[audit.cases.Case], fixtures: list[Json], work: pathlib.Path, jobs: int, timeout: float) -> list[Json]:
     """Execute every case in R, then in Python against R's outcome; returns one result per case, in case order."""
-    work.mkdir(parents=True, exist_ok=True)
+    audit.harness_io.ensure_dir(work, 'create the work directory')
     fixtures_path = work / 'fixtures.json'
-    fixtures_path.write_text(json.dumps(fixtures))
+    audit.harness_io.write_text(fixtures_path, json.dumps(fixtures), 'write the fixtures')
     n = max(1, min(jobs, len(cases)))
     shards = audit.cases.shards(cases, n)
     with concurrent.futures.ThreadPoolExecutor(max_workers=n) as threads:
@@ -236,6 +236,6 @@ def run_cases(cases: list[audit.cases.Case], fixtures: list[Json], work: pathlib
         list(threads.map(lambda i: run_py_shard(work, i, fixtures_path, shards[i], timeout), range(len(shards))))
     by_id: dict[str, Json] = {}
     for i in range(len(shards)):
-        for result in json.loads((work / f'py-{i}.json').read_text())['results']:
+        for result in json.loads(audit.harness_io.read_text(work / f'py-{i}.json', 'read the Python results'))['results']:
             by_id[result['id']] = result
     return [by_id[c.id] for c in cases if c.id in by_id]

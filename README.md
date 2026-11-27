@@ -10,14 +10,14 @@ Meta-analysis in Python: a re-implementation of the R package
 ## Example
 
 ```python
-import numpy as np
-from metafopy import datasets, rma, confint, predict
+import numpy
+import metafopy
 
-dat = datasets.load('dat.hackshaw1998')  # already has yi / vi columns
-res = rma(data=dat, method='REML')
+dat = metafopy.datasets.load('dat.hackshaw1998')  # already has yi / vi columns
+res = metafopy.rma(data=dat, method='REML')
 print(res)
-print(confint(res))
-print(predict(res, transf=np.exp))
+print(metafopy.confint(res))
+print(metafopy.predict(res, transf=numpy.exp))
 ```
 
 ## Building
@@ -36,7 +36,7 @@ ruff check .
 
 ## Building the docs
 
-The user manual is in `docs/` (installation, tutorial, user guide, worked analyses, a guide for users coming from R and the function reference).
+The user manual is in `docs/` (for example the installation page, tutorial, user guide, worked analyses, a guide for users coming from R, the function reference, the differences from metafor and a showcase notebook).
 
 Build and browse it with:
 

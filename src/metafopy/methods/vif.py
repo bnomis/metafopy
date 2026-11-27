@@ -261,6 +261,8 @@ def vif(res: typing.Any, *args: typing.Any, **kwargs: typing.Any) -> VIFResult:
     Raises:
         metafopy.errors.ArgumentError: there is no implementation for the class of ``res``.
         metafopy.errors.InputError: raised by the implementation for an invalid argument.
+        metafopy.errors.InternalError: raised by the univariate or location-scale implementation when a refit hits an internal invariant
+            violation that the refit does not catch.
         TypeError: the implementation does not accept a keyword argument.
     """
     raise metafopy.errors.ArgumentError(f'vif() not implemented for {type(res).__name__}')
@@ -339,6 +341,8 @@ def vif_rma_uni(
         metafopy.errors.InputError: the model has no moderators; ``att`` is given; ``sim`` is a number below 2 or ``sim`` or ``reestimate`` is used with
             a [robust][metafopy.robust] result; ``btt`` is the intercept (without ``intercept=True``), is out of range or matches no coefficient;
             ``joinb`` does not have one label per column of the model matrix; ``parallel`` is not an accepted value or ``ncpus`` is below 1.
+        metafopy.errors.InternalError: with ``reestimate`` or ``sim`` the model is refitted and a refit hits an internal invariant
+            violation, which the refit's caught errors do not include.
 
     Metafor reference:
         [vif](https://wviechtb.github.io/metafor/reference/vif.html)

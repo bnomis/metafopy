@@ -112,6 +112,7 @@ def rma_peto(
     Raises:
         metafopy.errors.InputError: an argument or the data is invalid, or one of the two outcomes never occurred in any table.
         metafopy.errors.NotFoundError: a column named by an argument does not exist in ``data``.
+        metafopy.errors.InternalError: ``prepare_tables`` hits an internal invariant violation in ``escalc``.
 
     Examples:
         >>> from metafopy import datasets, rma_peto

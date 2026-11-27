@@ -731,11 +731,12 @@ def to_wide(
 
     study_vals = data.iloc[:, study_pos].tolist()
     ustudy = sorted(set(study_vals))
-    study_rank = numpy.array([ustudy.index(s) for s in study_vals])
+    rank_of = {s: i for i, s in enumerate(ustudy)}
+    study_rank = numpy.array([rank_of[s] for s in study_vals])
     lvl_index = {lvl: j for j, lvl in enumerate(lvls)}
     grp_rank = numpy.array([lvl_index[g] for g in grp_col.tolist()])
     data = data.iloc[numpy.lexsort((grp_rank, study_rank))].reset_index(drop=True)
-    study_rank = numpy.array([ustudy.index(s) for s in data.iloc[:, study_pos].tolist()])
+    study_rank = numpy.array([rank_of[s] for s in data.iloc[:, study_pos].tolist()])
 
     columns = [str(c) for c in data.columns]
     specs = [grpvars] if isinstance(grpvars, str | int) else list(grpvars)

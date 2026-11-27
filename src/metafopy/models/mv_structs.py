@@ -26,7 +26,13 @@ import metafopy.formula
 import metafopy.models.mv_factor
 
 # auditme: accept[non-alphabetical-literal] the order follows metafor's documented option order
-__all__ = ['GENERAL', 'SPATIAL', 'STRUCTS', 'Group', 'Term', 'con_vcov_un_chol']
+__all__ = [
+    'GENERAL',
+    'SPATIAL',
+    'STRUCTS',
+    'Group',
+    'Term',
+]
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]

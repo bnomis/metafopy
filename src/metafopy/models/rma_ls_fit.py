@@ -30,7 +30,7 @@ import metafopy.models.rma_ls_result
 import metafopy.models.rma_uni
 import metafopy.models.sel_opt
 
-__all__ = ['LS_METHODS']
+__all__ = ()
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 type BoolArray = numpy.typing.NDArray[numpy.bool_]
@@ -1070,20 +1070,8 @@ def fit_rma_ls(
         dev_ml = -2 * (ll_ml - float(numpy.sum(-0.5 * numpy.log(2 * math.pi * vi)))) if allvipos else -2 * ll_ml
     else:
         dev_ml = 0.0
-    fs_ml = metafopy.models.rma_uni.FitStats(
-        ll=ll_ml,
-        dev=dev_ml,
-        AIC=-2 * ll_ml + 2 * parms,
-        BIC=-2 * ll_ml + parms * math.log(k),
-        AICc=metafopy.models.rma_uni.aicc(ll_ml, parms, k),
-    )
-    fs_reml = metafopy.models.rma_uni.FitStats(
-        ll=ll_reml,
-        dev=-2 * ll_reml,
-        AIC=-2 * ll_reml + 2 * parms,
-        BIC=-2 * ll_reml + parms * math.log(k - p) if k > p else math.nan,
-        AICc=metafopy.models.rma_uni.aicc(ll_reml, parms, k - p),
-    )
+    fs_ml = metafopy.models.rma_uni.fit_stats_from(ll_ml, dev_ml, parms, k)
+    fs_reml = metafopy.models.rma_uni.fit_stats_from(ll_reml, -2 * ll_reml, parms, k - p)
 
     return metafopy.models.rma_ls_result.RMALSResult(
         beta=beta_out,

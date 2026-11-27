@@ -6,8 +6,8 @@
 **Corrected:** 2026-11-21 (version 1.2): statements that no longer matched the code, from audit review-1 (`agents/audit-reviews/review-1.md`, finding group F6)
 
 `rma_glmm` fits generalised linear mixed models to binomial and Poisson counts: the unconditional models with fixed or random study effects (`UM.FS`,
-`UM.RS`), the conditional models with the approximate and exact likelihood (`CM.AL`, `CM.EL`), and the one-group logistic and Poisson models. Today its
-numbers are checked only against R metafor (`src/tests/reference/` fixtures and `bin/metafor-audit.sh`), which proves that metafopy reproduces metafor,
+`UM.RS`), the conditional models with the approximate and exact likelihood (`CM.AL`, `CM.EL`), and the one-group logistic and Poisson models. Before this spec (on 2026-11-12) its
+numbers were checked only against R metafor (`src/tests/reference/` fixtures and `bin/metafor-audit.sh`), which proves that metafopy reproduces metafor,
 not that either maximises the likelihood the defining papers write down. A `TODO.md` item found on 2026-11-12 ("Extend the correctness tests beyond the
 core models") records that the [correctness-tests spec](../correctness-tests/spec.md) promises "Later specs extend the same harness to `rma_mv`,
 `rma_glmm`, `rma_ls`, the bias methods, `selmodel` and `robust`", and that no such spec existed. This spec is the `rma_glmm` one; sibling specs cover
@@ -71,8 +71,9 @@ Not covered: `confint`, `blup` and `ranef` refuse `rma_glmm` fits (as in metafor
   search from their own start, never metafopy's.
 - **Optimiser dependence.** Every `ML` fit, every `CM.EL` fit and every `UM.RS` fit is the result of a numerical search, and metafopy's search stops at
   a gradient tolerance (`GLMMControl.gtol`), the ported `optim` routines at R's `reltol`. Two optima that agree to `1e-5` in the estimates differ by
-  about `1e-10` in the log-likelihood, because the likelihood is flat at its maximum. So a derived `ML` case makes two checks: the formulas' log-likelihood
-  **at metafopy's reported estimates** equals metafopy's `ll` and the formulas' maximum (`rtol=1e-8`), and its gradient there is below `1e-4`; and the
+  about `1e-10` in the log-likelihood, because the likelihood is flat at its maximum. So a derived `ML` case makes two checks: where metafopy reports the marginal log-likelihood (`CM.EL`, GLMMadaptive and glmmTMB fits; not the lme4
+  conditional-deviance fits, one-group or Poisson fits), the formulas' log-likelihood **at metafopy's reported estimates** equals metafopy's `ll` and the
+  formulas' maximum (`rtol=1e-8`, `1e-5` for GLMMadaptive), and for the other fits its gradient there is below `1e-4` (no score check for GLMMadaptive); and the
   estimates agree with the formulas' optimum at a looser, stated tolerance (`1e-5` for `nlminb` and the mixed models, `1e-4` for the optimiser items).
   The first is the stronger check: it fails for a wrong likelihood even when both searches stop in the same wrong place.
 - **Fixed-effects fits** have closed forms where the paper gives one (`PLO` and `IRLN` without moderators: `logit(sum xi / sum ni)`,
@@ -172,7 +173,7 @@ def glmm_fit(
 
 # src/tests/correctness/test_derived.py
 def glmm_likelihood_at_estimate(case: correctness.cases.Case, result: GLMMResult) -> None:
-    """The formulas' log-likelihood at the reported estimates equals ``result.fit_stats_ml.ll`` and the formulas' maximum; the gradient is small."""
+    """Where ``rma_glmm`` reports the marginal log-likelihood, the formulas' log-likelihood at the reported estimates equals ``result.fit_stats_ml.ll`` and the formulas' maximum; the gradient is small (GLMMadaptive: ``rtol=1e-5``, no score check)."""
 ```
 
 Each model gets a `glmm_fit`-style entry point (`poisson_glmm_fit` and `one_group_glmm_fit`, with the arguments of its measure; the conditional models are fitted by `glmm_fit` itself through its `model` argument); `GLMMReference` is

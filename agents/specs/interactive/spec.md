@@ -6,8 +6,9 @@
 
 Library functions that build interactive Vega-Lite forest and funnel charts
 from a fitted model, so a caller gets the showcase notebook's charts without
-copying its cells. Today every Altair chart metafopy draws is built by hand in
-`docs/notebooks/showcase.ipynb`; nothing under `src/metafopy/` imports Altair.
+copying its cells. Before this spec, every Altair chart metafopy drew was built by hand in
+`docs/notebooks/showcase.ipynb`, and nothing under `src/metafopy/` imported Altair; the notebook now draws its forest and funnel with
+`forest_chart()` and `funnel_chart()`.
 
 The first consumer is LitRev, a systematic-review tool that embeds these
 charts in a self-contained HTML report and renders the same charts to SVG for
@@ -91,6 +92,11 @@ def forest_chart(
     clicking a linked study follows its href. When x is a fit, the
     remaining keyword arguments go to chart_data(). refline is on the
     transformed scale; None draws no reference line.
+
+    Raises:
+        metafopy.errors.InputError: a ChartData is missing a column, transformed
+            intervals are asked for without transf, or chart_data keyword
+            arguments are given together with a ChartData.
     """
 
 
@@ -134,7 +140,7 @@ for a static image. No function here writes a file.
 `chart_data()` does all the arithmetic, and both chart functions only map its
 columns to marks, so a caller who wants a different chart starts from the
 same numbers. It reads only public fields of the fit (`yi`, `vi`, `slab`,
-`weights_()`, `predict()`), so the R oracle that pins those pins the chart.
+`weights_()`, `predict()`, and also `int_only`, `not_na`, `yi_f`, `vi_f`, `fill`, `level`, `measure`, `k` and `I2`), so the R oracle that pins those pins the chart.
 
 The interactions are the ones the showcase notebook already uses: a
 `selection_point` on `slab` that highlights a study in both charts when they
@@ -143,9 +149,9 @@ the study marks. The notebook's estimator radio button and leave-one-out
 dropdown stay in the notebook: they need many fits precomputed, which is a
 caller's choice, not a chart's.
 
-Charts carry no data URL and no external resource: data is inlined with
-`altair.data_transformers.disable_max_rows()` scoped to the call, never set
-globally. Mark colours are fixed values, not a theme, so a chart renders the
+Charts carry no data URL and no external resource: data is inlined as
+`altair.InlineData` values built directly, so no `data_transformers` setting is
+touched. Mark colours are fixed values, not a theme, so a chart renders the
 same in any embedding.
 
 A study with a missing `yi` or `vi` is omitted, as `forest()` omits it; the

@@ -27,7 +27,7 @@ import scipy.stats
 import metafopy.core.labelled
 import metafopy.errors
 
-__all__ = ['summary_escalc']
+__all__ = ['level_to_alpha', 'summary_escalc']
 
 type FloatArray = numpy.typing.NDArray[numpy.float64]
 
