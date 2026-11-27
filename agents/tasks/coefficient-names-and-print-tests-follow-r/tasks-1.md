@@ -148,7 +148,7 @@ fit with its R counterpart by name.
 
 ## Task 4: The rma_mv and robust print tests compare like with like
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (`test_rma_mv.py`, `test_robust.py`, `conftest.py`)
@@ -157,26 +157,26 @@ fit with its R counterpart by name.
 
 **Subtasks:**
 
-- [ ] In `src/tests/test_rma_mv.py`: `ass_mods` and `ass_mods_t` write `factor(deltype)`, as `src/tests/r/generate_rma_mv.R` does
-- [ ] Remove `NAMES_DIFFER` and both its uses
-- [ ] Add `ber_un_mods` to `PRINT_UNSTABLE`, with a comment giving the measured reason: on 2026-11-27 its REML log-likelihood equalled R's to
+- [x] In `src/tests/test_rma_mv.py`: `ass_mods` and `ass_mods_t` write `factor(deltype)`, as `src/tests/r/generate_rma_mv.R` does
+- [x] Remove `NAMES_DIFFER` and both its uses
+- [x] Add `ber_un_mods` to `PRINT_UNSTABLE`, with a comment giving the measured reason: on 2026-11-27 its REML log-likelihood equalled R's to
       4e-12 while `QM` was 76.708512 against R's 76.708353, either side of the rounding point 76.70845
-- [ ] Add a module fixture that sets the print width to 80 (`monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)`), with a docstring
+- [x] Add a module fixture that sets the print width to 80 (`monkeypatch.setitem(metafopy.printing.SETTINGS, 'width', 80)`), with a docstring
       saying `generate_rma_mv.R` prints at R's default width
-- [ ] In `src/tests/test_robust.py`'s `test_print`, remove the `uni_cs_btt` skip
-- [ ] In `src/tests/conftest.py`, correct `wide_console`'s docstring: the generators that print wide tables set `width = 200`, and a module
+- [x] In `src/tests/test_robust.py`'s `test_print`, remove the `uni_cs_btt` skip
+- [x] In `src/tests/conftest.py`, correct `wide_console`'s docstring: the generators that print wide tables set `width = 200`, and a module
       whose generator does not sets 80 for its print tests
 
 **Acceptance Criteria:**
 
-- [ ] `test_print` runs and passes for `ass_mods`, `ass_mods_t`, `kon_btt` and `uni_cs_btt`, and `test_fit` checks `coef_names` for every case
-- [ ] Every `rma_mv` print case that passed before still passes at width 80
+- [x] `test_print` runs and passes for `ass_mods`, `ass_mods_t`, `kon_btt` and `uni_cs_btt`, and `test_fit` checks `coef_names` for every case
+- [x] Every `rma_mv` print case that passed before still passes at width 80
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `mypy src/tests/test_rma_mv.py src/tests/test_robust.py src/tests/conftest.py` passes
-- [ ] `pytest src/tests/test_rma_mv.py src/tests/test_robust.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `mypy src/tests/test_rma_mv.py src/tests/test_robust.py src/tests/conftest.py` passes
+- [x] `pytest src/tests/test_rma_mv.py src/tests/test_robust.py` passes
 
 **Notes:**
 
