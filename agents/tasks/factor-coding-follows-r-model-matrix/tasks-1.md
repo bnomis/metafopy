@@ -278,7 +278,7 @@ metafor.
 
 ## Task 8: The full local check and closing
 
-**Status:** in-progress
+**Status:** done
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** the whole spec
@@ -288,27 +288,27 @@ to `DONE.md`.
 
 **Subtasks:**
 
-- [ ] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
+- [x] Run the final tests and save their whole output for the merge gate. The main checkout is the first entry of
       `git worktree list --porcelain`, `/Users/simonb/src/metafopy`:
       `mkdir -p /Users/simonb/src/metafopy/ralpher-logs/factor-coding-follows-r-model-matrix/tasks-1 && export PATH=/Users/simonb/src/metafopy/.venv/bin:$PATH PYTHONPATH=$PWD/src && pytest src/tests 2>&1 | tee /Users/simonb/src/metafopy/ralpher-logs/factor-coding-follows-r-model-matrix/tasks-1/final-tests.log`
-- [ ] Any failure stops the task as `blocked`, naming the test: the spec says no formula in the repository's tests changes
-- [ ] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
-- [ ] Move the `TODO.md` item "A two-factor interaction with neither main effect gets other columns than in R" to the end of `DONE.md`: append its
+- [x] Any failure stops the task as `blocked`, naming the test: the spec says no formula in the repository's tests changes
+- [x] Set the spec's `**Status:**` to `implemented`, and its row in `agents/specs/index.md` to say so
+- [x] Move the `TODO.md` item "A two-factor interaction with neither main effect gets other columns than in R" to the end of `DONE.md`: append its
       heading and body unchanged, then `Done: <date> - agents/specs/factor-coding-follows-r-model-matrix/spec.md,
       agents/tasks/factor-coding-follows-r-model-matrix/tasks-1.md.`, and remove it from `TODO.md`
 
 **Acceptance Criteria:**
 
-- [ ] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
+- [x] The final test run passes, the spec says `implemented`, and the item is in `DONE.md` with its `Done:` line
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pre-commit run --all-files` passes
-- [ ] `pre-commit run auditme-all --hook-stage manual --all-files` passes
-- [ ] `mypy src/metafopy` passes
-- [ ] The final test run above passes
-- [ ] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/factor-coding-follows-r-model-matrix/tasks-1.md):TODO.md > <scratch>/todo-before.md`
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pre-commit run --all-files` passes
+- [x] `pre-commit run auditme-all --hook-stage manual --all-files` passes
+- [x] `mypy src/metafopy` passes
+- [x] The final test run above passes
+- [x] `git show $(git log --diff-filter=A --format=%H -- agents/tasks/factor-coding-follows-r-model-matrix/tasks-1.md):TODO.md > <scratch>/todo-before.md`
       and `python3 ~/.claude/skills/todo-review/verify_bodies.py <scratch>/todo-before.md TODO.md DONE.md` exits 0
 
 **Notes:**

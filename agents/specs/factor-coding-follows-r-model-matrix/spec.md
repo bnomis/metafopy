@@ -1,7 +1,7 @@
 # Factor coding follows R's model matrix
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-27
 **Review:** `agents/reviews/factor-coding-follows-r-model-matrix-spec.md` (page
 https://claude.ai/artifact/L3xcqoWFqU6HJgDYE3ri2q); work stops until every item has an answer
