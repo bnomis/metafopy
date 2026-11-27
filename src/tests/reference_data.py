@@ -8,8 +8,11 @@ import typing
 REFERENCE_DIR = pathlib.Path(__file__).parent / 'reference'
 
 
+NOT_CASES = frozenset({'formula_names'})  # R model.matrix names; read by test_formula_names.py, holds no fits
+
+
 def case_names() -> list[str]:
-    return sorted(p.stem for p in REFERENCE_DIR.glob('*.json'))
+    return sorted(p.stem for p in REFERENCE_DIR.glob('*.json') if p.stem not in NOT_CASES)
 
 
 @functools.cache

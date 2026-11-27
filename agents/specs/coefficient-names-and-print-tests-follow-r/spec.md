@@ -1,7 +1,7 @@
 # Coefficient names and print tests follow R
 
 **Version:** 1.0
-**Status:** proposed
+**Status:** implemented
 **Date:** 2026-11-27
 **Review:** `agents/reviews/coefficient-names-and-print-tests-follow-r-spec.md` (page https://claude.ai/artifact/4Vfupvo5ADv27gJf2EqpvD); answered 2026-11-27: every item approved
 
