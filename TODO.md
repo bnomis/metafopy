@@ -20,6 +20,8 @@ Cause: unconfirmed. formulaic and R choose differently which factors of a term w
 Fix direction: check what metafor then does with R's rank-deficient seven columns (it drops redundant columns with a note) and match the columns
 and names it ends with; measure before deciding whether it needs a spec. Do after the spec above ships, since both change `design_matrix`.
 
+Note 2026-11-27: the coefficient-names spec it waited for shipped in `e2438a2`; nothing blocks it now.
+
 ## Published `rma_mv` cases for van Houwelingen et al. (2002) and Gleser and Olkin (2009) were never written
 
 Found on 2026-11-26 at `900698c` during a `TODO.md` review: `src/tests/correctness/cases/published.toml:1465` (added in `b0d0bb6`, 2026-11-14) says
