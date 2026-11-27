@@ -155,9 +155,8 @@ def test_errors() -> None:
 
 
 @pytest.mark.parametrize('key', sorted(ALL_CASES))
+# auditme: accept[paired-sibling-helpers] each test module keeps its own print test over its own cases
 def test_print(key: str) -> None:
-    if key == 'uni_cs_btt':
-        pytest.skip('coefficient label of the squared term follows the formula engine (** instead of ^)')
     assert refutil.r_print(fit(key).summary(digits=4, showfit=False)).strip() == refutil.r_print(REF[key]['print']).strip()
 
 

@@ -121,6 +121,7 @@ def test_saddlepoint_has_no_degrees_of_freedom(key: str) -> None:
 
 
 @pytest.mark.parametrize('key', ['uni_two_saddle', 'mv_two_saddle', 'uni_int_wald_HTA', 'mv_two_wald_EDT', 'uni_three_wald_HTB'])
+# auditme: accept[paired-sibling-helpers] each test module keeps its own print test over its own cases
 def test_print(key: str) -> None:
     assert refutil.r_print(fit(key).summary(digits=4, showfit=False)).strip() == refutil.r_print(REF[key]['print']).strip()
 

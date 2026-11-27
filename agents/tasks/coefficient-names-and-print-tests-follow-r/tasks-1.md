@@ -148,7 +148,7 @@ fit with its R counterpart by name.
 
 ## Task 4: The rma_mv and robust print tests compare like with like
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Tests (`test_rma_mv.py`, `test_robust.py`, `conftest.py`)
