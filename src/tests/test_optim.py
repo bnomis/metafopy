@@ -68,9 +68,15 @@ BVN_SLACK = 4 * math.ulp(1.0)
 @hypothesis.settings(max_examples=100, deadline=None)
 @hypothesis.given(h=LIMITS, k=LIMITS, r=CORRELATIONS)
 def test_bvnu_property_symmetric_bounded_and_matches_scipy(h: float, k: float, r: float) -> None:
-    """Candidate ``src/metafopy/core/bvn.py::bvnu``: symmetric in (h, k), in [0, 1], and the scipy bivariate normal upper orthant probability."""
+    """Candidate ``src/metafopy/core/bvn.py::bvnu``: symmetric in (h, k), in [0, 1], and the scipy bivariate normal upper orthant probability.
+
+    Symmetry holds to a few ulps, not exactly: Genz's BVNU, which ``bvnu`` follows line by line, negates only ``k`` when ``r < 0`` in its
+    high-correlation branch, so swapping the limits can round differently (``bvnu(-1.0, -0.0625, -0.9375)`` and ``bvnu(-0.0625, -1.0, -0.9375)``
+    differ by one ulp, found 2026-11-27).
+    """
     value = metafopy.core.bvn.bvnu(h, k, r)
-    assert value == metafopy.core.bvn.bvnu(k, h, r)
+    swapped = metafopy.core.bvn.bvnu(k, h, r)
+    assert abs(value - swapped) <= 4 * math.ulp(max(abs(value), abs(swapped)))
     assert -BVN_SLACK <= value <= 1 + BVN_SLACK
     expected = float(scipy.stats.multivariate_normal(mean=[0.0, 0.0], cov=[[1.0, r], [r, 1.0]]).cdf([-h, -k]))
     assert value == pytest.approx(expected, abs=1e-6)

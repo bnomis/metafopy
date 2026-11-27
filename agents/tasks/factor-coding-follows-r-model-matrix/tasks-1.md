@@ -278,7 +278,7 @@ metafor.
 
 ## Task 8: The full local check and closing
 
-**Status:** todo
+**Status:** in-progress
 **Priority:** high
 **Complexity:** medium
 **Spec Reference:** the whole spec
@@ -317,3 +317,41 @@ to `DONE.md`.
 - The list does not push
 - The full run can outlast a ten-minute command limit; run it in the background with the longest limit the session allows, and wait for its
   exit status before going on
+
+---
+
+## Task 9: `bvnu` is not exactly symmetric in its limits
+
+**Status:** done
+**Priority:** medium
+**Complexity:** small
+**Spec Reference:** none (found by Task 8's final test run on 2026-11-27)
+
+**Technical Goal:** `src/tests/test_optim.py::test_bvnu_property_symmetric_bounded_and_matches_scipy` passes, so Task 8's full test run is clean.
+
+**Subtasks:**
+
+- [x] Reproduce: `bvnu(-1.0, -0.0625, -0.9375)` is `0.36631033698794846` and `bvnu(-0.0625, -1.0, -0.9375)` is `0.3663103369879485`, one ulp apart, and
+      the test asserts exact equality. Hypothesis replays this case from the worktree's ignored `.hypothesis` directory; the main checkout's
+      database does not hold it, so the test passes there
+- [x] Decide with the operator whether `bvnu` should swap its limits into a canonical order before computing, or the test should compare with a
+      tolerance of a few ulps; the change touches `src/metafopy/core/bvn.py` or `src/tests/test_optim.py`, not the formula code of this spec
+
+**Acceptance Criteria:**
+
+- [x] The test passes on the worktree's `.hypothesis` database
+
+**Definition of Done:**
+
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_optim.py` passes
+
+**Notes:**
+
+- Task 8 depends on this task for its clean full run
+- Task 8's other work is done in the worktree but uncommitted: the spec and index set to implemented, the `TODO.md` item moved to `DONE.md`, and
+  `formula_rank` added to `NOT_CASES` in `src/tests/reference_data.py` (the fixture glob read `formula_rank.json` as a case with no `fits`)
+- Decided 2026-11-27 by Claude at the operator's request ("unblock task 9"), not yet reviewed: the test compares within 4 ulps and `bvnu`
+  is unchanged. `bvnu` follows Genz's BVNU line by line, and its high-correlation branch negates only `k` when `r < 0`, so exact symmetry was
+  never promised; sorting the limits would make half of all calls round differently from the source the port follows
+- Run on 2026-11-27: `pytest src/tests/test_optim.py` 9 passed on the worktree's `.hypothesis` database; `mypy src/tests/test_optim.py` clean
