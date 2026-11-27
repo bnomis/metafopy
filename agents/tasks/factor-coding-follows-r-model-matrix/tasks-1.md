@@ -56,7 +56,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 2: Declare the `interface-meta` dependency
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** External dependencies
@@ -65,20 +65,20 @@ How to run things, in every task (from the worktree root):
 
 **Subtasks:**
 
-- [ ] Add `interface-meta>=2.0` to `[project] dependencies` in `pyproject.toml`, in the list's existing order
-- [ ] Run `uv lock` (from the worktree root, with `direnv exec /Users/simonb/src/metafopy`)
-- [ ] `git diff uv.lock` shows only the metafopy package's dependency list gaining `interface-meta`, and the locked `interface-meta` version is
+- [x] Add `interface-meta>=2.0` to `[project] dependencies` in `pyproject.toml`, in the list's existing order
+- [x] Run `uv lock` (from the worktree root, with `direnv exec /Users/simonb/src/metafopy`)
+- [x] `git diff uv.lock` shows only the metafopy package's dependency list gaining `interface-meta`, and the locked `interface-meta` version is
       unchanged (2.0.1 on 2026-11-27); any other change stops the task as `blocked`, naming it, and the lock is restored with `git checkout uv.lock`
 
 **Acceptance Criteria:**
 
-- [ ] `python -c 'import interface_meta; print(interface_meta.__version__)'` in the project venv prints the locked version
-- [ ] `uv.lock` differs from its starting state only as above
+- [x] `python -c 'import interface_meta; print(interface_meta.__version__)'` in the project venv prints the locked version
+- [x] `uv.lock` differs from its starting state only as above
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `uv lock --check` exits 0
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `uv lock --check` exits 0
 
 **Notes:**
 
