@@ -20,7 +20,7 @@ How to run things, in every task (from the worktree root):
 
 ## Task 1: Starting checks
 
-**Status:** todo
+**Status:** done
 **Priority:** high
 **Complexity:** small
 **Spec Reference:** Motivation; Module location
@@ -30,26 +30,27 @@ measured state.
 
 **Subtasks:**
 
-- [ ] `grep -rnwE 'r_term_order' src/metafopy` prints nothing; otherwise stop as `blocked` naming the match
-- [ ] `src/tests/test_formula_names.py`, `src/tests/r/generate_formula_names.R` and `src/tests/reference/formula_names.json` do not exist;
+- [x] `grep -rnwE 'r_term_order' src/metafopy` prints nothing; otherwise stop as `blocked` naming the match
+- [x] `src/tests/test_formula_names.py`, `src/tests/r/generate_formula_names.R` and `src/tests/reference/formula_names.json` do not exist;
       otherwise stop as `blocked` naming the file
-- [ ] `NAMES_DIFFER` in `src/tests/test_rma_mv.py` is `{'ass_mods', 'ass_mods_t', 'ber_un_mods', 'kon_btt'}`, `ass_mods` and `ass_mods_t` write
+- [x] `NAMES_DIFFER` in `src/tests/test_rma_mv.py` is `{'ass_mods', 'ass_mods_t', 'ber_un_mods', 'kon_btt'}`, `ass_mods` and `ass_mods_t` write
       `C(deltype)`, and `src/tests/test_robust.py`'s `test_print` skips `uni_cs_btt`; otherwise stop as `blocked` naming what differs
-- [ ] Run `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py`: it passes; otherwise stop as `blocked` naming
+- [x] Run `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py`: it passes; otherwise stop as `blocked` naming
       the failures
 
 **Acceptance Criteria:**
 
-- [ ] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
+- [x] Every check above holds, and the task's Notes record the test run's pass and skip counts with the date
 
 **Definition of Done:**
 
-- [ ] The task's commit passes its pre-commit hooks (never `--no-verify`)
-- [ ] `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py` passes
+- [x] The task's commit passes its pre-commit hooks (never `--no-verify`)
+- [x] `pytest src/tests/test_formula.py src/tests/test_rma_mv.py src/tests/test_robust.py` passes
 
 **Notes:**
 
 - Key files: `src/metafopy/formula.py`, `src/tests/test_rma_mv.py`, `src/tests/test_robust.py`
+- Run on 2026-11-27: 438 passed, 12 skipped (4 + 7 in `test_rma_mv.py`, 1 in `test_robust.py`)
 - The commit holds only this task file's ticks and Notes
 
 ---
